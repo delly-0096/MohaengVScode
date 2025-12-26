@@ -1,0 +1,143 @@
+/* 대시보드 스타일 */
+
+/* 활동 목록 */
+.activity-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.activity-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.activity-item:last-child {
+  border-bottom: none;
+}
+
+.activity-type {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.activity-type.회원가입 {
+  background: var(--primary-light);
+  color: var(--primary-color);
+}
+
+.activity-type.결제 {
+  background: #D1FAE5;
+  color: var(--success-color);
+}
+
+.activity-type.문의 {
+  background: #FEF3C7;
+  color: var(--warning-color);
+}
+
+.activity-type.신고 {
+  background: #FEE2E2;
+  color: var(--danger-color);
+}
+
+.activity-type.환불 {
+  background: #E0E7FF;
+  color: #4F46E5;
+}
+
+.activity-type.상품등록 {
+  background: #E5E7EB;
+  color: var(--text-secondary);
+}
+
+.activity-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.activity-content p {
+  font-size: 0.875rem;
+  color: var(--text-primary);
+  line-height: 1.4;
+  margin-bottom: 4px;
+}
+
+.activity-time {
+  font-size: 0.75rem;
+  color: var(--text-light);
+}
+
+/* 인기 여행지 */
+.destination-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.destination-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.destination-item:last-child {
+  border-bottom: none;
+}
+
+.destination-rank {
+  width: 28px;
+  height: 28px;
+  background: var(--bg-color);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+}
+
+.destination-item:nth-child(1) .destination-rank {
+  background: #FEF3C7;
+  color: #D97706;
+}
+
+.destination-item:nth-child(2) .destination-rank {
+  background: #E5E7EB;
+  color: #6B7280;
+}
+
+.destination-item:nth-child(3) .destination-rank {
+  background: #FED7AA;
+  color: #C2410C;
+}
+
+.destination-info {
+  flex: 1;
+}
+
+.destination-name {
+  font-weight: 600;
+  font-size: 0.9375rem;
+  margin-bottom: 2px;
+}
+
+.destination-visits {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+}
+
+.destination-change {
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
