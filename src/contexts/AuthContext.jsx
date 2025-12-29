@@ -1,45 +1,9 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 
 const AuthContext = createContext(null);
-
-// 더미 관리자 데이터 (실제 구현 시 API 연동)
-const ADMIN_USERS = [
-  {
-    id: 1,
-    email: 'admin@mohaeng.com',
-    password: 'admin123',
-    name: '최고관리자',
-    role: 'SUPER_ADMIN',
-    department: '시스템관리팀',
-    avatar: null
-  },
-  {
-    id: 2,
-    email: 'manager@mohaeng.com',
-    password: 'manager123',
-    name: '김관리',
-    role: 'ADMIN',
-    department: '운영팀',
-    avatar: null
-  },
-  {
-    id: 3,
-    email: 'support@mohaeng.com',
-    password: 'support123',
-    name: '이지원',
-    role: 'SUPPORT',
-    department: '고객지원팀',
-    avatar: null
-  }
-];
-
-const ROLE_NAMES = {
-  SUPER_ADMIN: '최고관리자',
-  ADMIN: '관리자',
-  SUPPORT: '고객지원'
-};
-
+console.log("🔥 AuthProvider 렌더링됨");
 export function AuthProvider({ children }) {
+  console.log("🔥 AuthProvider instance", Math.random());
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -52,30 +16,58 @@ export function AuthProvider({ children }) {
     setLoading(false);
   }, []);
 
-  const login = async (email, password) => {
-    // 더미 로그인 (실제 구현 시 API 호출)
-    const foundUser = ADMIN_USERS.find(
-      u => u.email === email && u.password === password
-    );
+  const login = async (loginId, password, captchaToken) => {
+    console.log("🔥 login 호출됨", loginId, password);
+    try {
+    const res = await fetch("http://localhost:8272/api/admin/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+      body: JSON.stringify({
+        loginId,
+        password,
+        captchaToken,
+      }),
+    });
 
-    if (foundUser) {
-      const userData = {
-        id: foundUser.id,
-        email: foundUser.email,
-        name: foundUser.name,
-        role: foundUser.role,
-        roleName: ROLE_NAMES[foundUser.role],
-        department: foundUser.department,
-        avatar: foundUser.avatar,
-        loginTime: new Date().toISOString()
+    console.log("🔥 response status:", res.status);
+
+    const text = await res.text();
+    console.log("🔥 raw response:", text);
+
+    const data = JSON.parse(text);
+    console.log("🔥 parsed response data:", data);
+
+    if (!res.ok) {
+      return {
+        success: false,
+        error: data.message,
+        needCaptcha: data.needCaptcha,
       };
-
-      setUser(userData);
-      localStorage.setItem('adminUser', JSON.stringify(userData));
-      return { success: true };
     }
 
-    return { success: false, error: '이메일 또는 비밀번호가 올바르지 않습니다.' };
+    // 로그인 성공 시 서버에서 내려준 관리자 정보
+    const userData = {
+      loginId: data.loginId,
+      name: data.name,
+      role: data.role,
+      department: data.department,
+      loginTime: new Date().toISOString(),
+    };
+
+    setUser(userData);
+    localStorage.setItem("adminUser", JSON.stringify(userData));
+
+    return { success: true };
+  } catch (err) {
+     console.error("🔥 fetch error", err);
+    return {
+      success: false,
+      error: "서버와 통신 중 오류가 발생했습니다.",
+    };
+  }
   };
 
   const logout = () => {
