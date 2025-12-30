@@ -1,15 +1,14 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const AuthContext = createContext(null);
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-console.log("🔥 AuthProvider 렌더링됨");
+
 export function AuthProvider({ children }) {
-  console.log("🔥 AuthProvider instance", Math.random());
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate(); // 페이지 이동을 위해 추가
 
   useEffect(() => {
-    // 저장된 로그인 정보 확인
     const savedUser = localStorage.getItem('adminUser');
     if (savedUser) {
       setUser(JSON.parse(savedUser));
@@ -17,29 +16,17 @@ export function AuthProvider({ children }) {
     setLoading(false);
   }, []);
 
+  // 통합된 login 함수
   const login = async (loginId, password, captchaToken) => {
-    console.log("🔥 login 호출됨", loginId, password);
-    try {
+  try {
     const res = await fetch("http://localhost:8272/api/admin/login", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      credentials: "include",
-      body: JSON.stringify({
-        loginId,
-        password,
-        captchaToken,
-      }),
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ loginId, password, captchaToken }),
     });
 
-    console.log("🔥 response status:", res.status);
-
-    const text = await res.text();
-    console.log("🔥 raw response:", text);
-
-    const data = JSON.parse(text);
-    console.log("🔥 parsed response data:", data);
+    const data = await res.json();
+    console.log("🔥 login response", data);
 
     if (!res.ok) {
       return {
@@ -49,42 +36,39 @@ export function AuthProvider({ children }) {
       };
     }
 
-    // 로그인 성공 시 서버에서 내려준 관리자 정보
+    localStorage.setItem("access_token", data.access_token);
+
     const userData = {
-      loginId: data.loginId,
-      name: data.name,
-      role: data.role,
       department: data.department,
       loginTime: new Date().toISOString(),
     };
 
-    setUser(userData);
     localStorage.setItem("adminUser", JSON.stringify(userData));
+    setUser(userData);
 
     return { success: true };
+
   } catch (err) {
-     console.error("🔥 fetch error", err);
-    return {
-      success: false,
-      error: "서버와 통신 중 오류가 발생했습니다.",
-    };
+    console.error(err);
+    return { success: false, error: "서버 오류" };
   }
+};
+
+  const signup = () => {
+    console.log("회원가입 페이지 이동");
+    navigate("/sign-up");
   };
 
   const logout = () => {
     setUser(null);
     localStorage.removeItem('adminUser');
+    localStorage.removeItem('access_token');
+    navigate("/login");
   };
 
   const hasPermission = (requiredRole) => {
     if (!user) return false;
-
-    const roleHierarchy = {
-      SUPER_ADMIN: 3,
-      ADMIN: 2,
-      SUPPORT: 1
-    };
-
+    const roleHierarchy = { SUPER_ADMIN: 3, ADMIN: 2, SUPPORT: 1 };
     return roleHierarchy[user.role] >= roleHierarchy[requiredRole];
   };
 
@@ -93,23 +77,17 @@ export function AuthProvider({ children }) {
     loading,
     login,
     logout,
+    signup,
     hasPermission,
     isAuthenticated: !!user
   };
 
   return (
     <AuthContext.Provider value={value}>
-      {children}
+      {!loading && children}
     </AuthContext.Provider>
   );
 }
 
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-}
-
+export const useAuth = () => useContext(AuthContext);
 export default AuthContext;
