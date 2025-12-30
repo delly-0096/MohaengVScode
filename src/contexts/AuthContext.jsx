@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 
 const AuthContext = createContext(null);
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 console.log("🔥 AuthProvider 렌더링됨");
 export function AuthProvider({ children }) {
   console.log("🔥 AuthProvider instance", Math.random());
