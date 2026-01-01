@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import api from '../api/api';
 
 const AuthContext = createContext(null);
 
@@ -19,28 +20,21 @@ export function AuthProvider({ children }) {
   // 통합된 login 함수
   const login = async (loginId, password, captchaToken) => {
   try {
-    const res = await fetch("http://localhost:8272/api/admin/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ loginId, password, captchaToken }),
+    const res = await api.post("/admin/login", {
+      loginId,
+      password,
+      captchaToken,
     });
 
-    const data = await res.json();
+    const data = await res.data;
     console.log("🔥 login response", data);
-
-    if (!res.ok) {
-      return {
-        success: false,
-        error: data.message,
-        needCaptcha: data.needCaptcha,
-      };
-    }
 
     localStorage.setItem("access_token", data.access_token);
 
     const userData = {
       department: data.department,
       loginTime: new Date().toISOString(),
+      token: data.access_token,
     };
 
     localStorage.setItem("adminUser", JSON.stringify(userData));
@@ -49,8 +43,17 @@ export function AuthProvider({ children }) {
     return { success: true };
 
   } catch (err) {
-    console.error(err);
-    return { success: false, error: "서버 오류" };
+    console.error("로그인 에러:", err);
+    
+    // 서버에서 보낸 에러 메시지 확인
+    const errorMessage = err.response?.data?.message || "서버 오류";
+    const needCaptcha = err.response?.data?.needCaptcha;
+
+    return { 
+      success: false, 
+      error: errorMessage,
+      needCaptcha: needCaptcha
+    };
   }
 };
 
