@@ -1,3 +1,4 @@
+import ReCAPTCHA from "react-google-recaptcha";
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
@@ -5,40 +6,56 @@ import { RiMailLine, RiLockLine, RiEyeLine, RiEyeOffLine } from 'react-icons/ri'
 import './Login.css';
 
 function Login() {
-  const [email, setEmail] = useState('');
+  const [loginId, setLoginId] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [needCaptcha, setNeedCaptcha] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState(null);
 
-  const { login } = useAuth();
+  const { login} = useAuth();
   const navigate = useNavigate();
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     setError('');
 
-    if (!email || !password) {
+    if (!loginId || !password) {
       setError('이메일과 비밀번호를 입력해주세요.');
       return;
     }
 
+
     setLoading(true);
 
     try {
-      const result = await login(email, password);
+    const result = await login(
+      loginId,
+      password,
+      needCaptcha ? captchaToken : null);
+    console.log("🔥 login result", result);
 
       if (result.success) {
-        navigate('/');
-      } else {
-        setError(result.error);
-      }
-    } catch (err) {
-      setError('로그인 중 오류가 발생했습니다.');
-    } finally {
-      setLoading(false);
-    }
-  };
+            navigate('/');
+            return;
+          }
+
+          setError(result.error || '로그인에 실패했습니다.');
+
+          if (result.needCaptcha) {
+            setNeedCaptcha(true);
+            setCaptchaToken(null);
+          }
+
+  } catch (err) {
+    setError('로그인 중 오류가 발생했습니다.');
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="login-page">
@@ -61,11 +78,11 @@ function Login() {
             <div className="login-input-wrapper">
               <RiMailLine className="login-input-icon" />
               <input
-                type="email"
+                type="text"
                 className="form-input login-input"
                 placeholder="admin@mohaeng.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={loginId}
+                onChange={(e) => setLoginId(e.target.value)}
                 autoFocus
               />
             </div>
@@ -92,10 +109,19 @@ function Login() {
             </div>
           </div>
 
+            {needCaptcha && (
+              <div className="captcha-wrapper">
+                <ReCAPTCHA
+                  sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
+                  onChange={(token) => setCaptchaToken(token)}
+                />
+              </div>
+            )}
+
           <button
             type="submit"
             className="btn btn-primary login-btn"
-            disabled={loading}
+            disabled={loading || (needCaptcha && !captchaToken)}
           >
             {loading ? '로그인 중...' : '로그인'}
           </button>
