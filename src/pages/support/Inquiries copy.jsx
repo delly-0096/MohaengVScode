@@ -41,7 +41,7 @@ const categoryColors = {
 };
 
 const statusLabels = {
-  waiting: { label: '답변대기', className: 'badge-danger' },
+  pending: { label: '답변대기', className: 'badge-danger' },
   answered: { label: '답변완료', className: 'badge-success' },
   closed: { label: '종료', className: 'badge-gray' }
 };
@@ -75,7 +75,7 @@ const initialInquiriesData = [
     content: '어제 이용 완료한 한라산 트레킹 투어 포인트가 아직 적립되지 않았습니다. 확인 부탁드립니다.',
     attachments: ['screenshot.png'],
     createdAt: '2024-03-14 16:45',
-    status: 'waiting',
+    status: 'pending',
     answer: '',
     answeredAt: '',
     answeredBy: ''
@@ -107,7 +107,7 @@ const initialInquiriesData = [
     content: '휴대폰 번호를 변경하려고 하는데 본인인증이 계속 실패합니다. 도움 부탁드립니다.',
     attachments: ['error_screenshot.png'],
     createdAt: '2024-03-15 11:20',
-    status: 'waiting',
+    status: 'pending',
     answer: '',
     answeredAt: '',
     answeredBy: ''
@@ -168,7 +168,7 @@ function Inquiries() {
 
   // 통계 계산
   const totalCount = inquiriesData.length;
-  const waitingCount = inquiriesData.filter(i => i.status === 'waiting').length;
+  const pendingCount = inquiriesData.filter(i => i.status === 'pending').length;
   const answeredCount = inquiriesData.filter(i => i.status === 'answered').length;
   const todayCount = inquiriesData.filter(i => i.createdAt.startsWith('2024-03-15')).length;
 
@@ -246,7 +246,7 @@ function Inquiries() {
               <RiTimeLine />
             </div>
             <div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#ef4444' }}>{waitingCount}</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#ef4444' }}>{pendingCount}</div>
               <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>답변 대기</div>
             </div>
           </div>
@@ -276,7 +276,7 @@ function Inquiries() {
       </div>
 
       {/* 답변 대기 알림 */}
-      {waitingCount > 0 && (
+      {pendingCount > 0 && (
         <div style={{
           display: 'flex',
           alignItems: 'center',
@@ -289,7 +289,7 @@ function Inquiries() {
           color: '#dc2626'
         }}>
           <RiMailLine style={{ fontSize: '1.25rem' }} />
-          <span style={{ fontWeight: 500 }}>답변 대기 중인 문의가 {waitingCount}건 있습니다. 빠른 답변 부탁드립니다.</span>
+          <span style={{ fontWeight: 500 }}>답변 대기 중인 문의가 {pendingCount}건 있습니다. 빠른 답변 부탁드립니다.</span>
         </div>
       )}
 
@@ -342,7 +342,7 @@ function Inquiries() {
               style={{ width: 'auto' }}
             >
               <option value="all">전체 상태</option>
-              <option value="waiting">답변대기</option>
+              <option value="pending">답변대기</option>
               <option value="answered">답변완료</option>
               <option value="closed">종료</option>
             </select>
@@ -363,7 +363,7 @@ function Inquiries() {
             </thead>
             <tbody>
               {filteredInquiries.map(inquiry => (
-                <tr key={inquiry.id} style={{ background: inquiry.status === 'waiting' ? '#fefce8' : 'transparent' }}>
+                <tr key={inquiry.id} style={{ background: inquiry.status === 'pending' ? '#fefce8' : 'transparent' }}>
                   <td>
                     <span
                       className={`badge ${categoryColors[inquiry.category]?.className || 'badge-gray'}`}
@@ -395,7 +395,6 @@ function Inquiries() {
                     <span
                       className={`badge ${statusLabels[inquiry.status].className}`}
                       style={{ whiteSpace: 'nowrap' }}
-                      
                     >
                       {statusLabels[inquiry.status].label}
                     </span>
@@ -405,7 +404,7 @@ function Inquiries() {
                       <button className="table-action-btn" title="상세보기" onClick={() => handleViewDetail(inquiry)}>
                         <RiEyeLine />
                       </button>
-                      {inquiry.status === 'waiting' && (
+                      {inquiry.status === 'pending' && (
                         <button
                           className="table-action-btn"
                           title="답변하기"
@@ -447,7 +446,7 @@ function Inquiries() {
         title="문의 상세"
         size="large"
         footer={
-          detailModal.inquiry?.status === 'waiting' && (
+          detailModal.inquiry?.status === 'pending' && (
             <button
               className="btn btn-primary"
               onClick={() => {
