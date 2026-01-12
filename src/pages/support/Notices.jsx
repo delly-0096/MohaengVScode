@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import {
   RiSearchLine,
   RiAddLine,
@@ -18,6 +18,8 @@ import {
   RiImageLine
 } from 'react-icons/ri';
 import { Modal, ConfirmModal } from '../../components/common/Modal';
+import api from '../../api/api';
+import axios from 'axios';
 
 // 카테고리 정의 (사용자 페이지와 동일)
 const categories = [
@@ -33,6 +35,7 @@ const categoryColors = {
   '업데이트': { className: 'badge-warning', color: '#f59e0b' }
 };
 
+
 // 더미 데이터 (사용자 페이지와 동일한 구조)
 const initialNoticesData = [
   {
@@ -42,116 +45,119 @@ const initialNoticesData = [
     views: 1234,
     isPinned: true,
     createdAt: '2024-03-15',
-    status: 'published',
+    status: 'PUBLISHED',
     content: '안녕하세요, 모행입니다.\n\n2024년 4월 1일부터 적용되는 개인정보 처리방침 개정 내용을 안내드립니다.\n\n주요 변경사항:\n1. 개인정보 수집 항목 변경\n2. 개인정보 보유 기간 조정\n3. 제3자 제공 동의 절차 개선\n\n자세한 내용은 개인정보 처리방침 페이지에서 확인하실 수 있습니다.\n\n감사합니다.',
     images: []
   },
-  {
-    id: 2,
-    title: '[이벤트] 봄맞이 제주도 여행 할인 프로모션',
-    category: '이벤트',
-    views: 2567,
-    isPinned: true,
-    createdAt: '2024-03-14',
-    status: 'published',
-    content: '봄을 맞이하여 제주도 여행 상품 특별 할인 프로모션을 진행합니다!\n\n기간: 2024년 3월 14일 ~ 4월 30일\n할인율: 최대 30%\n대상: 제주도 전 여행 상품\n\n봄꽃 피는 제주도로 떠나보세요!',
-    images: [
-      'https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=800&h=400&fit=crop',
-      'https://images.unsplash.com/photo-1596422846543-75c6fc197f07?w=800&h=400&fit=crop'
-    ]
-  },
-  {
-    id: 3,
-    title: '[업데이트] AI 일정 추천 기능 개선 안내',
-    category: '업데이트',
-    views: 892,
-    isPinned: false,
-    createdAt: '2024-03-12',
-    status: 'published',
-    content: '모행의 AI 일정 추천 기능이 더욱 똑똑해졌습니다!\n\n개선 내용:\n- 사용자 취향 분석 정확도 향상\n- 실시간 날씨 정보 반영\n- 맛집/카페 추천 기능 강화\n- 이동 경로 최적화\n\n새로워진 AI 추천 기능을 이용해보세요!',
-    images: []
-  },
-  {
-    id: 4,
-    title: '[공지] 2024년 3월 정기 점검 안내',
-    category: '공지',
-    views: 567,
-    isPinned: false,
-    createdAt: '2024-03-10',
-    status: 'published',
-    content: '안녕하세요, 모행입니다.\n\n더 나은 서비스 제공을 위해 정기 점검을 진행합니다.\n\n점검 일시: 2024년 3월 20일 (수) 02:00 ~ 06:00 (4시간)\n점검 내용: 서버 업그레이드 및 보안 패치\n\n점검 시간 동안 서비스 이용이 제한됩니다.\n불편을 드려 죄송합니다.',
-    images: []
-  },
-  {
-    id: 5,
-    title: '[이벤트] 신규 회원 가입 시 5,000P 적립!',
-    category: '이벤트',
-    views: 3456,
-    isPinned: false,
-    createdAt: '2024-03-08',
-    status: 'published',
-    content: '모행에 오신 것을 환영합니다!\n\n신규 회원 가입 시 5,000 포인트를 즉시 적립해드립니다.\n\n이벤트 기간: 상시\n적립 조건: 회원가입 완료\n사용 조건: 10,000원 이상 결제 시 사용 가능\n\n지금 바로 가입하고 포인트 받으세요!',
-    images: ['https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=800&h=400&fit=crop']
-  },
-  {
-    id: 6,
-    title: '[공지] 포인트 정책 변경 안내',
-    category: '공지',
-    views: 1023,
-    isPinned: false,
-    createdAt: '2024-03-05',
-    status: 'published',
-    content: '2024년 4월 1일부터 포인트 정책이 변경됩니다.\n\n변경 내용:\n- 적립률: 결제금액의 1% → 2%\n- 유효기간: 1년 → 2년\n- 최소 사용 포인트: 1,000P → 500P\n\n더 많은 혜택으로 돌아오겠습니다!',
-    images: []
-  },
-  {
-    id: 7,
-    title: '[업데이트] 모바일 웹 UI 개선 안내',
-    category: '업데이트',
-    views: 678,
-    isPinned: false,
-    createdAt: '2024-03-01',
-    status: 'published',
-    content: '모바일 웹 사용자 경험이 개선되었습니다.\n\n개선 내용:\n- 메뉴 네비게이션 개선\n- 검색 기능 강화\n- 예약 프로세스 간소화\n- 로딩 속도 향상\n\n새로워진 모바일 웹을 이용해보세요!',
-    images: []
-  },
-  {
-    id: 8,
-    title: '[공지] 2월 정산 완료 안내 (기업회원)',
-    category: '공지',
-    views: 234,
-    isPinned: false,
-    createdAt: '2024-02-28',
-    status: 'published',
-    content: '기업회원 여러분께 안내드립니다.\n\n2024년 2월 정산이 완료되었습니다.\n정산 내역은 마이페이지 > 매출 집계에서 확인하실 수 있습니다.\n\n문의사항은 1:1 문의를 이용해주세요.',
-    images: []
-  },
-  {
-    id: 9,
-    title: '[이벤트] 후기 작성 이벤트 당첨자 발표',
-    category: '이벤트',
-    views: 1789,
-    isPinned: false,
-    createdAt: '2024-02-25',
-    status: 'published',
-    content: '후기 작성 이벤트에 참여해주신 모든 분들께 감사드립니다.\n\n당첨자 발표:\n- 대상 (1명): 김*행 - 제주도 3박4일 여행권\n- 우수상 (5명): 이*행 외 4명 - 10만 포인트\n- 참가상 (50명): 박*행 외 49명 - 5천 포인트\n\n당첨자분들께는 개별 연락드릴 예정입니다.',
-    images: []
-  },
-  {
-    id: 10,
-    title: '[공지] 설 연휴 고객센터 운영 안내',
-    category: '공지',
-    views: 2134,
-    isPinned: false,
-    createdAt: '2024-02-05',
-    status: 'draft',
-    content: '설 연휴 고객센터 운영 안내입니다.\n\n휴무 기간: 2024년 2월 9일 ~ 2월 12일\n정상 운영: 2024년 2월 13일부터\n\n긴급 문의는 챗봇을 이용해주세요.\n즐거운 명절 보내세요!',
-    images: []
-  }
+
+
 ];
 
 function Notices() {
   const [noticesData, setNoticesData] = useState(initialNoticesData);
+  const [selectedFiles, setSelectedFiles] = useState([]);
+
+  useEffect(() => {
+    api.get('/admin/notices')
+      .then(res => {
+        const mapped = (res.data ?? []).map(n => ({
+          id: n.ntcNo ?? n.id,
+          title: n.ntcTitle ?? n.title ?? '',
+          category: n.ntcType ?? n.ntcCategory ?? n.category ?? '공지',
+          views: n.views ?? n.viewCnt ?? 0,
+          isPinned: (n.isPinned ?? n.pinYn) === true || (n.pinYn === 'Y'),
+          createdAt: (n.createdAt ?? n.regDt ?? n.regDate ?? '').toString().slice(0, 10),
+          status: n.status ?? (n.useYn === 'Y' ? 'PUBLISHED' : 'DRAFT') ?? 'PUBLISHED',
+          content: n.content ?? n.ntcContent ?? '',
+          images: n.images ?? []
+        }));
+        setNoticesData(mapped);
+      })
+      .catch(error => {
+        console.log("API FAIL:", error.config?.method, error.config?.url, error.response?.status);
+        console.error(error);
+      });
+  }, []);
+
+  const handleAddSubmit = async () => {
+    try {
+      const formData = new FormData();
+      formData.append("ntcTitle", editForm.title);
+      formData.append("ntcContent", editForm.content);
+      formData.append("pinYn", editForm.isPinned ? "Y" : "N");
+      formData.append("useYn", editForm.status === "PUBLISHED" ? "Y" : "N");
+      formData.append("ntcType", editForm.category);
+
+      console.log("체로롱:", selectedFiles);
+      selectedFiles.forEach(file => {
+        formData.append("ntcFile", file);
+      });
+
+      // 목록 새로고침
+      await api.post("/admin/notices", formData);
+
+      const res = await api.get("/admin/notices");
+      console.log("res", res);
+      const mapped = (res.data ?? []).map(n => ({
+        id: n.ntcNo,
+        title: n.ntcTitle ?? "",
+        category: n.ntcType ?? n.ntcCategory ?? "공지",
+        views: n.viewCnt ?? 0,
+        isPinned: n.pinYn === "Y",
+        createdAt: (n.regDt ?? "").toString().slice(0, 10),
+        status: (n.useYn === "Y" ? "PUBLISHED" : "DRAFT"),
+        content: n.ntcContent ?? "",
+        images: n.images ?? []
+      }));
+      setNoticesData(mapped);
+
+      setAddModal(false);
+      alert("공지사항이 등록되었습니다.");
+    } catch (e) {
+      console.error(e);
+      alert("등록 실패");
+    }
+  };
+
+  const handleEditSubmit = async () => {
+    try {
+      const payload = {
+        ntcTitle: editForm.title,
+        ntcContent: editForm.content,
+        ntcType: editForm.category,
+        pinYn: editForm.isPinned ? "Y" : "N",
+        status: editForm.status === "PUBLISHED" ? "Y" : "N"
+
+      };
+      await api.put(`/admin/notices/${editForm.id}`, payload);
+
+      // 로컬 상태 업데이트(빠르고 깔끔)
+      setNoticesData(prev => prev.map(n => n.id === editForm.id ? { ...n, ...editForm } : n));
+
+      setEditModal({ isOpen: false, notice: null });
+      alert("공지사항이 수정되었습니다.");
+    } catch (e) {
+      console.error(e);
+      alert("수정 실패");
+    }
+  };
+
+  const handleDeleteConfirm = async () => {
+    try {
+      await api.delete(`/admin/notices/${deleteModal.notice.id}`);
+
+      setNoticesData(prev => prev.filter(n => n.id !== deleteModal.notice.id));
+      setDeleteModal({ isOpen: false, notice: null });
+
+      alert("공지사항이 삭제되었습니다.");
+    } catch (e) {
+      console.error(e);
+      alert("삭제 실패");
+    }
+  };
+
+
+
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -168,7 +174,7 @@ function Notices() {
   const editFileInputRef = useRef(null);
 
   const filteredNotices = noticesData.filter(notice => {
-    const matchesSearch = notice.title.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = (notice.title ?? '').toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = categoryFilter === 'all' || notice.category === categoryFilter;
     const matchesStatus = statusFilter === 'all' || notice.status === statusFilter;
     return matchesSearch && matchesCategory && matchesStatus;
@@ -176,13 +182,16 @@ function Notices() {
 
   // 통계 계산
   const totalCount = noticesData.length;
-  const publishedCount = noticesData.filter(n => n.status === 'published').length;
+  const publishedCount = noticesData.filter(n => n.status === 'PUBLISHED').length;
   const pinnedCount = noticesData.filter(n => n.isPinned).length;
-  const totalViews = noticesData.reduce((sum, n) => sum + n.views, 0);
+  const totalViews = noticesData.reduce((sum, n) => sum + (n.views ?? 0), 0);
+
 
   // 이미지 업로드 핸들러
   const handleImageUpload = (e, isEdit = false) => {
     const files = Array.from(e.target.files);
+    setSelectedFiles(prev => [...prev, ...files]);
+
     if (files.length === 0) return;
 
     files.forEach(file => {
@@ -214,27 +223,48 @@ function Notices() {
   };
 
   // 상세보기
-  const handleViewDetail = (notice) => {
-    setDetailModal({ isOpen: true, notice });
+  const handleViewDetail = async (notice) => {
+    // 비동기 axios 요청 (detail) > 공지사항 + 파일 detail 가져오는 정보
+    let n = null;
+    try {
+      //1)리스트에서 번호는 notice.id 로 통일돼 있음
+      const ntcNo = notice?.id;
+      if (!ntcNo) {
+        alert('공지 번호가 없습니다.');
+        return;
+      }
+
+      //2)공지 상세 조회(공지+attachNo)
+      const res = await api.get(`/admin/notices/${ntcNo}`);
+      n = res.data;
+
+      console.log("상세정보 보기 출력함!");
+      console.log(n);
+
+      //3)attachNo로 파일 detail 조회
+      let fileList = [];
+      const attachNo = n.attachNo ?? 0;
+
+      //if (attachNo > 0) {
+      //우리 url 파일조회 api
+      //  const fileRes = await api.get(`/files/${attachNo}`);
+      //  fileList = fileRes.data ?? [];
+      //}
+
+      notice.images = n.noticeFileList;
+      setDetailModal({ isOpen: true, notice });
+    } catch (e) {
+
+    }
   };
 
   // 추가
   const handleAdd = () => {
-    setEditForm({ title: '', category: '공지', content: '', isPinned: false, status: 'draft', images: [] });
+    setEditForm({ title: '', category: '공지', content: '', isPinned: false, status: 'DRAFT', images: [] });
     setAddModal(true);
   };
 
-  const handleAddSubmit = () => {
-    const newNotice = {
-      ...editForm,
-      id: Date.now(),
-      views: 0,
-      createdAt: new Date().toISOString().split('T')[0]
-    };
-    setNoticesData(prev => [newNotice, ...prev]);
-    setAddModal(false);
-    alert('공지사항이 등록되었습니다.');
-  };
+
 
   // 수정
   const handleEdit = (notice) => {
@@ -242,22 +272,13 @@ function Notices() {
     setEditModal({ isOpen: true, notice });
   };
 
-  const handleEditSubmit = () => {
-    setNoticesData(prev => prev.map(n => n.id === editForm.id ? editForm : n));
-    setEditModal({ isOpen: false, notice: null });
-    alert('공지사항이 수정되었습니다.');
-  };
 
   // 삭제
   const handleDelete = (notice) => {
     setDeleteModal({ isOpen: true, notice });
   };
 
-  const handleDeleteConfirm = () => {
-    setNoticesData(prev => prev.filter(n => n.id !== deleteModal.notice.id));
-    setDeleteModal({ isOpen: false, notice: null });
-    alert('공지사항이 삭제되었습니다.');
-  };
+
 
   // 고정 토글
   const handleTogglePin = (notice) => {
@@ -478,8 +499,8 @@ function Notices() {
               style={{ width: 'auto' }}
             >
               <option value="all">전체 상태</option>
-              <option value="published">게시중</option>
-              <option value="draft">임시저장</option>
+              <option value="PUBLISHED">게시중</option>
+              <option value="DRAFT">임시저장</option>
             </select>
           </div>
         </div>
@@ -506,66 +527,67 @@ function Notices() {
                   return new Date(b.createdAt) - new Date(a.createdAt);
                 })
                 .map(notice => (
-                <tr key={notice.id} style={{ background: notice.isPinned ? '#fefce8' : 'transparent' }}>
-                  <td>
-                    <button
-                      className="table-action-btn"
-                      onClick={() => handleTogglePin(notice)}
-                      title={notice.isPinned ? '고정 해제' : '상단 고정'}
-                    >
-                      <RiPushpinLine style={{ color: notice.isPinned ? '#f59e0b' : '#cbd5e1' }} />
-                    </button>
-                  </td>
-                  <td>
-                    <span
-                      className={`badge ${categoryColors[notice.category]?.className || 'badge-gray'}`}
-                      style={{ whiteSpace: 'nowrap' }}
-                    >
-                      {notice.category}
-                    </span>
-                  </td>
-                  <td>
-                    <div
-                      className="font-medium"
-                      style={{ cursor: 'pointer' }}
-                      onClick={() => handleViewDetail(notice)}
-                    >
-                      {notice.title}
-                    </div>
-                  </td>
-                  <td>
-                    {notice.images && notice.images.length > 0 && (
-                      <span style={{ color: '#64748b', fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: 2 }}>
-                        <RiImageLine /> {notice.images.length}
+                  <tr key={notice.id} style={{ background: notice.isPinned ? '#fefce8' : 'transparent' }}>
+                    <td>
+                      <button
+                        className="table-action-btn"
+                        onClick={() => handleTogglePin(notice)}
+                        title={notice.isPinned ? '고정 해제' : '상단 고정'}
+                      >
+                        <RiPushpinLine style={{ color: notice.isPinned ? '#f59e0b' : '#cbd5e1' }} />
+                      </button>
+                    </td>
+                    <td>
+                      <span
+                        className={`badge ${categoryColors[notice.category]?.className || 'badge-gray'}`}
+                        style={{ whiteSpace: 'nowrap' }}
+                      >
+                        {notice.category}
                       </span>
-                    )}
-                  </td>
-                  <td>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#64748b', fontSize: '0.875rem' }}>
-                      <RiEyeLine /> {notice.views.toLocaleString()}
-                    </span>
-                  </td>
-                  <td style={{ fontSize: '0.875rem', color: '#64748b' }}>{notice.createdAt}</td>
-                  <td>
-                    <span className={`badge ${notice.status === 'published' ? 'badge-success' : 'badge-gray'}`} style={{ whiteSpace: 'nowrap' }}>
-                      {notice.status === 'published' ? '게시중' : '임시저장'}
-                    </span>
-                  </td>
-                  <td>
-                    <div className="table-actions">
-                      <button className="table-action-btn" title="보기" onClick={() => handleViewDetail(notice)}>
-                        <RiEyeLine />
-                      </button>
-                      <button className="table-action-btn edit" title="수정" onClick={() => handleEdit(notice)}>
-                        <RiEditLine />
-                      </button>
-                      <button className="table-action-btn delete" title="삭제" onClick={() => handleDelete(notice)}>
-                        <RiDeleteBinLine />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                    <td>
+                      <div
+                        className="font-medium"
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => handleViewDetail(notice)}
+                      >
+                        {notice.title}
+                      </div>
+                    </td>
+                    <td>
+                      {notice.images && notice.images.length > 0 && (
+                        <span style={{ color: '#64748b', fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: 2 }}>
+                          <RiImageLine /> {notice.images.length}
+                        </span>
+                      )}
+                    </td>
+                    <td>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#64748b', fontSize: '0.875rem' }}>
+                        <RiEyeLine /> {(notice.views ?? 0).toLocaleString()}
+
+                      </span>
+                    </td>
+                    <td style={{ fontSize: '0.875rem', color: '#64748b' }}>{notice.createdAt}</td>
+                    <td>
+                      <span className={`badge ${notice.status === 'PUBLISHED' ? 'badge-success' : 'badge-gray'}`} style={{ whiteSpace: 'nowrap' }}>
+                        {notice.status === 'DRAFT' ? '임시저장' : '게시중'}
+                      </span>
+                    </td>
+                    <td>
+                      <div className="table-actions">
+                        <button className="table-action-btn" title="보기" onClick={() => handleViewDetail(notice)}>
+                          <RiEyeLine />
+                        </button>
+                        <button className="table-action-btn edit" title="수정" onClick={() => handleEdit(notice)}>
+                          <RiEditLine />
+                        </button>
+                        <button className="table-action-btn delete" title="삭제" onClick={() => handleDelete(notice)}>
+                          <RiDeleteBinLine />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
             </tbody>
           </table>
         </div>
@@ -585,80 +607,83 @@ function Notices() {
         title="공지사항 상세"
         size="large"
       >
-        {detailModal.notice && (
-          <div style={{ maxHeight: '70vh', overflowY: 'auto' }}>
-            {/* 카테고리 뱃지 & 메타 정보 */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-              <span
-                className={`badge ${categoryColors[detailModal.notice.category]?.className || 'badge-gray'}`}
-                style={{ padding: '6px 12px', fontSize: '0.875rem' }}
-              >
-                {detailModal.notice.category}
-              </span>
-              {detailModal.notice.isPinned && (
-                <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#f59e0b', fontSize: '0.875rem' }}>
-                  <RiPushpinLine /> 상단 고정
+        {
+          detailModal.notice && (
+            <div style={{ maxHeight: '70vh', overflowY: 'auto' }}>
+              {/* 카테고리 뱃지 & 메타 정보 */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+                <span
+                  className={`badge ${categoryColors[detailModal.notice.category]?.className || 'badge-gray'}`}
+                  style={{ padding: '6px 12px', fontSize: '0.875rem' }}
+                >
+                  {detailModal.notice.category}
                 </span>
-              )}
-              <span className={`badge ${detailModal.notice.status === 'published' ? 'badge-success' : 'badge-gray'}`}>
-                {detailModal.notice.status === 'published' ? '게시중' : '임시저장'}
-              </span>
-            </div>
-
-            {/* 제목 */}
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: 16, lineHeight: 1.4 }}>
-              {detailModal.notice.title}
-            </h3>
-
-            {/* 메타 정보 */}
-            <div style={{ display: 'flex', gap: 16, marginBottom: 20, padding: '12px 0', borderTop: '1px solid #e2e8f0', borderBottom: '1px solid #e2e8f0' }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#64748b', fontSize: '0.875rem' }}>
-                <RiCalendarLine /> {detailModal.notice.createdAt}
-              </span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#64748b', fontSize: '0.875rem' }}>
-                <RiEyeLine /> {detailModal.notice.views.toLocaleString()}
-              </span>
-              {detailModal.notice.images && detailModal.notice.images.length > 0 && (
-                <span style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#64748b', fontSize: '0.875rem' }}>
-                  <RiImageLine /> 이미지 {detailModal.notice.images.length}개
+                {detailModal.notice.isPinned && (
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#f59e0b', fontSize: '0.875rem' }}>
+                    <RiPushpinLine /> 상단 고정
+                  </span>
+                )}
+                <span className={`badge ${detailModal.notice.status === 'PUBLISHED' ? 'badge-success' : 'badge-gray'}`}>
+                  {detailModal.notice.status === 'published' ? '게시중' : '임시저장'}
                 </span>
-              )}
-            </div>
-
-            {/* 첨부 이미지 */}
-            {detailModal.notice.images && detailModal.notice.images.length > 0 && (
-              <div style={{ marginBottom: 20 }}>
-                <h5 style={{ fontSize: '0.9rem', fontWeight: 600, color: '#334155', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <RiImageLine /> 첨부 이미지
-                </h5>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12 }}>
-                  {detailModal.notice.images.map((img, index) => (
-                    <div key={index} style={{ borderRadius: 8, overflow: 'hidden', aspectRatio: '16/9' }}>
-                      <img
-                        src={img}
-                        alt={`첨부 이미지 ${index + 1}`}
-                        style={{ width: '100%', height: '100%', objectFit: 'cover', cursor: 'pointer' }}
-                        onClick={() => window.open(img, '_blank')}
-                      />
-                    </div>
-                  ))}
-                </div>
               </div>
-            )}
 
-            {/* 본문 */}
-            <div style={{
-              padding: 20,
-              background: '#f8fafc',
-              borderRadius: 8,
-              lineHeight: 1.8,
-              whiteSpace: 'pre-line',
-              fontSize: '0.95rem'
-            }}>
-              {detailModal.notice.content}
+              {/* 제목 */}
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: 16, lineHeight: 1.4 }}>
+                {detailModal.notice.title}
+              </h3>
+
+              {/* 메타 정보 */}
+              <div style={{ display: 'flex', gap: 16, marginBottom: 20, padding: '12px 0', borderTop: '1px solid #e2e8f0', borderBottom: '1px solid #e2e8f0' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#64748b', fontSize: '0.875rem' }}>
+                  <RiCalendarLine /> {detailModal.notice.createdAt}
+                </span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#64748b', fontSize: '0.875rem' }}>
+                  <RiEyeLine /> {(detailModal.notice?.views ?? 0).toLocaleString()}
+
+
+                </span>
+                {detailModal.notice.images && detailModal.notice.images.length > 0 && (
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#64748b', fontSize: '0.875rem' }}>
+                    <RiImageLine /> 이미지 {detailModal.notice.images.length}개
+                  </span>
+                )}
+              </div>
+
+              {/* 첨부 이미지 */}
+              {detailModal.notice.images && detailModal.notice.images.length > 0 && (
+                <div style={{ marginBottom: 20 }}>
+                  <h5 style={{ fontSize: '0.9rem', fontWeight: 600, color: '#334155', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <RiImageLine /> 첨부 이미지
+                  </h5>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12 }}>
+                    {detailModal.notice.images.map((img, index) => (
+                      <div key={index} style={{ borderRadius: 8, overflow: 'hidden', aspectRatio: '16/9' }}>
+                        <img
+                          src={"http://localhost:8272/api/admin/notices/thumbnail/" + img.fileNo}
+                          alt={`첨부 이미지 ${index + 1}`}
+                          style={{ width: '100%', height: '100%', objectFit: 'cover', cursor: 'pointer' }}
+                          onClick={() => window.open(img, '_blank')}
+                        />
+                      </div>
+                    ))}
+                  </div>  
+                </div>
+              )}
+
+              {/* 본문 */}
+              <div style={{
+                padding: 20,
+                background: '#f8fafc',
+                borderRadius: 8,
+                lineHeight: 1.8,
+                whiteSpace: 'pre-line',
+                fontSize: '0.95rem'
+              }}>
+                {detailModal.notice.content}
+              </div>
             </div>
-          </div>
-        )}
+          )}
       </Modal>
 
       {/* 추가 모달 */}
@@ -711,8 +736,8 @@ function Notices() {
                 value={editForm.status || ''}
                 onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
               >
-                <option value="draft">임시저장</option>
-                <option value="published">게시</option>
+                <option value="DRAFT">임시저장</option>
+                <option value="PUBLISHED">게시</option>
               </select>
             </div>
           </div>
@@ -788,8 +813,8 @@ function Notices() {
                   value={editForm.status || ''}
                   onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
                 >
-                  <option value="draft">임시저장</option>
-                  <option value="published">게시</option>
+                  <option value="DRAFT">임시저장</option>
+                  <option value="PUBLISHED">게시</option>
                 </select>
               </div>
             </div>
