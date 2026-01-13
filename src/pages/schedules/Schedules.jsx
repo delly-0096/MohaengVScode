@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import "../products/Products.css";
+import { Bounce, toast, ToastContainer } from "react-toastify";
+import api from "../../api/api";
 
 // 샘플 일정 데이터 (사용자 페이지 기반 개선)
 const initialSchedulesData = [
@@ -797,7 +799,7 @@ function Schedules() {
       case "관광지":
         return "bi-geo-alt";
       case "문화시설":
-        return "bi-museum";
+        return "bi-bank";
       case "행사":
       case "축제": // 유사한 명칭 대응
         return "bi-calendar-event";
@@ -891,10 +893,42 @@ function Schedules() {
   };
 
   // 일정 삭제
-  const deleteSchedule = () => {
+  const deleteSchedule = async () => {
     setSchedulesData((prev) =>
       prev.filter((s) => s.id !== selectedSchedule.id)
     );
+
+    const res = await api.post("/admin/schedule/remove", {
+      schdlNo: selectedSchedule.id,
+    });
+
+    console.log(res);
+    if (res.data.result.toUpperCase() == "SUCCESS") {
+      toast.success("일정이 삭제되었습니다.", {
+        position: "top-right",
+        autoClose: 2000,
+        hideProgressBar: true,
+        closeOnClick: false,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "light",
+        transition: Bounce,
+      });
+    } else {
+      toast.error("일정 삭제에 실패했습니다.", {
+        position: "top-right",
+        autoClose: 2000,
+        hideProgressBar: true,
+        closeOnClick: false,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "light",
+        transition: Bounce,
+      });
+    }
+
     setIsDeleteModalOpen(false);
   };
 
@@ -968,10 +1002,10 @@ function Schedules() {
         dataList.forEach((data) => {
           let resData = {
             id: data.schdlNo,
-            memberId: data.memId,
-            memberName: data.memName,
-            memberEmail: "jimin@email.com",
-            memberPhone: "010-1234-5678",
+            memberId: data.member.memId,
+            memberName: data.member.memName,
+            memberEmail: data.member.memEmail,
+            memberPhone: data.member.tel,
             title: data.schdlNm,
             destination: data.rgnNm,
             startDate: data.schdlEndDt,
@@ -982,34 +1016,34 @@ function Schedules() {
             companions: data.travelerCnt,
             budget: data.totalBudget,
             reservations: [
-              {
-                type: "항공",
-                name: "서울-제주 왕복",
-                date: "2024-03-20",
-                status: "확정",
-                price: 160000,
-              },
-              {
-                type: "숙박",
-                name: "제주 오션뷰 호텔",
-                date: "2024-03-20~23",
-                status: "확정",
-                price: 450000,
-              },
-              {
-                type: "체험",
-                name: "스쿠버다이빙 체험",
-                date: "2024-03-21",
-                status: "확정",
-                price: 100000,
-              },
+              // {
+              //   type: "항공",
+              //   name: "서울-제주 왕복",
+              //   date: "2024-03-20",
+              //   status: "확정",
+              //   price: 160000,
+              // },
+              // {
+              //   type: "숙박",
+              //   name: "제주 오션뷰 호텔",
+              //   date: "2024-03-20~23",
+              //   status: "확정",
+              //   price: 450000,
+              // },
+              // {
+              //   type: "체험",
+              //   name: "스쿠버다이빙 체험",
+              //   date: "2024-03-21",
+              //   status: "확정",
+              //   price: 100000,
+              // },
             ],
             travelLogWritten: false,
             createdAt: data.regDt,
             lastModified: data.modDt,
-            views: 45,
-            shareCount: 12,
-            likes: 8,
+            views: 0,
+            shareCount: 0,
+            likes: 0,
           };
           let detailsList = data.tripScheduleDetailsList;
           let details = [];
@@ -1047,6 +1081,7 @@ function Schedules() {
 
   return (
     <div className="products-page">
+      <ToastContainer />
       <div className="page-header">
         <h1>일정 관리</h1>
         <div className="header-actions">
@@ -1707,12 +1742,12 @@ function Schedules() {
                   정말로 <strong>{selectedSchedule.title}</strong> 일정을
                   삭제하시겠습니까?
                 </p>
-                {selectedSchedule.reservations?.length > 0 && (
+                {/* {selectedSchedule.reservations?.length > 0 && (
                   <p className="text-warning">
                     <i className="bi bi-exclamation-circle"></i>이 일정에 연결된{" "}
                     {selectedSchedule.reservations.length}개의 예약이 있습니다.
                   </p>
-                )}
+                )} */}
                 <p className="text-muted">이 작업은 되돌릴 수 없습니다.</p>
               </div>
             </div>
