@@ -236,11 +236,15 @@ function Notices() {
 
       //2)공지 상세 조회(공지+attachNo)
       const res = await api.get(`/admin/notices/${ntcNo}`);
-      n = res.data;
+      const n = res.data;
 
       console.log("상세정보 보기 출력함!");
       console.log(n);
-
+      const detail = {
+        ...notice,
+        content: n.ntcContent ?? notice.content,
+        images: n.noticeFileList ?? []
+      };
       //3)attachNo로 파일 detail 조회
       let fileList = [];
       const attachNo = n.attachNo ?? 0;
@@ -252,7 +256,7 @@ function Notices() {
       //}
 
       notice.images = n.noticeFileList;
-      setDetailModal({ isOpen: true, notice });
+      setDetailModal({ isOpen: true, notice: detail });
     } catch (e) {
 
     }
@@ -661,13 +665,16 @@ function Notices() {
                       <div key={index} style={{ borderRadius: 8, overflow: 'hidden', aspectRatio: '16/9' }}>
                         <img
                           src={"http://localhost:8272/api/admin/notices/thumbnail/" + img.fileNo}
+                          onError={(e) => {
+                            console.log("thumbnail load fail", img.fileNo, e);
+                          }}
                           alt={`첨부 이미지 ${index + 1}`}
                           style={{ width: '100%', height: '100%', objectFit: 'cover', cursor: 'pointer' }}
-                          onClick={() => window.open(img, '_blank')}
+                          onClick={() => window.open(`http://localhost:8272/api/admin/notices/thumbnail/${img.fileNo}`, '_blank')}
                         />
                       </div>
                     ))}
-                  </div>  
+                  </div>
                 </div>
               )}
 
