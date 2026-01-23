@@ -1,4 +1,11 @@
-import { useState } from 'react';
+/* 
+useState (상태 관리자)  "바뀌는 데이터를 저장할 때 사용하는 바구니" ex)게임 점수판
+useEffect (행동 대장)   "특정한 타이밍에 실행되는 작업을 담은 코드"  React 컴포넌트가 화면에 그려진 후(렌더링 이후) 처리할 일을 명령 내리는 공간
+useCallback (기억력 대장) "함수를 재사용하기 위한 메모리" ex)예전에 적은 레시피 카드
+*/ 
+
+import { useState, useEffect, useCallback } from 'react';
+
 import {
   RiSearchLine,
   RiFilterLine,
@@ -18,6 +25,7 @@ import {
   RiFlagLine
 } from 'react-icons/ri';
 import { Modal, ConfirmModal } from '../../components/common/Modal';
+import api from '../../api/api'; //우리 서버와 대화하기 위한 전용 통로. api.js 파일 참조
 
 // 평점 필터
 const ratingFilters = [
@@ -37,147 +45,35 @@ const statuses = [
   { id: 'reported', label: '신고됨' }
 ];
 
-// 더미 데이터
-const reviewsData = [
-  {
-    id: 1,
-    productName: '제주 스노클링 체험',
-    productType: 'tour',
-    rating: 5,
-    content: '정말 최고의 경험이었습니다! 강사분이 친절하게 알려주셔서 수영을 못하는 저도 무사히 체험할 수 있었어요. 물고기도 많이 봤고 사진도 많이 찍어주셔서 좋은 추억이 됐습니다. 다음에 제주 가면 또 이용할게요!',
-    images: ['https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=200', 'https://images.unsplash.com/photo-1682687982501-1e58ab814714?w=200'],
-    memberId: 'travel_lover',
-    memberName: '김여행',
-    businessId: 'jeju_diving',
-    businessName: '제주다이빙센터',
-    recommend: true,
-    status: 'active',
-    likes: 24,
-    createdAt: '2024-12-18 10:30:00'
-  },
-  {
-    id: 2,
-    productName: '부산 해운대 호텔',
-    productType: 'accommodation',
-    rating: 4,
-    content: '위치가 해운대 바로 앞이라 정말 좋았어요. 방도 깨끗하고 조식도 맛있었습니다. 다만 체크인할 때 조금 기다렸어요. 그래도 전반적으로 만족스러운 숙박이었습니다.',
-    images: ['https://images.unsplash.com/photo-1566073771259-6a8506099945?w=200'],
-    memberId: 'happy_traveler',
-    memberName: '이모행',
-    businessId: 'haeundae_hotel',
-    businessName: '해운대그랜드호텔',
-    recommend: true,
-    status: 'active',
-    likes: 15,
-    createdAt: '2024-12-17 16:45:00'
-  },
-  {
-    id: 3,
-    productName: '경주 역사 투어',
-    productType: 'tour',
-    rating: 5,
-    content: '가이드분의 설명이 정말 재미있고 유익했어요! 경주의 역사를 잘 몰랐는데 이번 투어를 통해 많이 배웠습니다. 점심 식사도 맛있었고, 일정도 적당했어요. 강력 추천합니다!',
-    images: [],
-    memberId: 'history_fan',
-    memberName: '박역사',
-    businessId: 'gyeongju_tour',
-    businessName: '경주문화투어',
-    recommend: true,
-    status: 'active',
-    likes: 32,
-    createdAt: '2024-12-16 14:20:00'
-  },
-  {
-    id: 4,
-    productName: '강릉 서핑 체험',
-    productType: 'tour',
-    rating: 2,
-    content: '기대에 비해 실망스러웠습니다. 장비 상태가 좋지 않았고, 강사분이 너무 바빠서 제대로 된 레슨을 받지 못했어요. 가격 대비 만족도가 낮았습니다.',
-    images: [],
-    memberId: 'surf_fan',
-    memberName: '최서퍼',
-    businessId: 'gangneung_surf',
-    businessName: '강릉서핑스쿨',
-    recommend: false,
-    status: 'active',
-    likes: 3,
-    createdAt: '2024-12-15 11:30:00'
-  },
-  {
-    id: 5,
-    productName: '여수 요트 투어',
-    productType: 'tour',
-    rating: 5,
-    content: '날씨도 좋고 요트도 깨끗하고 최고였어요! 선장님이 친절하시고 사진도 많이 찍어주셨어요. 여수 바다 정말 아름답더라구요. 석양 보면서 샴페인 마신 게 잊을 수 없는 추억이에요.',
-    images: ['https://images.unsplash.com/photo-1500514966906-fe245eea9344?w=200', 'https://images.unsplash.com/photo-1544551763-77ef2d0cfc6c?w=200', 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200'],
-    memberId: 'sea_lover',
-    memberName: '정바다',
-    businessId: 'yeosu_yacht',
-    businessName: '여수요트클럽',
-    recommend: true,
-    status: 'active',
-    likes: 45,
-    createdAt: '2024-12-14 17:00:00'
-  },
-  {
-    id: 6,
-    productName: '제주 신라 호텔',
-    productType: 'accommodation',
-    rating: 1,
-    content: '욕설 및 비방 내용으로 삭제 처리됨',
-    images: [],
-    memberId: 'angry_guest',
-    memberName: '문제손님',
-    businessId: 'shilla_jeju',
-    businessName: '제주신라호텔',
-    recommend: false,
-    status: 'hidden',
-    likes: 0,
-    createdAt: '2024-12-13 09:00:00',
-    reportReason: '욕설 및 비방'
-  },
-  {
-    id: 7,
-    productName: '속초 번지점프',
-    productType: 'tour',
-    rating: 4,
-    content: '스릴 만점! 무섭긴 했지만 정말 짜릿했어요. 안전 교육도 철저하고 직원분들도 친절했습니다. 사진 패키지 구매했는데 퀄리티가 좋네요.',
-    images: ['https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?w=200'],
-    memberId: 'thrill_seeker',
-    memberName: '한스릴',
-    businessId: 'sokcho_bungee',
-    businessName: '속초번지점프',
-    recommend: true,
-    status: 'reported',
-    likes: 18,
-    createdAt: '2024-12-12 15:30:00',
-    reportReason: '허위 리뷰 의심'
-  }
-];
-
 const productTypeLabels = {
+  ticket: '티켓/입장권',
   tour: '투어/체험',
   accommodation: '숙박',
-  flight: '항공'
+  flight: '항공',
+  rental: '렌터카',
+  // 필요한 다른 타입 추가
 };
 
 const statusLabels = {
-  active: { text: '게시중', class: 'badge-success' },
-  hidden: { text: '숨김', class: 'badge-secondary' },
-  reported: { text: '신고됨', class: 'badge-danger' }
+  ACTIVE: { text: '게시중', class: 'badge-success' },
+  HIDDEN: { text: '숨김', class: 'badge-secondary' },
+  REPORTED: { text: '신고됨', class: 'badge-danger' }
 };
 
 function ProductReviews() {
-  const [searchTerm, setSearchTerm] = useState('');
+
+  // 상태 저장소 (화면에 보여줄 데이터를 저장하고, 그 값이 변할 때마다 화면을 자동으로 다시 그려줌)
+
+  // 검색 및 필터링 
+  const [searchWord, setSearchWord] = useState(''); // 실제 검색에 사용
+  const [searchInput, setSearchInput] = useState('');   // 입력창 표시용
   const [ratingFilter, setRatingFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+
+  // 기간 선택
   const [selectedPeriod, setSelectedPeriod] = useState('week');
-  const [dateRange, setDateRange] = useState({ start: '2024-12-12', end: '2024-12-18' });
-
-  const [detailModal, setDetailModal] = useState({ isOpen: false, review: null });
-  const [deleteModal, setDeleteModal] = useState({ isOpen: false, review: null });
-  const [actionModal, setActionModal] = useState({ isOpen: false, review: null, action: '' });
-
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const periods = [
     { id: 'today', label: '오늘' },
     { id: 'week', label: '이번 주' },
@@ -185,47 +81,274 @@ function ProductReviews() {
     { id: '3months', label: '최근 3개월' }
   ];
 
-  const filteredData = reviewsData.filter(item => {
-    const matchesSearch = item.productName.includes(searchTerm) ||
-                          item.content.includes(searchTerm) ||
-                          item.memberName.includes(searchTerm) ||
-                          item.businessName.includes(searchTerm);
-    const matchesRating = ratingFilter === 'all' || item.rating === parseInt(ratingFilter);
-    const matchesStatus = statusFilter === 'all' || item.status === statusFilter;
-    return matchesSearch && matchesRating && matchesStatus;
+  // 페이지 관리 (현재 내가 보고 있는 페이지 번호)
+  const [currentPage, setCurrentPage] = useState(1);
+ 
+  // 통계 및 요약 데이터
+  const [stats, setStats] = useState({
+    totalCount: 0,
+    avgRating: 0,
+    totalRecommendCount: 0,
+    reportedCount: 0
   });
 
-  const totalCount = reviewsData.length;
-  const avgRating = (reviewsData.reduce((sum, r) => sum + r.rating, 0) / totalCount).toFixed(1);
-  const recommendCount = reviewsData.filter(r => r.recommend).length;
-  const reportedCount = reviewsData.filter(r => r.status === 'reported').length;
+  // 평점별 개수 데이터
+  const [ratingCounts, setRatingCounts] = useState({
+    all: 0,
+    rating1: 0,
+    rating2: 0,
+    rating3: 0,
+    rating4: 0,
+    rating5: 0
+  });
 
-  const handleViewDetail = (review) => {
-    setDetailModal({ isOpen: true, review });
+  // 서버에서 받아 온 실제 상품 리뷰 목록 데이터
+  const [reviewData, setReviewData] = useState({
+    dataList: [],
+    totalRecord: 0,
+    totalPage: 0,
+    currentPage: 1,
+    pagingHTML: ''
+  });
+
+  // 팝업창(모달) 제어
+  const [detailModal, setDetailModal] = useState({ isOpen: false, review: null });
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, review: null });
+  const [actionModal, setActionModal] = useState({ isOpen: false, review: null, action: '' });// 상태 변경(숨김/게시) 창
+  
+  //  API 호출 함수들  --------------------------------------------------------------------------------
+  /* 
+  API란 : 서버와 프론트의 중간에서 주문을 전달해주는 통로
+  API호출 함수들 : 이제부터 서버에 데이터를 달라고 주문을 넣는 코드 작성하겠다는 뜻
+  */
+
+  // 통계 가져오기
+  const loadStats = useCallback(async (customStartDate, customEndDate) => {
+    try {
+      const params = {
+        startDate: customStartDate || startDate || null,
+        endDate: customEndDate || endDate || null
+      };
+      const response = await api.get('/admin/reviews/statistics', { params });
+      console.log('통계 데이터:', response.data);
+      if (response.data) {setStats(response.data);}
+    } catch (error) {
+      console.error('통계 조회 실패:', error);
+    }
+  }, [startDate, endDate]);
+
+  // 평점별 개수 가져오기
+  const loadRatingCounts= useCallback(async(customStartDate, customEndDate)=>{
+    try {
+      const params = {
+        startDate: customStartDate || startDate || null, 
+        endDate: customEndDate || endDate || null
+      };
+      const response = await api.get('/admin/reviews/rating-counts', { params });
+      if (response.data){setRatingCounts(response.data)}
+    }catch(error){
+      console.error('평점별 개수 조회 실패:', error);
+    }
+  },[startDate, endDate]);
+
+  // 리뷰 목록 가져오기
+  const loadReviews = useCallback(async (options = {}) => {
+    try {
+      const params = {
+        searchKeyword: options.searchKeyword !== undefined ? options.searchKeyword : searchWord || null,
+        ratingFilter: options.ratingFilter !== undefined ? 
+          (options.ratingFilter === 'all' ? null : parseInt(options.ratingFilter)) :
+          (ratingFilter === 'all' ? null : parseInt(ratingFilter)),
+        statusFilter: options.statusFilter !== undefined ?
+          (options.statusFilter === 'all' ? null : options.statusFilter) :
+          (statusFilter === 'all' ? null : statusFilter),
+        startDate: options.startDate !== undefined ? options.startDate : startDate || null,
+        endDate: options.endDate !== undefined ? options.endDate : endDate || null,
+        currentPage: options.currentPage !== undefined ? options.currentPage : currentPage
+      };
+      const response = await api.get('/admin/reviews', { params });
+      console.log('리뷰 목록:', response.data);
+      if (response.data) {
+        setReviewData(response.data);
+      }
+    } catch (error) {
+      console.error('리뷰 목록 조회 실패:', error);
+    }
+  },[searchWord, ratingFilter, statusFilter, startDate, endDate, currentPage]);
+
+  // 리뷰 상세 조회
+  const loadReviewDetail = async (prodRvNo) => {
+    try {
+      const response = await api.get(`/admin/reviews/${prodRvNo}`);
+      console.log('리뷰 상세:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('리뷰 상세 조회 실패:', error);
+      return null;
+    }
+  }
+  // 리뷰 상태 변경
+  const updateReviewStatus = async (prodRvNo, reviewStatus) => {
+    try {
+       const response = await api.patch(`/admin/reviews/${prodRvNo}/status`, {
+        reviewStatus: reviewStatus
+      });
+      console.log('상태 변경 결과:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('리뷰 상태 변경 실패:', error);
+      return null;
+    }
+  }
+
+  // 리뷰 삭제
+  const deleteReview = async (prodRvNo) => {
+    try {
+      const response = await api.delete(`/admin/reviews/${prodRvNo}`)
+      console.log('삭제 결과:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('리뷰 삭제 실패:', error);
+      return null;
+    }
+  }
+
+  // --- useEffect : 자동 실행 구역 (리엑트가 알아서 때가 되면 실행하는 코드들 ex)알람시계 )---
+useEffect(() => {
+  const fetchData = async () => {
+    const params = { startDate, endDate };
+    /* Promise.all을 사용하여 두 개의 API 요청을 '동시에' 보낸다.
+      통계(statistics)와 별점수(rating-counts)를 따로 기다리지 않고 한꺼번에 출발 */
+    const [stats, ratings] = await Promise.all([
+      api.get('/admin/reviews/statistics', { params }),
+      api.get('/admin/reviews/rating-counts', { params })
+    ]);
+    /*서버에서 받아온 따끈따끈한 데이터(data)를 우리 화면의 상태(State)에 저장.
+      이 코드가 실행되면 리액트가 화면을 알아서 새로 그려준다 */
+    setStats(stats.data);
+    setRatingCounts(ratings.data);
+  };
+  fetchData();
+   //의존성 배열(Dependency Array): [startDate, endDate] 안에 있는 값이 바뀔 때마다 이 useEffect 전체가 다시 실행
+}, [startDate, endDate]); 
+
+useEffect(() => {
+  const fetchReviews = async () => {
+    const params = {
+      searchKeyword: searchWord || null,
+      ratingFilter: ratingFilter === 'all' ? null : parseInt(ratingFilter),
+      statusFilter: statusFilter === 'all' ? null : statusFilter,
+      startDate: startDate || null,
+      endDate: endDate || null,
+      currentPage: currentPage
+    };
+    const response = await api.get('/admin/reviews', { params });
+    setReviewData(response.data);
+  };
+  fetchReviews();
+}, [searchWord, ratingFilter, statusFilter, startDate, endDate, currentPage]);
+
+  // --- 이벤트 핸들러 : 수동 실행 구역 (직접 무언가 했을때만 실행되는 코드들 ex)전등 스위치 )---
+
+  // 기간 선택 버튼
+   const handlePeriodClick = (periodId) => {
+    setSelectedPeriod(periodId);
+    const today = new Date();
+    const end = new Date();
+    let start = new Date();
+
+    switch(periodId) {
+      case 'today':
+        start = new Date();
+        break;
+      case 'week':
+        start.setDate(today.getDate() - 7);
+        break;
+      case 'month':
+        start.setMonth(today.getMonth() - 1);
+        break;
+      case '3months':
+        start.setMonth(today.getMonth() - 3);
+        break;
+      default:
+        break;
+    }
+
+    const startStr = start.toISOString().split('T')[0];
+    const endStr = end.toISOString().split('T')[0];
+
+    setStartDate(startStr);
+    setEndDate(endStr);
+
+    // ✅ 계산된 날짜를 직접 전달 (state 업데이트를 기다리지 않음)
+    loadStats(startStr, endStr);
+    loadRatingCounts(startStr, endStr);
+   }
+
+   // 검색
+  const handleSearch = () => {
+    setSearchWord(searchInput);  // 임시값 → 실제값
+    loadReviews({ searchKeyword: searchInput,currentPage: 1 }); 
   };
 
+  // 페이지 변경
+  const handlePageClick = (page) => {
+    setCurrentPage(page);
+    loadReviews({ currentPage: page });
+  };
+
+  // 상세보기
+  const handleViewDetail = async (review) => {
+    const detailData = await loadReviewDetail(review.prodRvNo);
+    if (detailData) {
+      setDetailModal({ isOpen: true, review: detailData });
+    }
+  };
+
+  // 삭제
   const handleDelete = (review) => {
     setDeleteModal({ isOpen: true, review });
   };
 
-  const confirmDelete = () => {
-    alert(`리뷰가 삭제되었습니다. (ID: ${deleteModal.review.id})`);
-    setDeleteModal({ isOpen: false, review: null });
+   const confirmDelete = async () => {
+    const result = await deleteReview(deleteModal.review.prodRvNo);
+    if (result && result.success) {
+      alert('리뷰가 삭제되었습니다.');
+      setDeleteModal({ isOpen: false, review: null });
+      loadReviews(); // 목록 새로고침
+      loadStats(); // 통계 새로고침
+      loadRatingCounts(); // 평점 개수 새로고침
+    } else {
+      alert('리뷰 삭제에 실패했습니다.');
+    }
   };
 
+  // 상태 변경 (확인창을 보여주기)
   const handleAction = (review, action) => {
     setActionModal({ isOpen: true, review, action });
+  };  
+
+  const confirmAction = async () => {
+    const { action, review } = actionModal;
+    const newStatus = action === 'hide' ? 'HIDDEN' : 'ACTIVE';
+
+    const result = await updateReviewStatus(review.prodRvNo, newStatus);
+    if (result && result.success) {
+      alert(result.message || '상태가 변경되었습니다');
+      setActionModal({isOpen:false, review:null, action:''});
+      loadReviews(); //목록 새로고침
+      loadStats(); //통계 새로고침
+    } else {
+      alert('상태 변경에 실패했습니다');
+    }
   };
 
-  const confirmAction = () => {
-    const { action, review } = actionModal;
-    if (action === 'hide') {
-      alert(`리뷰가 숨김 처리되었습니다. (ID: ${review.id})`);
-    } else if (action === 'show') {
-      alert(`리뷰가 게시 처리되었습니다. (ID: ${review.id})`);
-    }
-    setActionModal({ isOpen: false, review: null, action: '' });
-  };
+  // 날짜 포맷
+  const formatDate = (dateStr) => {
+    if (!dateStr) return '-';
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('ko-KR');
+  }
 
   // 별점 렌더링
   const renderStars = (rating, size = 14) => {
@@ -240,7 +363,37 @@ function ProductReviews() {
     );
   };
 
-  return (
+  // 페이지 번호 생성 함수
+  const renderPageNumbers = () => {
+    const pages = [];
+    const totalPages = reviewData.totalPage || 1;
+    const maxVisible = 5;
+    
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+    
+    if (endPage - startPage < maxVisible - 1) {
+      startPage = Math.max(1, endPage - maxVisible + 1);
+    }
+    
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(
+        <button
+          key={i}
+          className={`pagination-btn ${currentPage === i ? 'active' : ''}`}
+          onClick={() => handlePageClick(i)}
+        >
+          {i}
+        </button>
+      );
+    }
+    
+    return pages;
+  };
+
+  // 진짜 눈에 보이는 화면(JSX) ------------------------------------------------------------------------------
+  
+  return ( //결과물 반환 명령
     <div className="page">
       <div className="page-header">
         <div>
@@ -258,7 +411,7 @@ function ProductReviews() {
                 <button
                   key={period.id}
                   className={`btn ${selectedPeriod === period.id ? 'btn-primary' : 'btn-secondary'}`}
-                  onClick={() => setSelectedPeriod(period.id)}
+                  onClick={() => handlePeriodClick(period.id)}
                   style={{ padding: '8px 16px' }}
                 >
                   {period.label}
@@ -270,16 +423,16 @@ function ProductReviews() {
               <input
                 type="date"
                 className="form-input"
-                value={dateRange.start}
-                onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
                 style={{ padding: '8px 12px' }}
               />
               <span>~</span>
               <input
                 type="date"
                 className="form-input"
-                value={dateRange.end}
-                onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })}
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
                 style={{ padding: '8px 12px' }}
               />
             </div>
@@ -294,7 +447,7 @@ function ProductReviews() {
             <RiStarFill />
           </div>
           <div className="stat-content">
-            <div className="stat-value">{totalCount}</div>
+            <div className="stat-value">{stats.totalCount}</div>
             <div className="stat-label">전체 리뷰</div>
           </div>
         </div>
@@ -303,7 +456,7 @@ function ProductReviews() {
             <RiStarFill />
           </div>
           <div className="stat-content">
-            <div className="stat-value">{avgRating}</div>
+            <div className="stat-value">{stats.avgRating}</div>
             <div className="stat-label">평균 평점</div>
           </div>
         </div>
@@ -312,7 +465,7 @@ function ProductReviews() {
             <RiThumbUpLine />
           </div>
           <div className="stat-content">
-            <div className="stat-value">{recommendCount}</div>
+            <div className="stat-value">{stats.totalRecommendCount}</div>
             <div className="stat-label">추천 리뷰</div>
           </div>
         </div>
@@ -321,9 +474,9 @@ function ProductReviews() {
             <RiFlagLine />
           </div>
           <div className="stat-content">
-            <div className="stat-value">{reportedCount}</div>
+            <div className="stat-value">{stats.reportedCount}</div>
             <div className="stat-label">신고된 리뷰</div>
-            {reportedCount > 0 && <div className="stat-change negative">확인 필요</div>}
+            {stats.reportedCount > 0 && <div className="stat-change negative">확인 필요</div>}
           </div>
         </div>
       </div>
@@ -333,11 +486,15 @@ function ProductReviews() {
         <div className="card-body" style={{ padding: '12px 20px' }}>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             {ratingFilters.map(filter => {
-              const count = filter.id === 'all' ? totalCount : reviewsData.filter(r => r.rating === parseInt(filter.id)).length;
+              const count = filter.id === 'all' ? stats.totalCount : ratingCounts[`rating${filter.id}`] || 0;
               return (
                 <button
                   key={filter.id}
-                  onClick={() => setRatingFilter(filter.id)}
+                  onClick={() => {
+                    setRatingFilter(filter.id); 
+                    setCurrentPage(1);
+                    loadReviews({ ratingFilter: filter.id, currentPage: 1 });
+                  }}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -372,24 +529,64 @@ function ProductReviews() {
 
       {/* 리뷰 목록 */}
       <div className="card">
-        <div className="filter-bar">
-          <div className="search-bar">
-            <RiSearchLine className="search-bar-icon" />
+        {/* 검색 및 필터 영역 */}
+        <div style={{ 
+          padding: '20px', 
+          borderBottom: '1px solid #E5E7EB',
+          display: 'flex',
+          gap: 12,
+          alignItems: 'center',
+          flexWrap: 'wrap'
+        }}>
+          {/* 검색창 */}
+          <div style={{ 
+            flex: 1,
+            minWidth: 300,
+            display: 'flex',
+            gap: 8,
+            alignItems: 'center',
+            position: 'relative'
+          }}>
+            <RiSearchLine style={{ 
+              position: 'absolute', 
+              left: 12, 
+              color: 'var(--text-muted)',
+              fontSize: 18
+            }} />
             <input
               type="text"
               className="form-input"
               placeholder="상품명, 리뷰내용, 회원명 검색..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              value={searchInput} //임시값 표시
+              onChange={(e) => setSearchInput(e.target.value)} //임시저장만
+              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+              style={{ 
+                paddingLeft: 40,
+                flex: 1
+              }}
             />
+            <button 
+              className="btn btn-primary" 
+              onClick={handleSearch}
+              style={{ whiteSpace: 'nowrap' }}
+            >
+              검색
+            </button>
           </div>
-          <div className="filter-group">
-            <RiFilterLine />
+
+          {/* 상태 필터 */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <RiFilterLine style={{ color: 'var(--text-muted)' }} />
             <select
               className="form-input form-select"
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              style={{ width: 'auto' }}
+              onChange={(e) => {
+                const newStatus = e.target.value;
+                setStatusFilter(newStatus); 
+                setCurrentPage(1);
+                loadReviews({ statusFilter: newStatus, currentPage: 1 });
+              }}
+              style={{ width: 'auto', minWidth: 120 }}
             >
               {statuses.map(s => (
                 <option key={s.id} value={s.id}>{s.label}</option>
@@ -397,7 +594,7 @@ function ProductReviews() {
             </select>
           </div>
         </div>
-
+        
         <div className="table-container">
           <table className="table">
             <thead>
@@ -414,120 +611,141 @@ function ProductReviews() {
               </tr>
             </thead>
             <tbody>
-              {filteredData.map(review => (
-                <tr key={review.id} style={{ background: review.status === 'reported' ? '#FEF2F2' : 'transparent' }}>
-                  <td>{renderStars(review.rating)}</td>
-                  <td>
-                    <div>
-                      <div className="font-medium">{review.productName}</div>
-                      <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                        {productTypeLabels[review.productType]}
+              {reviewData.dataList && reviewData.dataList.length > 0 ? (
+                reviewData.dataList.map(review => (
+                  <tr key={review.prodRvNo} style={{ background: review.reviewStatus === 'REPORTED' ? '#FEF2F2' : 'transparent' }}>
+                    <td>{renderStars(review.rating || 0)}</td>
+                    <td>
+                      <div>
+                        <div className="font-medium">{review.tripProdTitle || '-'}</div>
+                        <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                          {productTypeLabels[review.prodCtgryType] || review.prodCtgryType || '-'}
+                        </div>
                       </div>
-                    </div>
-                  </td>
-                  <td>
-                    <div style={{
-                      maxWidth: 250,
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 6
-                    }}>
-                      {review.images.length > 0 && (
-                        <span style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: 2,
-                          padding: '2px 6px',
-                          background: '#E0E7FF',
-                          color: '#4F46E5',
-                          borderRadius: 4,
-                          fontSize: 11,
-                          flexShrink: 0
-                        }}>
-                          <RiImageLine /> {review.images.length}
-                        </span>
+                    </td>
+                    <td>
+                      <div style={{
+                        maxWidth: 250,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 6
+                      }}>
+                        {review.reviewImages && review.reviewImages.length > 0 && (
+                          <span style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 2,
+                            padding: '2px 6px',
+                            background: '#E0E7FF',
+                            color: '#4F46E5',
+                            borderRadius: 4,
+                            fontSize: 11,
+                            flexShrink: 0
+                          }}>
+                            <RiImageLine /> {review.reviewImages.length}
+                          </span>
+                        )}
+                        {review.prodReview || '-'}
+                      </div>
+                    </td>
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <RiUserLine style={{ color: 'var(--text-muted)' }} />
+                        <span>{review.memName || '-'}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <RiBuilding2Line style={{ color: 'var(--primary-color)' }} />
+                        <span style={{ fontSize: 13 }}>{review.bzmnNm || '-'}</span>
+                      </div>
+                    </td>
+                    <td>
+                      {review.rcmdtnYn === 'Y' ? (
+                        <RiThumbUpLine style={{ color: '#10B981', fontSize: 18 }} />
+                      ) : (
+                        <RiThumbDownLine style={{ color: '#EF4444', fontSize: 18 }} />
                       )}
-                      {review.content}
-                    </div>
-                  </td>
-                  <td>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <RiUserLine style={{ color: 'var(--text-muted)' }} />
-                      <span>{review.memberName}</span>
-                    </div>
-                  </td>
-                  <td>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <RiBuilding2Line style={{ color: 'var(--primary-color)' }} />
-                      <span style={{ fontSize: 13 }}>{review.businessName}</span>
-                    </div>
-                  </td>
-                  <td>
-                    {review.recommend ? (
-                      <RiThumbUpLine style={{ color: '#10B981', fontSize: 18 }} />
-                    ) : (
-                      <RiThumbDownLine style={{ color: '#EF4444', fontSize: 18 }} />
-                    )}
-                  </td>
-                  <td>
-                    <span className={`badge ${statusLabels[review.status].class}`} style={{ whiteSpace: 'nowrap' }}>
-                      {statusLabels[review.status].text}
-                    </span>
-                  </td>
-                  <td className="text-secondary" style={{ fontSize: 13 }}>
-                    {review.createdAt.split(' ')[0]}
-                  </td>
-                  <td>
-                    <div className="table-actions">
-                      <button
-                        className="table-action-btn"
-                        onClick={() => handleViewDetail(review)}
-                        title="상세보기"
-                      >
-                        <RiEyeLine />
-                      </button>
-                      {review.status === 'active' ? (
+                    </td>
+                    <td>
+                      <span className={`badge ${statusLabels[review.reviewStatus]?.class || 'badge-secondary'}`} style={{ whiteSpace: 'nowrap' }}>
+                        {statusLabels[review.reviewStatus]?.text || review.reviewStatus}
+                      </span>
+                    </td>
+                    <td className="text-secondary" style={{ fontSize: 13 }}>
+                      {formatDate(review.prodRegdate)}
+                    </td>
+                    <td>
+                      <div className="table-actions">
                         <button
                           className="table-action-btn"
-                          onClick={() => handleAction(review, 'hide')}
-                          title="숨김"
+                          onClick={() => handleViewDetail(review)}
+                          title="상세보기"
                         >
-                          <RiAlertLine />
+                          <RiEyeLine />
                         </button>
-                      ) : review.status === 'hidden' ? (
+                        {review.reviewStatus === 'ACTIVE' ? (
+                          <button
+                            className="table-action-btn"
+                            onClick={() => handleAction(review, 'hide')}
+                            title="숨김"
+                          >
+                            <RiAlertLine />
+                          </button>
+                        ) : review.reviewStatus === 'HIDDEN' ? (
+                          <button
+                            className="table-action-btn"
+                            onClick={() => handleAction(review, 'show')}
+                            title="게시"
+                          >
+                            <RiCheckLine />
+                          </button>
+                        ) : null}
                         <button
                           className="table-action-btn"
-                          onClick={() => handleAction(review, 'show')}
-                          title="게시"
+                          onClick={() => handleDelete(review)}
+                          title="삭제"
                         >
-                          <RiCheckLine />
+                          <RiDeleteBinLine />
                         </button>
-                      ) : null}
-                      <button
-                        className="table-action-btn"
-                        onClick={() => handleDelete(review)}
-                        title="삭제"
-                      >
-                        <RiDeleteBinLine />
-                      </button>
-                    </div>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="9" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
+                    리뷰 데이터가 없습니다.
                   </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>
 
-        <div className="pagination">
-          <button className="pagination-btn" disabled>&lt;</button>
-          <button className="pagination-btn active">1</button>
-          <button className="pagination-btn">2</button>
-          <button className="pagination-btn">3</button>
-          <button className="pagination-btn">&gt;</button>
-        </div>
+        {/* 페이지네이션 */}
+        {reviewData.totalPage > 0 && (
+          <div className="pagination">
+            <button 
+              className="pagination-btn" 
+              disabled={currentPage === 1}
+              onClick={() => handlePageClick(currentPage - 1)}
+            >
+              &lt;
+            </button>
+            {renderPageNumbers()}
+            <button 
+              className="pagination-btn"
+              disabled={currentPage === reviewData.totalPage}
+              onClick={() => handlePageClick(currentPage + 1)}
+            >
+              &gt;
+            </button>
+          </div>
+        )}
       </div>
 
       {/* 상세보기 모달 */}
@@ -564,13 +782,13 @@ function ProductReviews() {
                   <RiShoppingBagLine size={24} />
                 </div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 600, fontSize: 16 }}>{review.productName}</div>
+                  <div style={{ fontWeight: 600, fontSize: 16 }}>{review.tripProdTitle || review.prodName || '-'}</div>
                   <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>
-                    {productTypeLabels[review.productType]} | {review.businessName}
+                    {productTypeLabels[review.prodCtgryType] || review.prodCtgryType || '-'} | {review.bzmnNm || '-'}
                   </div>
                 </div>
-                <span className={`badge ${statusLabels[review.status].class}`}>
-                  {statusLabels[review.status].text}
+                <span className={`badge ${statusLabels[review.reviewStatus]?.class || 'badge-secondary'}`}>
+                  {statusLabels[review.reviewStatus]?.text || review.reviewStatus}
                 </span>
               </div>
 
@@ -585,8 +803,8 @@ function ProductReviews() {
                 borderRadius: 8
               }}>
                 <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: 36, fontWeight: 700, color: '#FBBF24' }}>{review.rating}</div>
-                  {renderStars(review.rating, 20)}
+                  <div style={{ fontSize: 36, fontWeight: 700, color: '#FBBF24' }}>{review.rating || 0}</div>
+                  {renderStars(review.rating || 0, 20)}
                 </div>
                 <div style={{ flex: 1 }}>
                   <div style={{
@@ -595,7 +813,7 @@ function ProductReviews() {
                     gap: 8,
                     marginBottom: 8
                   }}>
-                    {review.recommend ? (
+                    {review.rcmdtnYn === 'Y' ? (
                       <span style={{
                         display: 'inline-flex',
                         alignItems: 'center',
@@ -625,7 +843,7 @@ function ProductReviews() {
                       </span>
                     )}
                     <span style={{ color: 'var(--text-muted)', fontSize: 13 }}>
-                      좋아요 {review.likes}개
+                      좋아요 {review.recommendCount || 0}개
                     </span>
                   </div>
                 </div>
@@ -637,15 +855,15 @@ function ProductReviews() {
                   <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 8 }}>
                     <RiUserLine style={{ marginRight: 4 }} />작성자
                   </div>
-                  <div style={{ fontWeight: 500 }}>{review.memberName}</div>
-                  <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>@{review.memberId}</div>
+                  <div style={{ fontWeight: 500 }}>{review.memName || '-'}</div>
+                  <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>회원번호: {review.memNo}</div>
                 </div>
                 <div style={{ padding: 16, background: '#F8FAFC', borderRadius: 8 }}>
                   <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 8 }}>
                     <RiBuilding2Line style={{ marginRight: 4 }} />판매자
                   </div>
-                  <div style={{ fontWeight: 500 }}>{review.businessName}</div>
-                  <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>@{review.businessId}</div>
+                  <div style={{ fontWeight: 500 }}>{review.bzmnNm || '-'}</div>
+                  <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>기업번호: {review.compNo}</div>
                 </div>
               </div>
 
@@ -659,7 +877,7 @@ function ProductReviews() {
                 }}>
                   <span style={{ fontSize: 14, fontWeight: 600 }}>리뷰 내용</span>
                   <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>
-                    {review.createdAt}
+                    {formatDate(review.prodRegdate)}
                   </span>
                 </div>
                 <div style={{
@@ -668,12 +886,12 @@ function ProductReviews() {
                   borderRadius: 8,
                   lineHeight: 1.6
                 }}>
-                  {review.content}
+                  {review.prodReview || '-'}
                 </div>
               </div>
 
               {/* 이미지 */}
-              {review.images.length > 0 && (
+              {review.images && review.images.length > 0 && (
                 <div style={{ marginBottom: 20 }}>
                   <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>
                     첨부 이미지 ({review.images.length})
@@ -682,7 +900,7 @@ function ProductReviews() {
                     {review.images.map((img, idx) => (
                       <img
                         key={idx}
-                        src={img}
+                        src={img.prodRvImgUrl}
                         alt={`리뷰이미지 ${idx + 1}`}
                         style={{
                           width: 120,
@@ -697,7 +915,7 @@ function ProductReviews() {
               )}
 
               {/* 신고 정보 */}
-              {review.status === 'reported' && (
+              {review.reviewStatus === 'REPORTED' && (
                 <div style={{
                   marginTop: 20,
                   padding: 16,
@@ -710,7 +928,7 @@ function ProductReviews() {
                   <RiFlagLine style={{ color: '#DC2626', fontSize: 24 }} />
                   <div>
                     <div style={{ fontWeight: 500, color: '#DC2626' }}>신고된 리뷰</div>
-                    <div style={{ fontSize: 13, color: '#7F1D1D' }}>사유: {review.reportReason}</div>
+                    <div style={{ fontSize: 13, color: '#7F1D1D' }}>사유: {review.reportReason || '확인 필요'}</div>
                   </div>
                   <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
                     <button className="btn btn-secondary btn-sm" onClick={() => handleAction(review, 'show')}>
