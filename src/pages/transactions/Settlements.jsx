@@ -1,6 +1,7 @@
 import * as XLSX from 'xlsx';
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { SETTLE_STATUS, getSettlementStatus } from './settlement';
+import SettlementDash from './SettlementDash';
 
 import api from '../../api/api';
 import {
@@ -82,7 +83,10 @@ const filteredData = (settlementsData || []).filter(s => {
   const company = s.COMPNAME || s.company || ""; 
   const businessNo = s.BRNO || s.businessNo || "";
   const id = s.SETTLENO || s.id || "";
-  const status = s.STATUS || s.status || "all";
+  const status = s.STATUS || s.status || "";
+
+  // 기간 데이터 (2026-01 형식)
+  const period = s.SETTLEMONTH || s.settleMonth || "";
 
   // 3. 검색어 필터링 (String으로 감싸서 혹시 모를 숫자 데이터 에러 방지)
   const matchesSearch = 
@@ -91,19 +95,37 @@ const filteredData = (settlementsData || []).filter(s => {
     String(id).includes(searchTerm);
 
   // 4. 상태 필터링
-  const matchesStatus = statusFilter === 'all' || status === statusFilter;
+  const statusConfig = getSettlementStatus(s);
+  const matchesStatus = statusFilter === 'all' || statusConfig.key === statusFilter;
 
-  return matchesSearch && matchesStatus;
+  // 5. 기간 필터링 추가!
+  const matchesPeriod = periodFilter === 'all' || period === periodFilter;
+
+  // 6. 모든 관문을 통과해야 최종 리스트에 합격!
+  return matchesSearch && matchesStatus && matchesPeriod;
 });
 
-  // 통계 계산 섹션
-const dataToCalculate = settlementsData || [];
-
 // 모든 데이터에 현재 계산된 상태 키값을 미리 부여하면 계산이 편해!
-const enrichedData = dataToCalculate.map(item => ({
+const enrichedData = (settlementsData || []).map(item => ({
   ...item,
   calculatedStatus: getSettlementStatus(item)
 }));
+
+/**
+ * 기간 옵션 계산 (최근 6개월)
+ */
+const periodOptions = React.useMemo(() => {
+    const options = [];
+    const now = new Date(); // 현재 2026년 1월
+    
+    for (let i = 0; i < 6; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      options.push(`${year}-${month}`);
+    }
+    return options;
+  }, []); // 컴포넌트가 처음 뜰 때 딱 한 번만 계산!
 
 /**
  * 정산 관련 핸들러들
@@ -167,19 +189,28 @@ const handleBatchApprove = async () => {
   }
 };
 
-// 정산 완료 관련
-const completedData = dataToCalculate.filter(s => s.status === '정산완료');
-const completedSettlement = completedData.reduce((acc, cur) => acc + (cur.settlePay || 0), 0);
-
 // ✅ 정산 가능 관련 (추가!)
-const readyData = enrichedData.filter(s => s.calculatedStatus === 'ready');
-const readyCount = readyData.length;
-const readySettlement = readyData.reduce((acc, cur) => acc + (Number(cur.SETTLEPAY || cur.settlePay) || 0), 0);
+const readyItems = enrichedData.filter(s => s.calculatedStatus.key === 'ready');
+const readyCount = readyItems.length;
+const readySettlement = readyItems.reduce((acc, cur) => 
+  acc + (Number(cur.SETTLEPAY || cur.settlePay) || 0), 0
+);
 
 // 정산 대기 관련 (에러 해결 포인트!)
-const pendingData = dataToCalculate.filter(s => s.status === '정산대기');
-const pendingCount = pendingData.length; // ★ 여기서 정의!
-const pendingSettlement = pendingData.reduce((acc, cur) => acc + (cur.settlePay || 0), 0);
+const pendingItems = enrichedData.filter(s => s.calculatedStatus.key === 'pending');
+const pendingCount = pendingItems.length; // 대기 건수
+const pendingSettlement = Math.round(
+  pendingItems.reduce((acc, cur) => 
+    acc + (Number(cur.SETTLEPAY || cur.settlePay) || 0), 0
+  )
+);
+
+// 정산 완료 관련
+const completedItems = enrichedData.filter(s => s.calculatedStatus.key === 'completed');
+const completedCount = completedItems.length;
+const completedSettlement = completedItems.reduce((acc, cur) => 
+  acc + (Number(cur.SETTLEPAY || cur.settlePay) || 0), 0
+);
 
   // 정산 처리
 const handleProcess = (settlement) => {
@@ -191,9 +222,9 @@ const handleProcessConfirm = async () => {
       if (!s) return;
 
       // 1. 보여준 데이터(대문자)에 맞춰서 정확하게 추출
-      const saleNo = Number(s.SETTLENO);
+      const saleNo = Math.round(Number(s.SETTLENO || s.saleNo));
+      const settlePay = Math.round(Number(s.SETTLEPAY || s.settlePay));
       let compNo = s.COMP_NO || s.COMPNO || s.compNo;
-      const settlePay = Number(s.SETTLEPAY);
 
       console.log("🚀 최종 전송 데이터:", { saleNo, compNo, settlePay });
 
@@ -227,10 +258,6 @@ const handleProcessConfirm = async () => {
         alert('서버 통신 오류가 발생했습니다.');
       }
 };
-
-// 기타 통계
-const totalSales = dataToCalculate.reduce((acc, cur) => acc + (cur.totalSales || 0), 0);
-const totalFee = dataToCalculate.reduce((acc, cur) => acc + (cur.commission || 0), 0);
   
 // JWT API 연동
   useEffect(() => {
@@ -285,6 +312,17 @@ const handleExcelDownload = () => {
 
   // 2. 워크시트(Worksheet) 생성
   const worksheet = XLSX.utils.json_to_sheet(excelData);
+
+  // 엑셀에서 E, F, G열이 숫자 형식으로 인식되도록 설정
+  const range = XLSX.utils.decode_range(worksheet['!ref']);
+  for (let R = range.s.r + 1; R <= range.e.r; ++R) {
+    ['E', 'F', 'G'].forEach(col => {
+      const cell = worksheet[col + (R + 1)];
+      if (cell && cell.t === 'n') { // 타입이 숫자(number)일 때
+        cell.z = '#,##0'; // 엑셀 표준 회계 서식 적용!
+      }
+    });
+  }
   
   // 3. 워크북(Workbook) 생성 및 시트 추가
   const workbook = XLSX.utils.book_new();
@@ -294,6 +332,39 @@ const handleExcelDownload = () => {
   const fileName = `[Mohaeng] 정산내역_${new Date().toISOString().split('T')[0]}.xlsx`;
   XLSX.writeFile(workbook, fileName);
 };
+
+/**
+ * 복사 핸들러 
+ */
+const handleCopy = async (text) => {
+  try {
+    await navigator.clipboard.writeText(text);
+    alert('계좌번호가 클립보드에 복사되었습니다! 📋');
+  } catch (err) {
+    console.error('복사 실패:', err);
+  }
+};
+
+/**
+ * 통계 카드용 계산
+ */
+const dataToCalculate = settlementsData || [];
+
+// 1. 총 매출액 (모든 데이터의 합산 + 소수점 반올림)
+const totalSales = Math.round(
+  dataToCalculate.reduce((acc, cur) => acc + (Number(cur.TOTALSALES || cur.totalSales || 0)), 0)
+);
+
+// 2. 총 수수료 (모든 데이터의 합산 + 소수점 반올림)
+const totalFee = Math.round(
+  dataToCalculate.reduce((acc, cur) => acc + (Number(cur.COMMISSION || cur.commission || cur.fee || 0)), 0)
+);
+
+// 3. 정산 완료 (이미 계산된 로직 활용)
+const finalCompletedSettlement = Math.round(completedSettlement || 0);
+
+// 4. 정산 대기 (이미 계산된 로직 활용)
+const finalPendingSettlement = Math.round(pendingSettlement || 0);
 
 /**
  * return 시작
@@ -309,54 +380,77 @@ const handleExcelDownload = () => {
         </div>
       </div>
 
-      {/* 통계 카드 */}
-      <div className="stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20, marginBottom: 24 }}>
-        <div className="card stat-card" style={{ padding: 20 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ width: 48, height: 48, borderRadius: 12, background: 'linear-gradient(135deg, #4A90D9, #357ABD)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '1.25rem' }}>
-              <RiMoneyDollarCircleLine />
-            </div>
-            <div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--primary-color)' }}>₩{totalSales.toLocaleString()}</div>
-              <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>총 매출액</div>
-            </div>
-          </div>
-        </div>
-        <div className="card stat-card" style={{ padding: 20 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ width: 48, height: 48, borderRadius: 12, background: 'linear-gradient(135deg, #f59e0b, #d97706)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '1.25rem' }}>
-              <RiPercentLine />
-            </div>
-            <div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#f59e0b' }}>₩{totalFee.toLocaleString()}</div>
-              <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>총 수수료</div>
+      {/* 통계 카드 그리드 */}
+        <div className="stats-grid" style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(4, 1fr)', 
+          gap: 20, 
+          marginBottom: 32 
+        }}>
+          {/* 1. 총 매출액 */}
+          <div className="card stat-card" style={{ padding: '24px', borderRadius: '16px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', border: '1px solid #e2e8f0' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+              <div style={{ width: 52, height: 52, borderRadius: '14px', background: 'linear-gradient(135deg, #4f46e5, #3b82f6)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '1.5rem', boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)' }}>
+                <RiMoneyDollarCircleLine />
+              </div>
+              <div>
+                <div style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 600, marginBottom: 4 }}>총 매출액</div>
+                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#1e293b' }}>
+                  ₩{totalSales.toLocaleString()}
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-        <div className="card stat-card" style={{ padding: 20 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ width: 48, height: 48, borderRadius: 12, background: 'linear-gradient(135deg, #10b981, #059669)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '1.25rem' }}>
-              <RiCheckboxCircleLine />
-            </div>
-            <div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#10b981' }}>₩{completedSettlement.toLocaleString()}</div>
-              <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>정산 완료</div>
-            </div>
-          </div>
-        </div>
-        <div className="card stat-card" style={{ padding: 20 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ width: 48, height: 48, borderRadius: 12, background: 'linear-gradient(135deg, #ef4444, #dc2626)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '1.25rem' }}>
-              <RiTimeLine />
-            </div>
-            <div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#ef4444' }}>₩{pendingSettlement.toLocaleString()}</div>
-              <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>정산 대기</div>
-            </div>
-          </div>
-        </div>
-      </div>
 
+          {/* 2. 총 수수료 */}
+          <div className="card stat-card" style={{ padding: '24px', borderRadius: '16px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', border: '1px solid #e2e8f0' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+              <div style={{ width: 52, height: 52, borderRadius: '14px', background: 'linear-gradient(135deg, #f59e0b, #fbbf24)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '1.5rem', boxShadow: '0 4px 12px rgba(245, 158, 11, 0.3)' }}>
+                <RiPercentLine />
+              </div>
+              <div>
+                <div style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 600, marginBottom: 4 }}>총 수수료</div>
+                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#d97706' }}>
+                  ₩{totalFee.toLocaleString()}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 3. 정산 완료 */}
+          <div className="card stat-card" style={{ padding: '24px', borderRadius: '16px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', border: '1px solid #e2e8f0' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+              <div style={{ width: 52, height: 52, borderRadius: '14px', background: 'linear-gradient(135deg, #10b981, #34d399)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '1.5rem', boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)' }}>
+                <RiCheckboxCircleLine />
+              </div>
+              <div>
+                <div style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 600, marginBottom: 4 }}>정산 완료</div>
+                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#059669' }}>
+                  ₩{finalCompletedSettlement.toLocaleString()}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 4. 정산 대기 */}
+          <div className="card stat-card" style={{ padding: '24px', borderRadius: '16px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', border: '1px solid #e2e8f0' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+              <div style={{ width: 52, height: 52, borderRadius: '14px', background: 'linear-gradient(135deg, #ef4444, #f87171)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '1.5rem', boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)' }}>
+                <RiTimeLine />
+              </div>
+              <div>
+                <div style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 600, marginBottom: 4 }}>정산 대기</div>
+                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#dc2626' }}>
+                  ₩{finalPendingSettlement.toLocaleString()}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <SettlementDash data={settlementsData} />
+
+      {/* 정산 대기 알림 배너 */}
       {pendingCount > 0 && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 16px', background: '#fef3c7', borderRadius: 8, marginBottom: 16 }}>
           <RiTimeLine style={{ color: '#f59e0b' }} />
@@ -380,11 +474,14 @@ const handleExcelDownload = () => {
               <option value="processing">정산중</option>
               <option value="completed">정산완료</option>
             </select>
-            <select className="form-input form-select" value={periodFilter} onChange={(e) => setPeriodFilter(e.target.value)} style={{ width: 'auto' }}>
+            <select className="form-input form-select" value={periodFilter} onChange={(e) => setPeriodFilter(e.target.value)}>
               <option value="all">전체 기간</option>
-              <option value="2024-12">2024년 12월</option>
-              <option value="2024-11">2024년 11월</option>
-              <option value="2024-10">2024년 10월</option>
+              {/* 이제 여기서 periodOptions를 안전하게 사용할 수 있어! */}
+              {periodOptions.map(period => (
+                <option key={period} value={period}>
+                  {period.split('-')[0]}년 {period.split('-')[1]}월
+                </option>
+              ))}
             </select>
           </div>
           </div>
@@ -430,7 +527,7 @@ const handleExcelDownload = () => {
                 onClick={handleExcelDownload} // 함수 연결!
                 style={{ whiteSpace: 'nowrap' }}
               >
-                <RiFileDownloadLine /> 정산서 다운로드
+                <RiFileDownloadLine /> 정산내역 다운로드
               </button>
             </div>
         </div>
@@ -508,8 +605,8 @@ const handleExcelDownload = () => {
                     </td>
                     <td style={{ fontSize: '0.85rem' }}>{settleMonth}</td>
                     <td>₩{Number(sales).toLocaleString()}</td>
-                    <td style={{ color: '#f59e0b' }}>-₩{Number(fee).toLocaleString()}</td>
-                    <td className="font-medium" style={{ color: '#10b981' }}>₩{Number(settlement).toLocaleString()}</td>
+                    <td style={{ color: '#f59e0b' }}>-₩{Math.round(Number(fee)).toLocaleString()}</td>
+                    <td className="font-medium" style={{ color: '#10b981' }}>₩{Math.round(Number(settlement)).toLocaleString()}</td>
                     <td>
                       {item.changeRate > 0 ? (
                         <span style={{ color: '#10b981', display: 'flex', alignItems: 'center', gap: 2, fontSize: '0.85rem' }}>
@@ -559,32 +656,28 @@ const handleExcelDownload = () => {
         className="modal-900"
         size="large"
       >
-
-        
         {detailModal.settlement && (() => {
-         const resData = detailModal.settlement;
-        const s = resData.enterprise || {};       // 기업 & 정산 요약
-        const orders = resData.orderDetails || []; // 주문 상세 내역 (아까 헤맸던 거!)
-        const products = resData.productSummary || []; // 상품별 요약
+        const resData = detailModal.settlement;
+        const s = resData.enterprise || {};
+        const orders = resData.orderDetails || []; // 주문 상세 내역 
+        const products = resData.productSummary || []; // 상품별 요약내역
 
-        // 1. 상태 및 스타일 설정
-        const rawStatus = s.status || '';
-        let statusKey = 'pending';
-        if (rawStatus === 'S02') statusKey = 'completed'; 
-        else if (rawStatus === 'S01') statusKey = 'processing';
-              
-          if (rawStatus === '정산완료') statusKey = 'completed';
-          else if (rawStatus === '정산중') statusKey = 'processing';
+        console.log("상세 모달 데이터:", resData, s, orders, products);
 
-          const config = SETTLE_STATUS[statusKey] || SETTLE_STATUS.PENDING;
-          const isCompleted = statusKey === 'completed';
-          const bgGradient = isCompleted 
-            ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
-            : statusKey === 'processing' 
-              ? 'linear-gradient(135deg, #4A90D9 0%, #357ABD 100%)'
-              : 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)';
+      //1. 이제 쿼리에서 "status"를 보내주니까 바로 잡힘!
+        const dbStatus = s.status || s.STATUS || '정산대기'; 
 
-              console.log(s)
+        // 2. 판정 (문자열 비교로 깔끔하게)
+        const isCompleted = dbStatus === '정산완료';
+        const isProcessing = dbStatus === '정산중';
+
+        // 3. 배경색 결정
+        const bgGradient = isCompleted 
+          ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' 
+          : isProcessing 
+            ? 'linear-gradient(135deg, #4A90D9 0%, #357ABD 100%)' 
+            : 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)';
+
           // 필드명 매핑 (Oracle 대문자 대응)
           const company = s.COMPNAME || s.compName || '-';
           const businessNo = s.BRNO || s.brNo || '-';
@@ -608,117 +701,496 @@ const handleExcelDownload = () => {
 
           return (
             <div style={{ maxHeight: '70vh', overflowY: 'auto' }}>
-              {/* 상태 뱃지 */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: 20, background: bgGradient, borderRadius: 12, color: 'white', marginBottom: 20 }}>
-                {isCompleted ? <RiCheckboxCircleLine style={{ fontSize: 40 }} /> : <RiTimeLine style={{ fontSize: 40 }} />}
-                <div>
-                  <h4 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: 4 }}>{config.label}</h4>
-                  <p style={{ fontSize: '0.875rem', opacity: 0.9, margin: 0 }}>
-                    {isCompleted
-                      ? `정산 완료일: ${s.COMPLETEDAT || s.completedAt || '-'}`
-                      : `정산 예정일: ${s.SCHEDULEDDATE || s.scheduledDate || '-'}`}
-                  </p>
-                </div>
-              </div>
+               {/* --- 1. 상태 뱃지 배너 --- */}
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'space-between', 
+                  padding: '28px 36px', 
+                  background: bgGradient, 
+                  borderRadius: '24px', 
+                  color: 'white', 
+                  marginBottom: 28,
+                  boxShadow: '0 12px 20px -5px rgba(0, 0, 0, 0.15)',
+                  position: 'relative',
+                  overflow: 'hidden' 
+                }}>
+                  {/* 배경 장식 원형 */}
+                  <div style={{ position: 'absolute', right: '-30px', top: '-30px', width: '150px', height: '150px', background: 'rgba(255,255,255,0.12)', borderRadius: '50%' }} />
+                  <div style={{ position: 'absolute', left: '-20px', bottom: '-40px', width: '100px', height: '100px', background: 'rgba(255,255,255,0.08)', borderRadius: '50%' }} />
 
-              {/* 기업 정보 */}
-              <div style={{ marginBottom: 20, paddingBottom: 16, borderBottom: '1px solid #e2e8f0' }}>
-                <h5 style={{ fontSize: '0.9rem', fontWeight: 600, color: '#334155', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <RiBuildingLine /> 기업 정보
-                </h5>
-                <div className="detail-list">
-                  <div className="detail-item"><span className="detail-label">기업명</span><span className="detail-value font-medium">{company}</span></div>
-                  <div className="detail-item"><span className="detail-label">사업자번호</span><span className="detail-value">{businessNo}</span></div>
-                  <div className="detail-item"><span className="detail-label"><RiUserLine style={{ marginRight: 4 }} />대표자명</span><span className="detail-value">{representative}</span></div>
-                  <div className="detail-item"><span className="detail-label"><RiPhoneLine style={{ marginRight: 4 }} />연락처</span><span className="detail-value">{phone}</span></div>
-                  <div className="detail-item"><span className="detail-label"><RiMailLine style={{ marginRight: 4 }} />이메일</span><span className="detail-value">{email}</span></div>
-                </div>
-              </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 28, position: 'relative', zIndex: 1 }}>
+                    {/* 아이콘 글래스 모피즘 박스 */}
+                    <div style={{ 
+                      width: 72, height: 72, borderRadius: '20px', 
+                      background: 'rgba(255, 255, 255, 0.25)', 
+                      backdropFilter: 'blur(12px)', 
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      border: '1px solid rgba(255, 255, 255, 0.4)',
+                      boxShadow: '0 8px 16px rgba(0,0,0,0.1)'
+                    }}>
+                      <div style={{ fontSize: '2.5rem', display: 'flex' }}>
+                        {isCompleted ? <RiCheckboxCircleLine /> : <RiTimeLine />}
+                      </div>
+                    </div>
 
-              {/* 정산 정보 */}
-              <div style={{ marginBottom: 20, paddingBottom: 16, borderBottom: '1px solid #e2e8f0' }}>
-                <h5 style={{ fontSize: '0.9rem', fontWeight: 600, color: '#334155', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <RiCalendarLine /> 정산 정보
-                </h5>
-                <div className="detail-list">
-                  <div className="detail-item"><span className="detail-label">정산번호</span><span className="detail-value font-medium">{id}</span></div>
-                  <div className="detail-item"><span className="detail-label">정산기간</span><span className="detail-value">{period}</span></div>
-                  <div className="detail-item"><span className="detail-label">주문건수</span><span className="detail-value">{orders.length}건</span></div>
+                    {/* 텍스트 정보: 제목과 설명을 위아래로 분리 */}
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+                        <h4 style={{ fontSize: '1.75rem', fontWeight: 900, margin: 0, letterSpacing: '-0.5px' }}>
+                          {dbStatus}
+                        </h4>
+                        <span style={{ 
+                          fontSize: '0.75rem', padding: '4px 10px', 
+                          background: 'rgba(0,0,0,0.15)', borderRadius: '8px', 
+                          fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px'
+                        }}>
+                          {isCompleted ? 'Confirmed' : 'Action Required'}
+                        </span>
+                      </div>
+                      <p style={{ fontSize: '1rem', opacity: 0.95, margin: 0, fontWeight: 500 }}>
+                        {isCompleted
+                          ? `✅ 해당 정산 건은 승인이 완료되어 지급 절차가 마무리되었습니다.`
+                          : `📢 현재 담당자가 해당 건의 정산 내역 및 증빙 자료를 검토 중입니다.`}
+                      </p>
+                    </div>
+                  </div>
                 </div>
-              </div>
 
-              {/* 정산 금액 */}
-              <div style={{ marginBottom: 20, padding: 20, background: '#f8fafc', borderRadius: 12 }}>
-                <h5 style={{ fontSize: '0.9rem', fontWeight: 600, color: '#334155', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <RiMoneyDollarCircleLine /> 정산 금액
-                </h5>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
-                  <span style={{ color: '#64748b' }}>총 매출액</span>
-                  <span className="font-medium">₩{Number(sales).toLocaleString()}</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
-                  <span style={{ color: '#64748b' }}>수수료({String(feeRate)}%)</span>
-                  <span style={{ color: '#f59e0b' }}>-₩{Number(fee).toLocaleString()}</span>
-                </div>
-                <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: 12, display: 'flex', justifyContent: 'space-between', fontSize: '1.125rem', fontWeight: 600 }}>
-                  <span>정산금액</span>
-                  <span style={{ color: '#10b981' }}>₩{Number(settlementAmount).toLocaleString()}</span>
-                </div>
-              </div>
+                {/* --- 금액 대시보드 섹션 시작 --- */}
+                  <div style={{ 
+                    display: 'grid', 
+                    gridTemplateColumns: 'repeat(3, 1fr)', 
+                    gap: 16, 
+                    marginBottom: 28 
+                  }}>
+                    {/* 1. 총 매출액 카드 */}
+                    <div style={{ 
+                      padding: '20px', 
+                      background: '#ffffff', 
+                      borderRadius: '16px', 
+                      border: '1px solid #e2e8f0',
+                      textAlign: 'center'
+                    }}>
+                      <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: 8, fontWeight: 500 }}>총 매출액</div>
+                      <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1e293b' }}>
+                        ₩{Math.round(Number(sales)).toLocaleString()}
+                      </div>
+                    </div>
 
-              {/* 입금 계좌 */}
-              <div style={{ marginBottom: 20, paddingBottom: 16, borderBottom: '1px solid #e2e8f0' }}>
-                <h5 style={{ fontSize: '0.9rem', fontWeight: 600, color: '#334155', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <RiBankCardLine /> 입금 계좌
-                </h5>
-                <div className="detail-list">
-                  <div className="detail-item"><span className="detail-label">은행</span><span className="detail-value">{bank}</span></div>
-                  <div className="detail-item"><span className="detail-label">계좌번호</span><span className="detail-value font-medium">{accountNo}</span></div>
-                  <div className="detail-item"><span className="detail-label">예금주</span><span className="detail-value">{accountHolder}</span></div>
+                    {/* 2. 공제 수수료 카드 (빨간색 포인트) */}
+                    <div style={{ 
+                      padding: '20px', 
+                      background: '#fff1f2', // 연한 분홍/빨강 배경
+                      borderRadius: '16px', 
+                      border: '1px solid #fecdd3',
+                      textAlign: 'center'
+                    }}>
+                      <div style={{ fontSize: '0.85rem', color: '#e11d48', marginBottom: 8, fontWeight: 600 }}>공제 수수료 ({feeRate}%)</div>
+                      <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#e11d48' }}>
+                        - ₩{Math.round(Number(fee)).toLocaleString()}
+                      </div>
+                    </div>
+
+                    {/* 3. 최종 입금 예정액 카드 (초록색 하이라이트) */}
+                    <div style={{ 
+                      padding: '20px', 
+                      background: '#f0fdf4', // 연한 초록 배경
+                      borderRadius: '16px', 
+                      border: '1px solid #bbf7d0',
+                      textAlign: 'center',
+                      boxShadow: '0 4px 6px -1px rgba(16, 185, 129, 0.1)'
+                    }}>
+                      <div style={{ fontSize: '0.85rem', color: '#166534', marginBottom: 8, fontWeight: 600 }}>최종 입금 예정액</div>
+                      <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#10b981' }}>
+                        ₩{Math.round(Number(settlementAmount)).toLocaleString()}
+                      </div>
+                    </div>
+                  </div>
+                  {/* --- 금액 대시보드 섹션 끝 --- */}
+
+             {/* 기업 정보 & 정산 정보 통합 섹션 */}
+                <div style={{ 
+                  display: 'grid', 
+                  gridTemplateColumns: '1.2fr 1fr', // 기업 정보를 조금 더 넓게
+                  gap: 20, 
+                  marginBottom: 24 
+                }}>
+                  
+                  {/* 1. 기업 프로필 카드 */}
+                  <div style={{ 
+                    padding: 24, 
+                    background: '#ffffff', 
+                    borderRadius: 16, 
+                    border: '1px solid #e2e8f0',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 16
+                  }}>
+                    <h5 style={{ fontSize: '1rem', fontWeight: 700, color: '#1e293b', display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                      <RiBuildingLine style={{ color: '#4F46E5' }} /> 기업 프로필
+                    </h5>
+                    
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 16, paddingBottom: 16, borderBottom: '1px solid #f1f5f9' }}>
+                      <div style={{ width: 56, height: 56, borderRadius: 12, background: '#EEF2FF', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#4F46E5', fontSize: '1.5rem' }}>
+                        {company.charAt(0)}
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '1.125rem', fontWeight: 700, color: '#1e293b' }}>{company}</div>
+                        <div style={{ fontSize: '0.875rem', color: '#64748b' }}>사업자번호: {businessNo}</div>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                      <div>
+                        <span style={{ fontSize: '0.75rem', color: '#94a3b8', display: 'block' }}>대표자</span>
+                        <span style={{ fontSize: '0.9rem', color: '#334155', fontWeight: 500 }}>{representative}</span>
+                      </div>
+                      <div>
+                        <span style={{ fontSize: '0.75rem', color: '#94a3b8', display: 'block' }}>연락처</span>
+                        <span style={{ fontSize: '0.9rem', color: '#334155', fontWeight: 500 }}>{phone}</span>
+                      </div>
+                      <div style={{ gridColumn: 'span 2' }}>
+                        <span style={{ fontSize: '0.75rem', color: '#94a3b8', display: 'block' }}>이메일</span>
+                        <span style={{ fontSize: '0.9rem', color: '#334155', fontWeight: 500 }}>{email}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 2. 정산 요약 정보 카드 */}
+                  <div style={{ 
+                    padding: 24, 
+                    background: '#ffffff', 
+                    borderRadius: 16, 
+                    border: '1px solid #e2e8f0',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 16
+                  }}>
+                    <h5 style={{ fontSize: '1rem', fontWeight: 700, color: '#1e293b', display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                      <RiCalendarLine style={{ color: '#4F46E5' }} /> 정산 식별 정보
+                    </h5>
+
+                    <div style={{ background: '#F8FAFC', borderRadius: 12, padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: '0.875rem', color: '#64748b' }}>정산번호</span>
+                        <span style={{ fontSize: '0.875rem', fontWeight: 700, color: '#4F46E5', background: '#ffffff', padding: '2px 8px', borderRadius: 6, border: '1px solid #E2E8F0' }}>{id}</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: '0.875rem', color: '#64748b' }}>정산대상 기간</span>
+                        <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#334155' }}>{period}</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: '0.875rem', color: '#64748b' }}>총 주문수</span>
+                        <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#334155' }}>{orders.length}건</span>
+                      </div>
+                    </div>
+                    
+                    <div style={{ marginTop: 'auto', fontSize: '0.75rem', color: '#94a3b8', textAlign: 'center', fontStyle: 'italic' }}>
+                      * 해당 데이터는 시스템에 의해 자동 집계되었습니다.
+                    </div>
+                  </div>
                 </div>
-              </div>
+
+             {/* 정산 금액 섹션 - 세련된 영수증 스타일 */}
+                <div style={{ 
+                  marginBottom: 24, 
+                  padding: '24px', 
+                  background: 'linear-gradient(to bottom right, #ffffff, #f8fafc)', 
+                  borderRadius: '16px', 
+                  border: '1px solid #e2e8f0',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
+                }}>
+                  <h5 style={{ 
+                    fontSize: '1rem', 
+                    fontWeight: 700, 
+                    color: '#1e293b', 
+                    marginBottom: 20, 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: 8 
+                  }}>
+                    <RiMoneyDollarCircleLine style={{ color: '#4F46E5', fontSize: '1.2rem' }} /> 결제 및 정산 요약
+                  </h5>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                    {/* 총 매출액 */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ color: '#64748b', fontSize: '0.9rem' }}>총 매출액</span>
+                      <span style={{ fontSize: '1.1rem', fontWeight: 600, color: '#334155' }}>
+                        ₩{Number(sales).toLocaleString()}
+                      </span>
+                    </div>
+
+                    {/* 수수료 (마이너스 요소 강조) */}
+                    <div style={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      alignItems: 'center',
+                      paddingBottom: '16px',
+                      borderBottom: '2px dashed #e2e8f0' // 영수증 절취선 느낌!
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ color: '#64748b', fontSize: '0.9rem' }}>플랫폼 수수료</span>
+                        <span style={{ 
+                          fontSize: '0.75rem', 
+                          padding: '2px 8px', 
+                          background: '#fef3c7', 
+                          color: '#d97706', 
+                          borderRadius: '12px',
+                          fontWeight: 600
+                        }}>
+                          {String(feeRate)}%
+                        </span>
+                      </div>
+                      <span style={{ fontSize: '1.1rem', fontWeight: 600, color: '#ef4444' }}>
+                        - ₩{Number(fee).toLocaleString()}
+                      </span>
+                    </div>
+
+                    {/* 최종 정산 금액 (하이라이트) */}
+                    <div style={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      alignItems: 'center',
+                      padding: '16px',
+                      background: '#f0fdf4', // 연한 초록색 배경으로 '정산 가능' 의미 부여
+                      borderRadius: '12px',
+                      marginTop: '4px'
+                    }}>
+                      <span style={{ fontWeight: 700, color: '#166534', fontSize: '1rem' }}>최종 정산금액</span>
+                      <div style={{ textAlign: 'right' }}>
+                        <span style={{ 
+                          fontSize: '1.5rem', 
+                          fontWeight: 800, 
+                          color: '#10b981',
+                          textShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                        }}>
+                          ₩{Number(settlementAmount).toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+              {/* 입금 계좌 섹션 - 카드 스타일로 리뉴얼 */}
+                <div style={{ 
+                  marginBottom: 24, 
+                  padding: 24, 
+                  background: '#f8fafc', // 아주 연한 회색/푸른색 배경
+                  borderRadius: 16, 
+                  border: '1px solid #e2e8f0' 
+                }}>
+                  <h5 style={{ 
+                    fontSize: '1rem', 
+                    fontWeight: 700, 
+                    color: '#334155', 
+                    marginBottom: 16, 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: 8 
+                  }}>
+                    <RiBankCardLine style={{ color: '#4F46E5' }} /> 입금 계좌 정보
+                  </h5>
+
+                  <div style={{ 
+                    display: 'grid', 
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', 
+                    gap: 20,
+                    alignItems: 'center'
+                  }}>
+                    {/* 은행 & 예금주 묶음 */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                      <div>
+                        <span style={{ fontSize: '0.8rem', color: '#64748b', display: 'block', marginBottom: 4 }}>은행명</span>
+                        <span style={{ fontSize: '1rem', fontWeight: 600, color: '#1e293b' }}>{bank}</span>
+                      </div>
+                      <div>
+                        <span style={{ fontSize: '0.8rem', color: '#64748b', display: 'block', marginBottom: 4 }}>예금주</span>
+                        <span style={{ fontSize: '1rem', fontWeight: 600, color: '#1e293b' }}>{accountHolder}</span>
+                      </div>
+                    </div>
+
+                    {/* 계좌번호 - 가장 중요하므로 강조! */}
+                      <div style={{ 
+                        padding: '16px 20px', 
+                        background: '#ffffff', 
+                        borderRadius: 12, 
+                        border: '1px dashed #cbd5e1', 
+                        position: 'relative',
+                        flex: 1,
+                        display: 'flex',
+                        justifyContent: 'space-between', // 번호와 버튼을 양쪽으로!
+                        alignItems: 'center'
+                      }}>
+                        <div>
+                          <span style={{ fontSize: '0.75rem', color: '#4F46E5', fontWeight: 600, display: 'block', marginBottom: 6 }}>계좌번호</span>
+                          <span style={{ 
+                            fontSize: '1.25rem', 
+                            fontWeight: 700, 
+                            color: '#1e293b', 
+                            letterSpacing: '0.5px',
+                            fontFamily: 'monospace'
+                          }}>
+                            {accountNo}
+                          </span>
+                        </div>
+
+                        {/* 복사 버튼 */}
+                        <button 
+                          onClick={() => handleCopy(accountNo)}
+                          title="계좌번호 복사"
+                          style={{
+                            background: '#f1f5f9',
+                            border: 'none',
+                            padding: '8px',
+                            borderRadius: '8px',
+                            cursor: 'pointer',
+                            color: '#64748b',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            transition: 'all 0.2s'
+                          }}
+                          onMouseOver={(e) => { e.currentTarget.style.background = '#e2e8f0'; e.currentTarget.style.color = '#4F46E5'; }}
+                          onMouseOut={(e) => { e.currentTarget.style.background = '#f1f5f9'; e.currentTarget.style.color = '#64748b'; }}
+                        >
+                          <RiFileListLine style={{ fontSize: '1.2rem' }} /> {/* 복사 아이콘 대용으로 파일 리스트 아이콘 사용 */}
+                          <span style={{ fontSize: '0.7rem', marginLeft: '4px', fontWeight: 600 }}>복사</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+              {/* 1. 상품별 매출 요약 섹션 추가 */}
+                <div style={{ marginBottom: 32, padding: 20, background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 12 }}>
+                  <h5 style={{ fontSize: '0.95rem', fontWeight: 600, color: '#1e293b', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <RiFileListLine style={{ color: '#4F46E5' }} /> 상품별 매출 요약
+                  </h5>
+                  <div style={{ overflowX: 'auto' }}>
+                    <table className="table" style={{ fontSize: '0.85rem', minWidth: '500px' }}>
+                      <thead style={{ background: '#f8fafc' }}>
+                        <tr>
+                          <th>상품명</th>
+                          <th style={{ textAlign: 'center', width: '80px' }}>판매수량</th>
+                          <th style={{ textAlign: 'right', width: '120px' }}>매출금액</th>
+                          <th style={{ width: '150px' }}>매출 비중</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {products.length > 0 ? products.map((prod, idx) => (
+                          <tr key={`prod-${prod.prodName || idx}-${idx}`}>
+                            <td className="font-medium">{prod.prodName || '-'}</td>
+                            <td style={{ textAlign: 'center' }}>{prod.quantity || 0}개</td>
+                            <td style={{ textAlign: 'right', fontWeight: 600 }}>
+                              ₩{Number(prod.amount || 0).toLocaleString()}
+                            </td>
+                            <td>
+                              {/* 비중을 시각적으로 보여주는 미니 바(Bar) */}
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <div style={{ flex: 1, height: 8, background: '#e2e8f0', borderRadius: 4, overflow: 'hidden' }}>
+                                  <div style={{ 
+                                    width: `${prod.share || 0}%`, 
+                                    height: '100%', 
+                                    background: 'linear-gradient(90deg, #4F46E5, #818CF8)',
+                                    borderRadius: 4 
+                                  }} />
+                                </div>
+                                <span style={{ fontSize: '0.75rem', color: '#64748b', minWidth: '35px' }}>{prod.share}%</span>
+                              </div>
+                            </td>
+                          </tr>
+                        )) : (
+                          <tr>
+                            <td colSpan="4" style={{ textAlign: 'center', color: '#94a3b8', padding: '20px 0' }}>데이터가 없습니다.</td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
 
               {/* 주문 상세 내역 */}
-              <div>
-                <h5 style={{ fontSize: '0.9rem', fontWeight: 600, color: '#334155', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <RiFileListLine /> 주문 상세 내역
+              <div style={{ 
+                padding: 24, 
+                background: '#ffffff', 
+                border: '1px solid #e2e8f0', 
+                borderRadius: 16,
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' // 살짝 그림자 추가
+              }}>
+                <h5 style={{ 
+                  fontSize: '1rem', 
+                  fontWeight: 700, 
+                  color: '#1e293b', 
+                  marginBottom: 20, 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: 10 
+                }}>
+                  <RiFileListLine style={{ color: '#4F46E5', fontSize: '1.2rem' }} /> 주문 상세 내역
+                  <span style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 400 }}>
+                    (총 {orders.length}건)
+                  </span>
                 </h5>
-                <div style={{ overflowX: 'auto' }}>
-                  <table className="table" style={{ fontSize: '0.8rem' }}>
-                    <thead>
+
+                <div style={{ overflowX: 'auto', borderRadius: 8, border: '1px solid #f1f5f9' }}>
+                  <table className="table" style={{ fontSize: '0.85rem', borderCollapse: 'separate', borderSpacing: 0 }}>
+                    <thead style={{ background: '#f8fafc' }}>
                       <tr>
-                        <th>예약번호</th><th>예약일시</th><th>상품명</th><th>예약자</th><th>이용일</th><th>금액</th><th>수수료</th><th>정산액</th><th>상태</th>
+                        <th style={{ padding: '12px 16px', color: '#475569' }}>예약번호</th>
+                        <th style={{ padding: '12px 16px', color: '#475569' }}>상품정보</th>
+                        <th style={{ padding: '12px 16px', color: '#475569' }}>이용일/예약자</th>
+                        <th style={{ padding: '12px 16px', color: '#475569', textAlign: 'right' }}>금액</th>
+                        <th style={{ padding: '12px 16px', color: '#475569', textAlign: 'right' }}>수수료(10%)</th>
+                        <th style={{ padding: '12px 16px', color: '#475569', textAlign: 'right' }}>정산예정액</th>
+                        <th style={{ padding: '12px 16px', color: '#475569', textAlign: 'center' }}>상태</th>
                       </tr>
                     </thead>
-                      <tbody>
-                        {orders.map((order, idx) => {
-                          const statusConfig = getSettlementStatus(order);
-                          const amount = order.payAmount || 0;
-                          const fee = Math.round(amount * 0.1); // 수수료 10% 계산
-                          const netSettlement = amount - fee;   // 정산액 계산
+                    <tbody>
+                      {orders.map((order, idx) => {
+                        const statusConfig = getSettlementStatus(order);
+                        const amount = order.payAmount || 0;
+                        const fee = Math.round(amount * 0.1);
+                        const netSettlement = amount - fee;
 
-                          return (
-                            <tr key={idx}>
-                              <td className="font-medium">{order.orderNo || '-'}</td>
-                              <td>{order.orderDate || '-'}</td>
-                              <td>{order.prodName || '-'}</td>
-                              <td>{order.bookerName || '-'}</td>
-                              <td>{order.useDate || '-'}</td>
-                              <td>₩{amount.toLocaleString()}</td>
-                              <td style={{ color: '#f59e0b' }}>-₩{fee.toLocaleString()}</td>
-                              <td className="font-medium">₩{netSettlement.toLocaleString()}</td>
-                              <td>
-                                <span 
-                                    className={`badge ${statusConfig.className}`} 
-                                    style={{ fontSize: '0.7rem', whiteSpace: 'nowrap' }}
-                                  >
-                                    {statusConfig.label}
-                                  </span>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
+                        return (
+                          <tr key={`order-${order.orderNo || idx}-${idx}`} style={{ transition: 'background 0.2s' }} className="hover-row">
+                            <td style={{ padding: '16px', borderBottom: '1px solid #f1f5f9' }}>
+                              <span style={{ fontWeight: 600, color: '#4F46E5' }}>{order.orderNo || '-'}</span>
+                              <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: 4 }}>{order.orderDate || '-'}</div>
+                            </td>
+                            <td style={{ padding: '16px', borderBottom: '1px solid #f1f5f9' }}>
+                              <div style={{ fontWeight: 500, color: '#334155' }}>{order.prodName || '-'}</div>
+                            </td>
+                            <td style={{ padding: '16px', borderBottom: '1px solid #f1f5f9' }}>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                <span style={{ color: '#475569' }}>{order.useDate || '-'}</span>
+                                <span style={{ fontSize: '0.75rem', color: '#64748b' }}><RiUserLine style={{ verticalAlign: 'middle' }} /> {order.bookerName || '-'}</span>
+                              </div>
+                            </td>
+                            <td style={{ padding: '16px', borderBottom: '1px solid #f1f5f9', textAlign: 'right' }}>
+                              ₩{amount.toLocaleString()}
+                            </td>
+                            <td style={{ padding: '16px', borderBottom: '1px solid #f1f5f9', textAlign: 'right', color: '#f59e0b' }}>
+                              -₩{fee.toLocaleString()}
+                            </td>
+                            <td style={{ padding: '16px', borderBottom: '1px solid #f1f5f9', textAlign: 'right', fontWeight: 700, color: '#10b981' }}>
+                              ₩{netSettlement.toLocaleString()}
+                            </td>
+                            <td style={{ padding: '16px', borderBottom: '1px solid #f1f5f9', textAlign: 'center' }}>
+                              <span className={`badge ${statusConfig.className}`} style={{ 
+                                fontSize: '0.75rem', 
+                                padding: '4px 10px', 
+                                borderRadius: '20px',
+                                fontWeight: 600
+                              }}>
+                                {statusConfig.label}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
                   </table>
                 </div>
               </div>
