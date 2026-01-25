@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import './Products.css';
 import api from '../../api/api';
+import AccommodationMap from './AccommodationMap';
 import axios from 'axios';
 
 
@@ -117,13 +118,18 @@ function Accommodations() {
 
   
 
-useEffect(() => {
+const fetchAccommodationList = () => {
   api.get('/admin/products/accommodations')
     .then(res => {
       console.log("API 응답 데이터:", res.data);
       setAccommodationsData(res.data.dataList || []);
     })
-    .catch(err => console.error(err));
+    .catch(err => console.error("목록 로딩 실패:", err));
+};
+
+// 2. 페이지 처음 열릴 때 실행
+useEffect(() => {
+  fetchAccommodationList();
 }, []);
 
 
@@ -279,6 +285,52 @@ const openDetailModal = async (accommodation) => {
     setSelectedAccommodation(accommodation);
     setIsDeleteModalOpen(true);
   };
+
+  /**
+   * 숙박 판매 승인 핸들러
+   */
+  // 승인 핸들러
+const handleApprove = async (tripProdNo) => {
+  if (!window.confirm("이 숙박 상품을 최종 승인하시겠습니까?\n승인 시 즉시 '판매중' 상태로 전환됩니다.")) return;
+
+  try {
+    const response = await api.patch(`/admin/products/accommodations/approve/${tripProdNo}`);
+    
+    if (response.status === 200) {
+      alert("✅ 상품 승인이 완료되었습니다!");
+      setIsDetailModalOpen(false); // 모달 닫기
+      fetchAccommodationList();    // 목록 새로고침 (리더가 쓰는 목록 함수명으로 맞춰줘!)
+    }
+  } catch (error) {
+    console.error("승인 오류:", error);
+    alert("승인 처리 중 문제가 발생했습니다. 서버 로그를 확인해주세요.");
+  }
+};
+
+// 판매 중지/재개 핸들러
+const handleToggleSale = async (item) => {
+  const isCurrentlySelling = item?.delYn === 'N';
+  const newDelYn = isCurrentlySelling ? 'Y' : 'N';
+  const actionText = isCurrentlySelling ? "판매 중지" : "판매 재개(복구)";
+
+  if (!window.confirm(`이 상품을 ${actionText} 하시겠습니까?`)) return;
+
+  try {
+    const response = await api.patch('/admin/products/accommodations/toggle-sale', {
+      tripProdNo: item.tripProdNo,
+      delYn: newDelYn
+    });
+
+    if (response.status === 200) {
+      alert(`✅ ${actionText} 처리가 완료되었습니다.`);
+      setIsDetailModalOpen(false);
+      fetchAccommodationList(); // 목록 새로고침
+    }
+  } catch (error) {
+    console.error("상태 변경 오류:", error);
+    alert("상태 변경 중 오류가 발생했습니다.");
+  }
+};
 
   // 숙박 저장 (추가/수정)
   const saveAccommodation = () => {
@@ -627,303 +679,702 @@ const openDetailModal = async (accommodation) => {
             <div className="modal-body">
               <div className="detail-grid">
                 {/* 숙소 정보 */}
-                <div className="detail-section">
-                  <h3><i className="bi bi-building"></i> 숙소 정보</h3>
-                  <div className="detail-row">
-                    <span className="label">상품명</span>
-                    <span className="value">{selectedAccommodation.accName}</span>
-                  </div>
-                  <div className="detail-row">
-                    <span className="label">유형</span>
-                    <span className="value">{getTypeLabel(selectedAccommodation.accCatCd)}</span>
-                  </div>
-                  <div className="detail-row">
-                    <span className="label">등급</span>
-                    <span className="value">
-                      {selectedAccommodation.starGrade > 0
-                        ? `${selectedAccommodation.starGrade}성급`
-                        : '무등급'}
-                    </span>
-                  </div>
-                  <div className="detail-row">
-                    <span className="label">지역</span>
-                    <span className="value">{selectedAccommodation.cityNm}</span>
-                  </div>
-                  <div className="detail-row">
-                    <span className="label">위치 정보</span>
-                    <span className="value">{selectedAccommodation.addr1}</span>
-                  </div>
-                  <div className="detail-row">
-                    <span className="label">총 객실 수</span>
-                    <span className="value">{selectedAccommodation.totalRooms}개</span>
+                <div className="detail-section" style={{ background: '#fff', borderRadius: '16px', padding: '24px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+                  <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px', borderBottom: '2px solid #f1f5f9', paddingBottom: '12px' }}>
+                    <i className="bi bi-building-fill" style={{ color: '#4f46e5' }}></i>
+                    <span>숙소 기본 정보</span>
+                  </h3>
+                  
+                  <div className="detail-grid-internal" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    {/* 1. 상품명 (가장 크게 강조) */}
+                    <div className="detail-row" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <span className="label" style={{ fontSize: '0.85rem', color: '#94a3b8', fontWeight: 600 }}>숙박 상품명</span>
+                      <span className="value" style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1e293b' }}>
+                        {selectedAccommodation.accName}
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginTop: '4px' }}>
+                      {/* 2. 숙소 유형 & 등급 */}
+                      <div className="detail-row-group">
+                        <span className="label" style={{ fontSize: '0.85rem', color: '#94a3b8', fontWeight: 600, display: 'block', marginBottom: '6px' }}>카테고리 및 등급</span>
+                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                          <span style={{ background: '#EEF2FF', color: '#4F46E5', padding: '4px 10px', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 700 }}>
+                            {getTypeLabel(selectedAccommodation.accCatCd)}
+                          </span>
+                          <span style={{ background: '#FFF7ED', color: '#EA580C', padding: '4px 10px', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 700 }}>
+                            <i className="bi bi-star-fill me-1"></i>
+                            {selectedAccommodation.starGrade > 0 ? `${selectedAccommodation.starGrade}성급` : '무등급'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* 3. 총 객실 수 */}
+                      <div className="detail-row-group">
+                        <span className="label" style={{ fontSize: '0.85rem', color: '#94a3b8', fontWeight: 600, display: 'block', marginBottom: '6px' }}>운영 규모</span>
+                        <div style={{ fontSize: '1rem', fontWeight: 700, color: '#334155' }}>
+                          <i className="bi bi-door-open me-2" style={{ color: '#64748b' }}></i>
+                          총 {selectedAccommodation.totalRooms}개 객실
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 4. 지역 정보 (리더의 로직 그대로 유지하며 스타일 업그레이드) */}
+                    <div className="detail-row" style={{ borderTop: '1px solid #f1f5f9', paddingTop: '16px' }}>
+                      <span className="label" style={{ fontSize: '0.85rem', color: '#94a3b8', fontWeight: 600, display: 'block', marginBottom: '8px' }}>소재지 정보</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        {(() => {
+                          const areaMap = {
+                            "1": "서울", "2": "인천", "3": "대전", "4": "대구", "5": "광주", "6": "부산", "7": "울산", "8": "세종", 
+                            "31": "경기", "32": "강원", "33": "충북", "34": "충남", "35": "경북", "36": "경남", "37": "전북", "38": "전남", "39": "제주"
+                          };
+                          const code = String(selectedAccommodation.areaCode || selectedAccommodation.AREACODE || "");
+                          const areaName = areaMap[code] || "미지정";
+                          const cityName = selectedAccommodation.cityNm || "";
+
+                          return (
+                            <>
+                              <span style={{ background: '#F1F5F9', color: '#475569', padding: '4px 12px', borderRadius: '20px', fontSize: '0.85rem', fontWeight: 700, border: '1px solid #e2e8f0' }}>
+                                {areaName} {cityName ? `· ${cityName}` : ""}
+                              </span>
+                              <span style={{ fontSize: '0.95rem', color: '#64748b' }}>
+                                {selectedAccommodation.addr1}
+                              </span>
+                            </>
+                          );
+                        })()}
+                      </div>
+                    </div>
                   </div>
                 </div>
 
                 {/* 운영 정보 */}
-                <div className="detail-section">
-                  <h3><i className="bi bi-clock"></i> 운영 정보</h3>
-                  <div className="detail-row">
-                    <span className="label">체크인</span>
-                    <span className="value">{selectedAccommodation.checkInTime}</span>
+                <div className="detail-section" style={{ background: '#fff', borderRadius: '16px', padding: '20px', border: '1px solid #e2e8f0' }}>
+                  <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px', borderBottom: '2px solid #f1f5f9', paddingBottom: '10px' }}>
+                    <i className="bi bi-clock-history" style={{ color: '#4f46e5' }}></i>
+                    <span>운영 및 등록 정보</span>
+                  </h3>
+                  
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div style={{ display: 'flex', gap: '24px' }}>
+                        <div style={{ textAlign: 'center' }}>
+                          <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginBottom: '4px' }}>체크인</div>
+                          <div style={{ fontWeight: 800, color: '#1e293b', fontSize: '1.1rem' }}>{selectedAccommodation.checkInTime}</div>
+                        </div>
+                        <div style={{ width: '1px', height: '30px', background: '#e2e8f0', alignSelf: 'center' }}></div>
+                        <div style={{ textAlign: 'center' }}>
+                          <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginBottom: '4px' }}>체크아웃</div>
+                          <div style={{ fontWeight: 800, color: '#1e293b', fontSize: '1.1rem' }}>{selectedAccommodation.checkOutTime}</div>
+                        </div>
+                      </div>
+                      
+                      {/* 운영 상태 배지 강조 */}
+                      <span style={{
+                        padding: '6px 14px',
+                        borderRadius: '10px',
+                        fontSize: '0.85rem',
+                        fontWeight: 800,
+                        background: selectedAccommodation.approveStatus === '운영중' ? '#dcfce7' : '#f1f5f9',
+                        color: selectedAccommodation.approveStatus === '운영중' ? '#166534' : '#64748b',
+                        border: selectedAccommodation.approveStatus === '운영중' ? '1px solid #bbf7d0' : '1px solid #e2e8f0'
+                      }}>
+                        <i className={`bi ${selectedAccommodation.approveStatus === '운영중' ? 'bi-play-circle-fill' : 'bi-pause-circle'} me-1`}></i>
+                        {selectedAccommodation.approveStatus}
+                      </span>
+                    </div>
+
+                    <div style={{ 
+                      marginTop: '10px', 
+                      padding: '12px', 
+                      background: '#f8fafc', 
+                      borderRadius: '12px', 
+                      display: 'flex', 
+                      justifyContent: 'space-between',
+                      fontSize: '0.85rem' 
+                    }}>
+                      <span style={{ color: '#64748b' }}>최초 등록일</span>
+                      <span style={{ color: '#1e293b', fontWeight: 600 }}>
+                        {selectedAccommodation.regDt || selectedAccommodation.REG_DT || '날짜 정보 없음'}
+                      </span>
+                    </div>
                   </div>
-                  <div className="detail-row">
-                    <span className="label">체크아웃</span>
-                    <span className="value">{selectedAccommodation.checkOutTime}</span>
-                  </div>
-                  <div className="detail-row">
-                    <span className="label">등록일</span>
-                    <span className="value">{selectedAccommodation.regDt}</span>
-                  </div>
-                  <div className="detail-row">
-                    <span className="label">상태</span>
-                    <span className={`status-badge ${selectedAccommodation.approveStatus === '운영중' ? 'active' : 'inactive'}`}>
-                      {selectedAccommodation.approveStatus}
-                    </span>
+                </div>
+
+                {/* 2. 위치 확인 섹션 - 가로 꽉 채우고 지도 소환! */}
+                <div className="detail-section full-width" style={{ marginTop: '24px' }}>
+                  <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+                    <i className="bi bi-geo-alt-fill" style={{ color: '#ef4444' }}></i>
+                    <span>위치 및 지도 확인</span>
+                  </h3>
+                  
+                  <div style={{ 
+                    padding: '20px', 
+                    background: '#fff', 
+                    border: '1px solid #e2e8f0', 
+                    borderRadius: '16px',
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)'
+                  }}>
+                    {/* 주소 안내창 */}
+                    <div style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '12px', 
+                      marginBottom: '20px',
+                      padding: '14px 20px',
+                      background: '#fef2f2',
+                      borderRadius: '12px',
+                      border: '1px solid #fee2e2'
+                    }}>
+                      <i className="bi bi-pin-map-fill" style={{ color: '#ef4444', fontSize: '1.2rem' }}></i>
+                      <span style={{ fontSize: '1rem', color: '#1e293b', fontWeight: 600 }}>
+                        {selectedAccommodation.addr1}
+                      </span>
+                    </div>
+
+                    {/* ★ 지도 소환 ★ */}
+                    <div style={{ 
+                      borderRadius: '12px', 
+                      overflow: 'hidden', 
+                      border: '1px solid #f1f5f9',
+                      height: '300px', 
+                      width: '100%',
+                      position: 'relative',
+                      background: '#f8fafc' // 지도 로딩 전 배경색
+                    }}>
+                      {/* 주의: 상단에 import AccommodationMap from './AccommodationMap'; 
+                        가 되어 있어야 함! 
+                      */}
+                      <AccommodationMap 
+                        lat={Number(selectedAccommodation.mapy)} 
+                        lng={Number(selectedAccommodation.mapx)} 
+                      />
+                    </div>
                   </div>
                 </div>
 
                 {/* 이미지 */}
-                  <div className="detail-section full-width">
-                    <h3><i className="bi bi-images"></i> 상품 이미지</h3>
+                <div className="detail-section full-width" style={{ marginTop: '32px' }}>
+                  <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+                    <i className="bi bi-images" style={{ color: '#2563eb' }}></i>
+                    <span>숙소 갤러리</span>
+                    <span style={{ fontSize: '0.85rem', color: '#94a3b8', fontWeight: 400 }}>
+                      (총 {selectedAccommodation.imageList?.length || 0}장)
+                    </span>
+                  </h3>
 
-                    {selectedAccommodation.imageList && selectedAccommodation.imageList.length > 0 ? (
-                      <div
-                        style={{
-                          display: 'flex',
-                          gap: '12px',
-                          marginTop: '12px',
-                          flexWrap: 'wrap'
-                        }}
-                      >
-                        {selectedAccommodation.imageList.map((image, idx) => (
-                          <div key={image.fileNo || idx} style={{ position: 'relative' }}>
-                            <img
-                              src={image.filePath}
-                              alt={image.fileOriginalName}
-                              style={{
-                                width: '150px',
-                                height: '100px',
-                                objectFit: 'cover',
-                                borderRadius: '8px',
-                                border: image.isMain
-                                  ? '3px solid #2563eb'
-                                  : '1px solid #e5e7eb'
-                              }}
-                            />
-                            {image.isMain && (
-                              <span
-                                style={{
-                                  position: 'absolute',
-                                  top: '4px',
-                                  left: '4px',
-                                  background: '#2563eb',
-                                  color: 'white',
-                                  fontSize: '0.625rem',
-                                  padding: '2px 6px',
-                                  borderRadius: '4px'
-                                }}
-                              >
-                                대표
-                              </span>
-                            )}
-                          </div>
-                        ))}
-                      </div>
+                  {selectedAccommodation.imageList && selectedAccommodation.imageList.length > 0 ? (
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
+                      gap: '16px',
+                      marginTop: '12px'
+                    }}>
+                      {selectedAccommodation.imageList.map((image, idx) => (
+                        <div key={image.fileNo || idx} style={{ 
+                          position: 'relative', 
+                          borderRadius: '12px', 
+                          overflow: 'hidden',
+                          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                          border: image.isMain ? '3px solid #2563eb' : '1px solid #e2e8f0',
+                          aspectRatio: '3/2' // 이미지 비율 통일
+                        }}>
+                          <img
+                            src={image.filePath}
+                            alt={image.fileOriginalName}
+                            style={{
+                              width: '100%',
+                              height: '100%',
+                              objectFit: 'cover',
+                              transition: 'transform 0.3s ease'
+                            }}
+                            onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
+                            onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                          />
+                          {image.isMain && (
+                            <span style={{
+                              position: 'absolute',
+                              top: '8px',
+                              left: '8px',
+                              background: '#2563eb',
+                              color: 'white',
+                              fontSize: '0.7rem',
+                              fontWeight: 700,
+                              padding: '3px 8px',
+                              borderRadius: '6px',
+                              boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                            }}>
+                              대표 이미지
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div style={{
+                      marginTop: '12px',
+                      padding: '40px',
+                      border: '2px dashed #e2e8f0',
+                      borderRadius: '16px',
+                      textAlign: 'center',
+                      color: '#94a3b8',
+                      background: '#f8fafc'
+                    }}>
+                      <i className="bi bi-image-fill" style={{ fontSize: '2rem', display: 'block', marginBottom: '8px' }}></i>
+                      등록된 상품 이미지가 없습니다.
+                    </div>
+                  )}
+                </div>
+
+                {/* 2. 상품 설명 섹션 개선 */}
+                <div className="detail-section full-width" style={{ marginTop: '32px' }}>
+                  <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+                    <i className="bi bi-card-text" style={{ color: '#4f46e5' }}></i>
+                    <span>상품 상세 설명</span>
+                  </h3>
+                  
+                  <div style={{
+                    background: '#f8fafc',
+                    padding: '24px',
+                    borderRadius: '16px',
+                    border: '1px solid #e2e8f0',
+                    minHeight: '100px'
+                  }}>
+                    {selectedAccommodation.tripProdContent ? (
+                      <p style={{
+                        margin: 0,
+                        color: '#334155',
+                        lineHeight: 1.8,
+                        fontSize: '1rem',
+                        whiteSpace: 'pre-wrap', // 줄바꿈 보존
+                        wordBreak: 'break-all'
+                      }}>
+                        {selectedAccommodation.tripProdContent}
+                      </p>
                     ) : (
-                      // 👇 이미지 없을 때도 영역은 유지
-                      <div
-                        style={{
-                          marginTop: '12px',
-                          padding: '24px',
-                          border: '1px dashed #d1d5db',
-                          borderRadius: '8px',
-                          textAlign: 'center',
-                          color: '#6b7280',
-                          fontSize: '0.875rem'
-                        }}
-                      >
-                        등록된 상품 이미지가 없습니다.
+                      <div style={{ textAlign: 'center', color: '#94a3b8', padding: '20px 0' }}>
+                        <i className="bi bi-chat-dots me-2"></i>
+                        등록된 상품 설명이 없습니다.
                       </div>
                     )}
                   </div>
-
-                {/* 상품 설명 */}
-                <div className="detail-section full-width">
-                <h3><i className="bi bi-card-text"></i> 상품 설명</h3>
-                {selectedAccommodation.tripProdContent ? (
-                  <p
-                    style={{
-                      margin: '8px 0 0 0',
-                      color: '#374151',
-                      lineHeight: 1.6
-                    }}
-                  >
-                    {selectedAccommodation.tripProdContent}
-                  </p>
-                ) : (
-                  <p
-                    style={{
-                      margin: '8px 0 0 0',
-                      padding: '24px',
-                      textAlign: 'center',
-                      border: '1px dashed #d1d5db',
-                      borderRadius: '8px',
-                      color: '#6b7280',
-                      fontSize: '0.875rem'
-                    }}
-                  >
-                    등록된 상품 설명이 없습니다.
-                  </p>
-                )}
-              </div>
+                </div>
 
                 {/* 객실 정보 */}
                 {selectedAccommodation.roomTypeList && selectedAccommodation.roomTypeList.length > 0 ? (
-                  <div className="detail-section full-width">
-                    <h3><i className="bi bi-door-closed"></i> 객실 정보</h3>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '12px' }}>
+                  <div className="detail-section full-width" style={{ marginTop: '32px' }}>
+                    <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
+                      <i className="bi bi-door-closed" style={{ color: '#2563eb' }}></i>
+                      <span>판매 객실 유형</span>
+                      <span style={{ fontSize: '0.85rem', color: '#94a3b8', fontWeight: 400 }}>
+                        (총 {selectedAccommodation.roomTypeList.length}개 유형)
+                      </span>
+                    </h3>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                       {selectedAccommodation.roomTypeList.map((room, idx) => (
-                        <div key={room.roomTypeNo || idx} style={{ padding: '16px', background: '#f9fafb', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                            <strong>{room.roomName}</strong>
-                            <span style={{ color: '#2563eb', fontWeight: 600 }}>
+                        <div key={room.roomTypeNo || idx} style={{ 
+                          padding: '20px', 
+                          background: '#fff', 
+                          borderRadius: '16px', 
+                          border: '1px solid #e2e8f0',
+                          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
+                          transition: 'transform 0.2s'
+                        }}>
+                          {/* 상단: 객실 이름 및 가격 */}
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                            <div>
+                              <h4 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700, color: '#1e293b' }}>
+                                {room.roomName}
+                              </h4>
+                              <div style={{ marginTop: '4px', display: 'flex', gap: '8px' }}>
+                                {room.breakfastYn === 'included' && (
+                                  <span style={{ fontSize: '0.75rem', background: '#dcfce7', color: '#166534', padding: '2px 8px', borderRadius: '6px', fontWeight: 700 }}>
+                                    🍳 조식포함
+                                  </span>
+                                )}
+                                <span style={{ fontSize: '0.75rem', background: '#f1f5f9', color: '#475569', padding: '2px 8px', borderRadius: '6px', fontWeight: 700 }}>
+                                  🛌 잔여 {selectedAccommodation.totalRooms}실
+                                </span>
+                              </div>
+                            </div>
+                            
+                            <div style={{ textAlign: 'right' }}>
                               {room.discount > 0 && (
-                                <span style={{ textDecoration: 'line-through', color: '#9ca3af', marginRight: '8px', fontSize: '0.875rem' }}>
+                                <div style={{ textDecoration: 'line-through', color: '#94a3b8', fontSize: '0.9rem', marginBottom: '2px' }}>
                                   {formatPrice(room.price)}
+                                </div>
+                              )}
+                              <div style={{ color: '#2563eb', fontSize: '1.3rem', fontWeight: 800 }}>
+                                {formatPrice(room.price * (1 - (room.discount || 0) / 100))}
+                                <span style={{ fontSize: '0.9rem', fontWeight: 500, color: '#64748b', marginLeft: '2px' }}> / 박</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <hr style={{ border: 0, borderTop: '1px solid #f1f5f9', margin: '16px 0' }} />
+
+                          {/* 하단: 객실 상세 스펙 */}
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div style={{ display: 'flex', gap: '20px', fontSize: '0.9rem', color: '#64748b' }}>
+                              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <i className="bi bi-people" style={{ color: '#94a3b8' }}></i>
+                                기준 {room.baseGuestCount}인 / 최대 {room.maxGuestCount}인
+                              </span>
+                              {room.size > 0 && (
+                                <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                  <i className="bi bi-aspect-ratio" style={{ color: '#94a3b8' }}></i>
+                                  {room.size}㎡
                                 </span>
                               )}
-                              {formatPrice(room.price * (1 - (room.discount || 0) / 100))}
-                            </span>
-                          </div>
-                          <div style={{ display: 'flex', gap: '16px', fontSize: '0.875rem', color: '#6b7280', flexWrap: 'wrap' }}>
-                            <span>기준 {room.baseGuestCount}인 / 최대 {room.maxGuestCount}인</span>
-                            {room.size > 0 && <span>{room.size}㎡</span>}
-                            <span>잔여 {selectedAccommodation.totalRooms}실</span>
-                            {room.breakfastYn === 'included' && <span style={{ color: '#059669' }}>조식 포함</span>}
-                          </div>
-                          {room.bedTypesCd?.length > 0 && (
-                            <div style={{ marginTop: '8px' }}>
-                              {room.bedTypesCd.map((bed, i) => (
-                                <span key={i} className="amenity-tag" style={{ marginRight: '4px' }}>{bed}</span>
-                              ))}
                             </div>
-                          )}
+                            
+                            {room.bedTypesCd?.length > 0 && (
+                              <div style={{ display: 'flex', gap: '6px' }}>
+                                {room.bedTypesCd.map((bed, i) => (
+                                  <span key={i} style={{ 
+                                    fontSize: '0.75rem', 
+                                    padding: '4px 10px', 
+                                    background: '#eef2ff', 
+                                    color: '#4f46e5', 
+                                    borderRadius: '8px',
+                                    fontWeight: 600
+                                  }}>
+                                    {bed}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
                         </div>
                       ))}
                     </div>
                   </div>
                 ) : (
-                  <div className="detail-section full-width">
-                    <h3><i className="bi bi-door-closed"></i> 객실 정보</h3>
-                    <p style={{
-                      margin: '8px 0 0 0',
-                      padding: '24px', 
-                      textAlign: 'center',
-                      border: '1px dashed #d1d5db',
-                      borderRadius: '8px',
-                      color: '#6b7280',
-                      fontSize: '0.875rem'
-                    }}>등록된 객실 정보가 없습니다.</p>
+                  <div className="detail-section full-width" style={{ textAlign: 'center', padding: '40px', background: '#f8fafc', borderRadius: '16px', border: '2px dashed #e2e8f0', marginTop: '32px' }}>
+                    <i className="bi bi-door-closed" style={{ fontSize: '2.5rem', color: '#cbd5e1' }}></i>
+                    <p style={{ marginTop: '12px', color: '#64748b', fontSize: '1rem' }}>등록된 객실 정보가 없습니다.</p>
                   </div>
                 )}
                 
+                {/* 숙소 편의시설 섹션 UI 개선 */}
+                <div className="detail-section" style={{ marginTop: '24px' }}>
+                  <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+                    <i className="bi bi-stars" style={{ color: '#059669' }}></i> {/* 아이콘 색상 포인트 */}
+                    <span>숙소 공용 편의시설</span>
+                  </h3>
+                  
+                  <div className="amenities-container" style={{
+                    background: '#f0fdf4', // 숙소 시설은 약간 초록빛 베이스로 신선하게!
+                    padding: '20px',
+                    borderRadius: '16px',
+                    border: '1px solid #dcfce7'
+                  }}>
+                    <div className="amenities-list" style={{ 
+                      display: 'flex', 
+                      flexWrap: 'wrap', 
+                      gap: '10px' 
+                    }}>
+                      {selectedAccommodation.accFacility ? (
+                        (() => {
+                          const renderedFacilities = Object.entries(selectedAccommodation.accFacility)
+                            .map(([key, value]) => {
+                              if (value !== 'Y') return null;
+                              
+                              const amenityKey = key.replace('Yn', '').toLowerCase();
+                              const amenity = facilityAmenities.find(f => f.value === amenityKey);
 
-                {/* 편의시설 */}
-                <div className="detail-section">
-                  <h3><i className="bi bi-stars"></i> 숙소 편의시설</h3>
-                  <div className="amenities-list" style={{ marginTop: '8px' }}>
-                    {selectedAccommodation.accFacility ? (
-                      // 1. 객체의 [키, 값] 쌍을 배열로 뽑아냅니다 (예: [['wifiYn', 'Y'], ['poolYn', 'N']])
-                      Object.entries(selectedAccommodation.accFacility)
-                        .map(([key, value]) => {
-                          // 2. 값이 'Y'인 항목만 아이콘으로 표시합니다.
-                          if (value !== 'Y') return null;
+                              return amenity ? (
+                                <span key={key} className="amenity-item" style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '6px',
+                                  padding: '8px 14px',
+                                  background: '#fff',
+                                  border: '1px solid #bbf7d0',
+                                  borderRadius: '10px',
+                                  fontSize: '0.9rem',
+                                  fontWeight: 600,
+                                  color: '#166534',
+                                  boxShadow: '0 2px 4px rgba(0,0,0,0.03)'
+                                }}>
+                                  <i className={`bi ${amenity.icon}`} style={{ color: '#059669', fontSize: '1.1rem' }}></i>
+                                  {amenity.label}
+                                </span>
+                              ) : null;
+                            }).filter(Boolean);
 
-                          // 3. DB 컬럼명(wifiYn)을 facilityAmenities의 value(wifi)와 매칭 시킵니다.
-                          // 예: 'wifiYn' -> 'wifi', 'parkingYn' -> 'parking'
-                          const amenityKey = key.replace('Yn', '').toLowerCase();
-                          const amenity = facilityAmenities.find(f => f.value === amenityKey);
-
-                          return amenity ? (
-                            <span key={key} className="amenity-tag">
-                              <i className={`bi ${amenity.icon} me-1`}></i>
-                              {amenity.label}
-                            </span>
-                          ) : null;
-                        })
-                    ) : (
-                      <p style={{
-                                      margin: '8px 0 0 0',
-                                      padding: '24px', 
-                                      textAlign: 'center',
-                                      border: '1px dashed #d1d5db',
-                                      borderRadius: '8px',
-                                      color: '#6b7280',
-                                      fontSize: '0.875rem'
-                                    }}>등록된 편의 시설이 없습니다.</p>
-                    )}
-                  </div>
-                </div>
-
-                {/* 객실 내 시설 */}
-                  <div className="detail-section">
-                    <h3><i className="bi bi-house-door"></i> 객실 내 시설</h3>
-                    <div className="amenities-list" style={{ marginTop: '8px' }}>
-                      {/* 데이터 위치 변경: selectedAccommodation.roomFacilityList가 아니라 
-                          roomTypeList의 0번째 방 안에 있는 facility를 참조해야 함 */}
-                      {selectedAccommodation.roomTypeList?.[0]?.facility ? (
-                        Object.entries(selectedAccommodation.roomTypeList[0].facility).map(([key, value]) => {
-                          if (value !== 'Y') return null;
-
-                          // 'airconYn' -> 'aircon'
-                          const amenityKey = key.replace('Yn', '').toLowerCase();
-                          
-                          // 상단에 선언된 roomAmenities 배열에서 찾기
-                          const amenity = roomAmenities.find(f => f.value === amenityKey);
-
-                          return amenity ? (
-                            <span key={key} className="amenity-tag">
-                              <i className={`bi ${amenity.icon} me-1`}></i>
-                              {amenity.label}
-                            </span>
-                          ) : null;
-                        }).filter(Boolean) // null 값 제외
+                          return renderedFacilities.length > 0 ? renderedFacilities : (
+                            <div style={{ width: '100%', textAlign: 'center', color: '#86efac', padding: '10px 0' }}>
+                              <i className="bi bi-info-circle me-2"></i>활성화된 공용 시설이 없습니다.
+                            </div>
+                          );
+                        })()
                       ) : (
-                        <p style={{
-                          margin: '8px 0 0 0',
-                          padding: '24px', 
+                        <div style={{
+                          width: '100%',
+                          padding: '32px',
                           textAlign: 'center',
-                          border: '1px dashed #d1d5db',
-                          borderRadius: '8px',
-                          color: '#6b7280',
-                          fontSize: '0.875rem',
-                          width: '100%' // 가득 차게 설정
-                        }}>등록된 시설이 없습니다.</p>
+                          border: '2px dashed #dcfce7',
+                          borderRadius: '12px',
+                          color: '#64748b',
+                          background: '#fff'
+                        }}>
+                          <i className="bi bi-patch-question d-block mb-2" style={{ fontSize: '1.5rem', color: '#86efac' }}></i>
+                          <span style={{ fontSize: '0.9rem' }}>등록된 편의 시설 정보가 없습니다.</span>
+                        </div>
                       )}
                     </div>
                   </div>
+                </div>
 
-                {/* 추가 옵션 */}
-                {selectedAccommodation.accOptionList?.length > 0 && (
-                  <div className="detail-section full-width">
-                    <h3><i className="bi bi-plus-circle"></i> 추가 옵션</h3>
-                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '8px' }}>
-                      {selectedAccommodation.accOptionList?.map((addon, idx) => (
-                        <span key={idx} className="amenity-tag">
-                          {addon.name} ({addon.person}인) - {formatPrice(addon.price)}
-                        </span>
-                      ))}
+                {/* 객실 내 시설 섹션 UI 개선 */}
+                  <div className="detail-section" style={{ marginTop: '24px' }}>
+                    <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+                      <i className="bi bi-house-door" style={{ color: '#4f46e5' }}></i>
+                      <span>객실 내 주요 시설</span>
+                    </h3>
+                    
+                    <div className="amenities-container" style={{
+                      background: '#f8fafc',
+                      padding: '20px',
+                      borderRadius: '16px',
+                      border: '1px solid #e2e8f0'
+                    }}>
+                      <div className="amenities-list" style={{ 
+                        display: 'flex', 
+                        flexWrap: 'wrap', 
+                        gap: '10px' 
+                      }}>
+                        {selectedAccommodation.roomTypeList?.[0]?.facility ? (
+                          (() => {
+                            const renderedAmenities = Object.entries(selectedAccommodation.roomTypeList[0].facility)
+                              .map(([key, value]) => {
+                                if (value !== 'Y') return null;
+                                const amenityKey = key.replace('Yn', '').toLowerCase();
+                                const amenity = roomAmenities.find(f => f.value === amenityKey);
+
+                                return amenity ? (
+                                  <span key={key} className="amenity-item" style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '6px',
+                                    padding: '8px 14px',
+                                    background: '#fff',
+                                    border: '1px solid #cbd5e1',
+                                    borderRadius: '10px',
+                                    fontSize: '0.9rem',
+                                    fontWeight: 600,
+                                    color: '#334155',
+                                    boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+                                  }}>
+                                    <i className={`bi ${amenity.icon}`} style={{ color: '#4f46e5', fontSize: '1.1rem' }}></i>
+                                    {amenity.label}
+                                  </span>
+                                ) : null;
+                              }).filter(Boolean);
+
+                            return renderedAmenities.length > 0 ? renderedAmenities : (
+                              <div style={{ width: '100%', textAlign: 'center', color: '#94a3b8', padding: '10px 0' }}>
+                                <i className="bi bi-exclamation-circle me-2"></i>활성화된 시설 정보가 없습니다.
+                              </div>
+                            );
+                          })()
+                        ) : (
+                          <div style={{
+                            width: '100%',
+                            padding: '32px',
+                            textAlign: 'center',
+                            border: '2px dashed #e2e8f0',
+                            borderRadius: '12px',
+                            color: '#64748b',
+                            background: '#fff'
+                          }}>
+                            <i className="bi bi-slash-circle d-block mb-2" style={{ fontSize: '1.5rem' }}></i>
+                            <span style={{ fontSize: '0.9rem' }}>등록된 객실 시설 정보가 없습니다.</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
-                )}
-              </div>
-            </div>
-            <div className="modal-footer">
-              <button className="btn btn-secondary" onClick={() => setIsDetailModalOpen(false)}>닫기</button>
-              <button className="btn btn-primary" onClick={() => { setIsDetailModalOpen(false); openEditModal(selectedAccommodation); }}>수정</button>
-            </div>
-          </div>
-        </div>
+               {/* 추가 옵션 */}
+                  {selectedAccommodation.accOptionList?.length > 0 && (
+                    <div className="detail-section full-width" style={{ marginTop: '24px' }}>
+                      <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+                        <i className="bi bi-plus-circle" style={{ color: '#4f46e5' }}></i> 
+                        <span>추가 옵션 정보</span>
+                        <span style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: 400 }}>
+                          (총 {selectedAccommodation.accOptionList.length}개)
+                        </span>
+                      </h3>
+                      
+                      <div style={{ 
+                        display: 'grid', 
+                        gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', 
+                        gap: '12px' 
+                      }}>
+                        {selectedAccommodation.accOptionList.map((addon, idx) => (
+                          <div key={idx} style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            padding: '12px 16px',
+                            background: '#f8fafc',
+                            border: '1px solid #e2e8f0',
+                            borderRadius: '12px',
+                            transition: 'all 0.2s'
+                          }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                              <span style={{ fontWeight: 700, color: '#1e293b', fontSize: '0.95rem' }}>
+                                {addon.name}
+                              </span>
+                              <span style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                                <i className="bi bi-person me-1"></i> 기준 {addon.person}인
+                              </span>
+                            </div>
+                            <div style={{ 
+                              fontWeight: 800, 
+                              color: '#4f46e5', 
+                              fontSize: '1rem',
+                              background: '#eef2ff',
+                              padding: '4px 10px',
+                              borderRadius: '8px'
+                            }}>
+                              {formatPrice(addon.price)}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  </div>
+                  </div>
+                  {/* 3. 통합 푸터 */}
+                    <div className="modal-footer" style={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  alignItems: 'center', 
+                  padding: '28px 36px',
+                  background: '#f1f5f9', 
+                  borderTop: '1px solid #e2e8f0',
+                  borderBottomLeftRadius: '24px',
+                  borderBottomRightRadius: '24px',
+                  marginTop: '24px' // 옵션 섹션과의 간격
+                }}>
+                  {/* 왼쪽: 관리자 승인 및 판매 상태 제어 */}
+                  <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
+                    
+                {/* 1. 승인 상태 배지 (approveStatus 기준) */}
+                  <span style={{
+                    padding: '6px 12px',
+                    borderRadius: '8px',
+                    fontSize: '0.85rem',
+                    fontWeight: 700,
+                    // '판매중'이면 초록색, 그 외(대기/반려 등)는 노란색
+                    background: selectedAccommodation?.approveStatus === '판매중' ? '#dcfce7' : '#fef3c7',
+                    color: selectedAccommodation?.approveStatus === '판매중' ? '#166534' : '#92400e',
+                    border: `1px solid ${selectedAccommodation?.approveStatus === '판매중' ? '#bbf7d0' : '#fde68a'}`
+                  }}>
+                    {(() => {
+                      const status = selectedAccommodation?.approveStatus;
+
+                      if (status === '판매중') {
+                        return '✅ 승인 완료된 상품';
+                      } else if (status === '승인대기' || !status) {
+                        return '🕒 승인 대기중';
+                      } else if (status === '반려') {
+                        return '❌ 반려된 상품';
+                      } else {
+                        // 혹시 다른 상태값이 있을 경우를 대비
+                        return `🕒 ${status}`;
+                      }
+                    })()}
+                  </span>
+
+                    {/* 2. 승인 버튼 (approveStatus가 '판매중'이 아닐 때만 노출) */}
+                    {selectedAccommodation?.approveStatus !== '판매중' && (
+                      <button 
+                        className="btn" 
+                        onClick={() => handleApprove(selectedAccommodation?.tripProdNo)}
+                        style={{ 
+                          background: '#10b981', 
+                          color: '#fff', 
+                          border: 'none', 
+                          padding: '12px 24px', 
+                          borderRadius: '12px', 
+                          fontWeight: 800,
+                          cursor: 'pointer', 
+                          boxShadow: '0 4px 6px rgba(16, 185, 129, 0.2)',
+                          transition: 'all 0.2s'
+                        }}
+                        // 마우스 올리면 더 진해지는 효과 살짝 추가!
+                        onMouseOver={(e) => e.currentTarget.style.background = '#059669'}
+                        onMouseOut={(e) => e.currentTarget.style.background = '#10b981'}
+                      >
+                        <i className="bi bi-check-all" style={{ marginRight: '6px' }}></i> 상품 승인하기
+                      </button>
+                    )}
+
+                    {/* 3. 판매 제어 버튼 (delYn 및 판매 상태 기준) */}
+                      <button 
+                        className="btn"
+                        onClick={() => handleToggleSale(selectedAccommodation)}
+                        style={{ 
+                          border: '2px solid',
+                          // 삭제된 상태('Y')면 파란색(복구), 운영 중이면 빨간색(중지)
+                          borderColor: selectedAccommodation?.delYn === 'Y' ? '#3b82f6' : '#ef4444', 
+                          color: selectedAccommodation?.delYn === 'Y' ? '#3b82f6' : '#ef4444', 
+                          background: 'transparent',
+                          padding: '10px 20px', 
+                          borderRadius: '12px', 
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          transition: 'all 0.2s'
+                        }}
+                        // 호버 시 살짝 색깔 채워주는 효과 (선택사항!)
+                        onMouseOver={(e) => {
+                          e.currentTarget.style.background = selectedAccommodation?.delYn === 'Y' ? '#eff6ff' : '#fef2f2';
+                        }}
+                        onMouseOut={(e) => {
+                          e.currentTarget.style.background = 'transparent';
+                        }}
+                      >
+                        {(() => {
+                          if (selectedAccommodation?.delYn === 'Y') {
+                            return <><i className="bi bi-arrow-counterclockwise me-1"></i> 삭제 데이터 복구</>;
+                          } else {
+                            // 삭제 안 된 상태라면? 판매 중인지 아닌지에 따라 문구 조절 가능!
+                            return <><i className="bi bi-stop-circle me-1"></i> 판매 중지(삭제)</>;
+                          }
+                        })()}
+                      </button>
+                  </div>
+
+                  {/* 오른쪽: 일반 조작 (닫기, 수정) */}
+                  <div style={{ display: 'flex', gap: '14px' }}>
+                    <button 
+                      className="btn btn-secondary" 
+                      onClick={() => setIsDetailModalOpen(false)}
+                      style={{ padding: '12px 24px', borderRadius: '12px', fontWeight: 600 }}
+                    >
+                      닫기
+                    </button>
+                    <button 
+                      className="btn btn-primary" 
+                      onClick={() => { setIsDetailModalOpen(false); openEditModal(selectedAccommodation); }}
+                      style={{ 
+                        background: '#4f46e5', color: '#fff', border: 'none',
+                        padding: '12px 28px', borderRadius: '12px', fontWeight: 700,
+                        boxShadow: '0 4px 12px rgba(79, 70, 229, 0.3)'
+                      }}
+                    >
+                      <i className="bi bi-pencil-square" style={{ marginRight: '6px' }}></i> 정보 수정
+                    </button>
+                  </div>
+                </div>
+
+                  </div>
+                  </div>
       )}
 
 
