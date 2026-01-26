@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { RiCloseLine } from 'react-icons/ri';
 
-function Modal({ isOpen, onClose, title, children, size = 'medium', footer }) {
+function Modal({ isOpen, onClose, title, children, size = 'medium', footer, className = '' }) {
   // ESC 키로 모달 닫기
   useEffect(() => {
     const handleEsc = (e) => {
@@ -27,7 +27,7 @@ function Modal({ isOpen, onClose, title, children, size = 'medium', footer }) {
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className={`modal-container ${sizeClass}`} onClick={(e) => e.stopPropagation()}>
+      <div className={`modal-container ${sizeClass} ${className}`} onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h2 className="modal-title">{title}</h2>
           <button className="modal-close" onClick={onClose}>
@@ -68,7 +68,15 @@ function ConfirmModal({ isOpen, onClose, onConfirm, title, message, confirmText 
         </>
       }
     >
-      <p style={{ textAlign: 'center', padding: '1rem 0' }}>{message}</p>
+      <p style={{ 
+        textAlign: 'center', 
+        padding: '1rem 0', 
+        whiteSpace: 'pre-wrap', // 이 녀석이 \n을 줄바꿈으로 바꿔줘!
+        lineHeight: '1.6',      // 줄 간격도 좀 주면 훨씬 보기 좋아
+        wordBreak: 'break-all'  // 혹시 모를 텍스트 넘침 방지
+      }}>
+        {message}
+      </p>
     </Modal>
   );
 }
