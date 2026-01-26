@@ -239,13 +239,13 @@ function Notifications() {
   // 필터링
   const filteredData = notificationsData.filter(notification => {
     const matchesSearch = notification.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         notification.message.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         notification.targetName.toLowerCase().includes(searchTerm.toLowerCase());
+      notification.message.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      notification.targetName.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = categoryFilter === 'all' || notification.type === categoryFilter;
     const matchesTarget = targetFilter === 'all' || notification.targetType === targetFilter;
     const matchesRead = readFilter === 'all' ||
-                       (readFilter === 'unread' && !notification.isRead) ||
-                       (readFilter === 'read' && notification.isRead);
+      (readFilter === 'unread' && !notification.isRead) ||
+      (readFilter === 'read' && notification.isRead);
     return matchesSearch && matchesCategory && matchesTarget && matchesRead;
   });
 

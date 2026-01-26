@@ -76,7 +76,7 @@ function ProtectedRoute({ children }) {
 // Public Route Component (redirect if already logged in)
 function PublicRoute({ children }) {
   const { isAuthenticated } = useAuth();
-  
+
   if (isAuthenticated) {
     return <Navigate to="/" replace />;
   }
@@ -166,6 +166,7 @@ function AppRoutes() {
 
       {/* Fallback - redirect to dashboard */}
       <Route path="*" element={<Navigate to="/" replace />} />
+
     </Routes>
   );
 }
