@@ -1559,3 +1559,13 @@
   transform: translateY(-2px);
   box-shadow: 0 6px 12px rgba(0,0,0,0.15);
 }
+
+/* 신규 요청 행 하이라이트 애니메이션 (선택사항!) */
+@keyframes pulse-blue {
+    0% { background-color: #f0f7ff; }
+    50% { background-color: #e0efff; }
+    100% { background-color: #f0f7ff; }
+}
+.row-new-request {
+    animation: pulse-blue 2s infinite;
+}
