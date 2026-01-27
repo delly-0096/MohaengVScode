@@ -362,11 +362,11 @@ function Reports() {
                     </span>
                   </td>
                   <td>
-                    <div>{report.reqMemName || report.reqMemNo}</div>
+                    <div>{report.reqMemName || report.reqMemId}</div>
                   </td>
                   <td>
                     <div className="text-danger font-medium">
-                      {report.targetMemName || report.targetMemNo}
+                      {report.targetMemName || report.targetMemId}
                     </div>
                   </td>
                   <td>{report.reqDt ? report.reqDt.split('T')[0] : '-'}</td>
