@@ -1,9 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import * as XLSX from 'xlsx';
 import './Products.css';
 import api from '../../api/api';
 import AccommodationMap from './AccommodationMap';
-import axios from 'axios';
-
 
 // 숙소 유형 목록
 const accommodationTypes = [
@@ -116,8 +115,6 @@ function Accommodations() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [loadingDetail, setLoadingDetail] = useState(false);
 
-  
-
 const fetchAccommodationList = () => {
   api.get('/admin/products/accommodations')
     .then(res => {
@@ -134,22 +131,14 @@ useEffect(() => {
 
 
   // 통계 계산
-  const stats = {
-  total: accommodationsData.length,
+const stats = useMemo(() => {
+  const total = accommodationsData.length;
+  const operating = accommodationsData.filter(a => a.approveStatus === '판매중').length;
+  const stopped = accommodationsData.filter(a => a.approveStatus === '판매중지').length;
+  const totalRooms = accommodationsData.reduce((sum, a) => sum + (a.totalRoomCnt || 0), 0);
 
-  operating: accommodationsData.filter(
-    a => a.approveStatus === '판매중'
-  ).length,
-
-  stopped: accommodationsData.filter(
-    a => a.approveStatus === '판매중단'
-  ).length,
-
-  totalRooms: accommodationsData.reduce(
-    (sum, a) => sum + Number(a.totalRooms || 0),
-    0
-  )
-};
+  return { total, operating, stopped, totalRooms };
+}, [accommodationsData]); // 리스트가 바뀔 때마다 숫자도 촥촥 바뀜!
 
   // 필터링된 데이터
  const filteredData = accommodationsData.filter(accommodation => {
@@ -249,10 +238,60 @@ const openDetailModal = async (accommodation) => {
   }
 };
 
+/* =======================
+   1. 숙소 정보 수정 (Update)
+======================= */
+const handleUpdateAccommodation = async (updatedData) => {
+    if (!window.confirm("수정된 내용을 저장하시겠습니까?")) return;
+
+    try {
+        // 서버의 @PutMapping("/update") 호출
+        const response = await api.put('/admin/products/accommodations/update', updatedData);
+        
+        if (response.status === 200) {
+            alert("✅ 수정이 완료되었습니다!");
+            setIsDetailModalOpen(false); // 모달 닫기
+            fetchAccommodationList();    // 목록 새로고침 (이게 제일 중요!)
+        }
+    } catch (error) {
+        console.error("수정 중 에러 발생:", error);
+        alert("❌ 수정 실패: 서버 에러가 발생했습니다.");
+    }
+};
+
   // 수정 모달 열기
-  const openEditModal = (accommodation) => {
-    setSelectedAccommodation(JSON.parse(JSON.stringify(accommodation)));
-    setIsEditModalOpen(true);
+  const openEditModal = async (accommodation) => {
+    try {
+        // 1. 서버에 상세 정보 요청 (상세 조회 API 활용)
+        const tripProdNo = accommodation.tripProdNo;
+        const res = await api.get(`/admin/products/accommodations/${tripProdNo}`);
+        
+        console.log("🔍 수정용 상세 데이터 로드:", res.data);
+        
+        // 2. 받아온 데이터를 깊은 복사
+        const editData = JSON.parse(JSON.stringify(res.data));
+
+        if (editData.accCatCd) {
+          editData.type = editData.accCatCd; 
+        }
+        if (editData.areaCode) {
+          editData.region = editData.areaCode;
+        } 
+
+        // 3. [방어막] 데이터가 null로 올 경우를 대비해 빈 객체/배열 세팅
+        editData.accFacility = editData.accFacility || {};
+        editData.roomTypeList = editData.roomTypeList || [];
+        editData.accOptionList = editData.accOptionList || [];
+
+        // 4. 상태 업데이트 및 모달 오픈
+        setSelectedAccommodation(editData);
+        setIsEditModalOpen(true);
+        
+    } catch (error) {
+        console.error("수정 데이터 로드 실패:", error);
+        alert("기존 데이터를 불러오지 못했습니다.");
+    }
+
   };
 
   // 추가 모달 열기
@@ -280,12 +319,35 @@ const openDetailModal = async (accommodation) => {
     setIsAddModalOpen(true);
   };
 
-  // 삭제 모달 열기
-  const openDeleteModal = (accommodation) => {
-    setSelectedAccommodation(accommodation);
-    setIsDeleteModalOpen(true);
-  };
+  // 엑셀 다운로드
+  const downloadExcel = () => {
+  // 1. 엑셀에 들어갈 데이터 정제 (한글 헤더로 예쁘게!)
+  const excelData = accommodationsData.map((acc, index) => ({
+    "번호": index + 1,
+    "숙소명": acc.accName,
+    "유형": acc.accCatCd === 'B02010500' ? '리조트' : '기타', // 아까 만든 getTypeLabel 써도 됨!
+    "지역": acc.addr1.split(' ')[0], // '제주특별자치도' 등 첫 단어만
+    "판매상태": acc.approveStatus,
+    "최저가": acc.minPrice ? `${acc.minPrice.toLocaleString()}원` : '정보없음',
+    "총객실": acc.totalRoomCnt || 0,
+    "등록일": acc.saleStartDt?.split(' ')[0] || '-'
+  }));
 
+  // 2. 워크시트 생성
+  const worksheet = XLSX.utils.json_to_sheet(excelData);
+  
+  // 3. 워크북(파일) 생성 및 시트 추가
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "숙박상품리스트");
+
+  // 4. 파일 다운로드 실행
+  const fileName = `모행_숙박상품관리_${new Date().toISOString().split('T')[0]}.xlsx`;
+  XLSX.writeFile(workbook, fileName);
+  
+  console.log("📊 엑셀 뽑기 완료! 부장님께 고고!");
+};
+
+ 
   /**
    * 숙박 판매 승인 핸들러
    */
@@ -333,20 +395,24 @@ const handleToggleSale = async (item) => {
 };
 
   // 숙박 저장 (추가/수정)
-  const saveAccommodation = () => {
-    if (selectedAccommodation.id) {
-      setAccommodationsData(prev => prev.map(a =>
-        a.id === selectedAccommodation.id
-          ? { ...selectedAccommodation, lastModified: new Date().toISOString().split('T')[0] }
-          : a
-      ));
-    } else {
-      const newId = Math.max(...accommodationsData.map(a => a.id)) + 1;
-      setAccommodationsData(prev => [...prev, { ...selectedAccommodation, id: newId }]);
+  const saveAccommodation = async () => {
+  if (isEditModalOpen) {
+    // 1. 수정 모드
+    if (!window.confirm("수정된 내용을 저장하시겠습니까?")) return;
+    try {
+      const response = await api.put('/admin/products/accommodations/update', selectedAccommodation);
+      if (response.status === 200) {
+        alert("✅ 수정 완료!");
+        setIsEditModalOpen(false);
+        fetchAccommodationList();
+      }
+    } catch (err) {
+      alert("❌ 수정 실패!");
     }
-    setIsEditModalOpen(false);
-    setIsAddModalOpen(false);
-  };
+  } else if (isAddModalOpen) {
+    console.log("등록 로직은 없다네요");
+  }
+};
 
   // 숙박 삭제
   const deleteAccommodation = () => {
@@ -355,22 +421,44 @@ const handleToggleSale = async (item) => {
   };
 
   // 상태 변경
-  const toggleStatus = (accommodation) => {
-    const newStatus = accommodation.status === '운영중' ? '운영중단' : '운영중';
-    setAccommodationsData(prev => prev.map(a =>
-      a.id === accommodation.id
-        ? { ...a, status: newStatus, lastModified: new Date().toISOString().split('T')[0] }
-        : a
-    ));
-  };
+const toggleStatus = async (accommodation) => {
+  // 현재 판매중이면 -> 차기 상태는 'N' (중지)
+  // 현재 판매중단이면 -> 차기 상태는 'Y' (판매)
+  const nextAprvYn = accommodation.approveStatus === '판매중' ? 'N' : 'Y';
 
+  try {
+    // 서버 파라미터명은 컨트롤러에 맞춰서 delYn으로 보내되, 값은 nextAprvYn을 담아!
+    const res = await api.patch('/admin/products/accommodations/toggle-sale', {
+      tripProdNo: accommodation.tripProdNo,
+      delYn: nextAprvYn // 서버가 받는 변수명이 delYn이라 일단 유지!
+    });
+
+    if (res.data > 0) {
+      setAccommodationsData(prev => prev.map(a =>
+        a.tripProdNo === accommodation.tripProdNo
+          ? { ...a, approveStatus: nextAprvYn === 'Y' ? '판매중' : '판매중지' }
+          : a
+      ));
+      console.log(`✅ [${accommodation.accName}] 상태 변경 완료! (APRV_YN: ${nextAprvYn})`);
+    }
+  } catch (error) {
+    console.error("토글 실패:", error);
+  }
+};
   // 입력 필드 변경 핸들러
-  const handleInputChange = (field, value) => {
-    setSelectedAccommodation(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
+  const handleInputChange = (field, value, subField = null) => {
+  setSelectedAccommodation(prev => {
+    if (subField) {
+      // accFacility 같은 하위 객체 수정 시
+      return {
+        ...prev,
+        [field]: { ...prev[field], [subField]: value }
+      };
+    }
+    // 일반 필드 수정 시
+    return { ...prev, [field]: value };
+  });
+};
 
   // 객실 추가
   const addRoom = () => {
@@ -390,13 +478,13 @@ const handleToggleSale = async (item) => {
 
   // 객실 정보 변경
   const handleRoomChange = (index, field, value) => {
-    setSelectedAccommodation(prev => ({
-      ...prev,
-      rooms: prev.roomTypeList.map((room, i) =>
-        i === index ? { ...room, [field]: value } : room
-      )
-    }));
-  };
+  setSelectedAccommodation(prev => ({
+    ...prev,
+    roomTypeList: prev.roomTypeList.map((room, i) =>
+      i === index ? { ...room, [field]: value } : room
+    )
+  }));
+};
 
   // 객실 침대타입 토글
   const toggleRoomBedType = (index, bedType) => {
@@ -427,14 +515,17 @@ const handleToggleSale = async (item) => {
   };
 
   // 편의시설 토글
-  const toggleFacilityAmenity = (amenity) => {
-    setSelectedAccommodation(prev => ({
-      ...prev,
-      facilityAmenities: prev.facilityAmenities.includes(amenity)
-        ? prev.facilityAmenities.filter(a => a !== amenity)
-        : [...prev.facilityAmenities, amenity]
-    }));
-  };
+  const toggleFacilityAmenity = (amenityKey) => {
+  // amenityKey 예: 'wifi' -> 'wifiYn'으로 매핑 확인 필요
+  const fieldName = `${amenityKey}Yn`; 
+  setSelectedAccommodation(prev => ({
+    ...prev,
+    accFacility: {
+      ...prev.accFacility,
+      [fieldName]: prev.accFacility[fieldName] === 'Y' ? 'N' : 'Y'
+    }
+  }));
+};
 
   // 객실 내 시설 토글
   const toggleRoomAmenity = (amenity) => {
@@ -450,7 +541,7 @@ const handleToggleSale = async (item) => {
   const addAddon = () => {
     setSelectedAccommodation(prev => ({
       ...prev,
-      addons: [...prev.addons, { ...emptyAddon }]
+     accOptionList: [...(prev.accOptionList || []), { ...emptyAddon }]
     }));
   };
 
@@ -458,7 +549,7 @@ const handleToggleSale = async (item) => {
   const removeAddon = (index) => {
     setSelectedAccommodation(prev => ({
       ...prev,
-      addons: prev.addons.filter((_, i) => i !== index)
+      aaccOptionList: (prev.accOptionList || []).filter((_, i) => i !== index)
     }));
   };
 
@@ -466,7 +557,7 @@ const handleToggleSale = async (item) => {
   const handleAddonChange = (index, field, value) => {
     setSelectedAccommodation(prev => ({
       ...prev,
-      addons: prev.addons.map((addon, i) =>
+      accOptionList: prev.accOptionList.map((addon, i) =>
         i === index ? { ...addon, [field]: value } : addon
       )
     }));
@@ -516,50 +607,60 @@ const handleToggleSale = async (item) => {
     }));
   };
 
+  // 숫자 포맷 함수
+  const formatNum = (num) => new Intl.NumberFormat('ko-KR').format(num);
   return (
     <div className="products-page">
       <div className="page-header">
         <h1>숙박 관리</h1>
-        <button className="btn btn-primary" onClick={openAddModal}>
-          <i className="bi bi-plus-lg"></i> 숙박 등록
-        </button>
+        <button className="btn-acc-excel" onClick={downloadExcel}>
+          <i className="bi bi-file-earmark-excel-fill me-2"></i>
+          엑셀 다운로드
+          </button>
       </div>
 
       {/* 통계 카드 */}
-      <div className="stats-grid">
+          <div className="stats-grid">
+        {/* 카드 1: 전체 숙박 */}
         <div className="stat-card">
           <div className="stat-icon blue">
-            <i className="bi bi-building"></i>
+            <i className="bi bi-building-fill"></i>
           </div>
           <div className="stat-content">
-            <span className="stat-value">{stats.total}</span>
+            <span className="stat-value">{formatNum(stats.total)}</span>
             <span className="stat-label">전체 숙박</span>
           </div>
         </div>
+
+        {/* 카드 2: 판매중 */}
         <div className="stat-card">
           <div className="stat-icon green">
-            <i className="bi bi-check-circle"></i>
+            <i className="bi bi-play-circle-fill"></i>
           </div>
           <div className="stat-content">
-            <span className="stat-value">{stats.operating}</span>
+            <span className="stat-value">{formatNum(stats.operating)}</span>
             <span className="stat-label">판매중</span>
           </div>
         </div>
+
+        {/* 카드 3: 판매중지 */}
         <div className="stat-card">
           <div className="stat-icon red">
-            <i className="bi bi-pause-circle"></i>
+            <i className="bi bi-stop-circle-fill"></i>
           </div>
           <div className="stat-content">
-            <span className="stat-value">{stats.stopped}</span>
-            <span className="stat-label">판매중단</span>
+            <span className="stat-value">{formatNum(stats.stopped)}</span>
+            <span className="stat-label">판매중지</span>
           </div>
         </div>
+
+        {/* 카드 4: 총 객실수 */}
         <div className="stat-card">
           <div className="stat-icon purple">
-            <i className="bi bi-door-open"></i>
+            <i className="bi bi-door-open-fill"></i>
           </div>
           <div className="stat-content">
-            <span className="stat-value">{stats.totalRooms}</span>
+            <span className="stat-value">{formatNum(stats.totalRooms)}</span>
             <span className="stat-label">총 객실수</span>
           </div>
         </div>
@@ -581,7 +682,7 @@ const handleToggleSale = async (item) => {
             <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
               <option value="all">전체 상태</option>
               <option value="판매중">판매중</option>
-              <option value="판매중단">판매중단</option>
+              <option value="판매중지">판매중지</option>
             </select>
             <select value={filterType} onChange={(e) => setFilterType(e.target.value)}>
               <option value="all">전체 유형</option>
@@ -645,11 +746,12 @@ const handleToggleSale = async (item) => {
                     <button className="btn-icon" title="수정" onClick={() => openEditModal(accommodation)}>
                       <i className="bi bi-pencil"></i>
                     </button>
-                    <button className="btn-icon" title="상태변경" onClick={() => toggleStatus(accommodation)}>
-                      <i className={`bi ${accommodation.approveStatus === '판매중' ? 'bi-pause' : 'bi-play'}`}></i>
-                    </button>
-                    <button className="btn-icon danger" title="삭제" onClick={() => openDeleteModal(accommodation)}>
-                      <i className="bi bi-trash"></i>
+                   <button 
+                      className={`btn-icon ${accommodation.approveStatus === '판매중' ? 'status-active' : 'status-inactive'}`}
+                      title={accommodation.approveStatus === '판매중' ? '판매 중지' : '판매 시작'} 
+                      onClick={() => toggleStatus(accommodation)}
+                    >
+                      <i className={`bi ${accommodation.approveStatus === '판매중' ? 'bi-pause-circle-fill' : 'bi-play-circle-fill'}`}></i>
                     </button>
                   </div>
                 </td>
@@ -693,7 +795,6 @@ const handleToggleSale = async (item) => {
                         {selectedAccommodation.accName}
                       </span>
                     </div>
-
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginTop: '4px' }}>
                       {/* 2. 숙소 유형 & 등급 */}
                       <div className="detail-row-group">
@@ -704,7 +805,7 @@ const handleToggleSale = async (item) => {
                           </span>
                           <span style={{ background: '#FFF7ED', color: '#EA580C', padding: '4px 10px', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 700 }}>
                             <i className="bi bi-star-fill me-1"></i>
-                            {selectedAccommodation.starGrade > 0 ? `${selectedAccommodation.starGrade}성급` : '무등급'}
+                            {selectedAccommodation.starRating > 0 ? `${selectedAccommodation.starRating}성급` : '무등급'}
                           </span>
                         </div>
                       </div>
@@ -1397,14 +1498,21 @@ const handleToggleSale = async (item) => {
                 <div className="form-grid">
                   <div className="form-group full-width">
                     <label>상품명 *</label>
-                    <input type="text" value={selectedAccommodation.name} onChange={(e) => handleInputChange('name', e.target.value)} placeholder="상품명을 입력하세요" />
+                    <input type="text" value={selectedAccommodation.accName} onChange={(e) => handleInputChange('name', e.target.value)} placeholder="상품명을 입력하세요" />
                   </div>
                   <div className="form-group">
-                    <label>숙소 유형 *</label>
-                    <select value={selectedAccommodation.type} onChange={(e) => handleInputChange('type', e.target.value)}>
-                      {accommodationTypes.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-                    </select>
-                  </div>
+                      <label>숙소 유형 *</label>
+                      <select 
+                        value={selectedAccommodation?.accCatCd || ""} 
+                        onChange={(e) => handleInputChange('accCatCd', e.target.value)}
+                      >
+                        {accommodationTypes.map(t => (
+                          <option key={t.value} value={t.value}>
+                            {t.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   <div className="form-group">
                     <label>등급</label>
                     <select value={selectedAccommodation.starRating} onChange={(e) => handleInputChange('starRating', parseInt(e.target.value))}>
@@ -1628,7 +1736,7 @@ const handleToggleSale = async (item) => {
                       <div className="checkbox-group">
                         {bedTypes.map(bed => (
                           <label key={bed} className="checkbox-label">
-                            <input type="checkbox" checked={room.bedTypes.includes(bed)} onChange={() => toggleRoomBedType(idx, bed)} />
+                            <input type="checkbox" checked={room.bedTypes?.includes(bed) || false} onChange={() => toggleRoomBedType(idx, bed)} />
                             {bed}
                           </label>
                         ))}
@@ -1639,7 +1747,7 @@ const handleToggleSale = async (item) => {
                       <div className="checkbox-group">
                         {roomFeatures.map(f => (
                           <label key={f.value} className="checkbox-label">
-                            <input type="checkbox" checked={room.features.includes(f.value)} onChange={() => toggleRoomFeature(idx, f.value)} />
+                            <input type="checkbox" checked={(room.features || []).includes(f.value)} onChange={() => toggleRoomFeature(idx, f.value)} />
                             <i className={`bi ${f.icon}`} style={{ marginRight: '4px' }}></i>{f.label}
                           </label>
                         ))}
@@ -1651,7 +1759,6 @@ const handleToggleSale = async (item) => {
                   <i className="bi bi-plus-lg" style={{ marginRight: '8px' }}></i>객실 타입 추가
                 </button>
               </div>
-
               {/* 편의시설 및 서비스 */}
               <div style={{ marginBottom: '24px' }}>
                 <h4 style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: '12px', color: '#374151', borderBottom: '1px solid #e5e7eb', paddingBottom: '8px' }}>
@@ -1662,7 +1769,7 @@ const handleToggleSale = async (item) => {
                   <div className="checkbox-group">
                     {facilityAmenities.map(a => (
                       <label key={a.value} className="checkbox-label">
-                        <input type="checkbox" checked={selectedAccommodation.facilityAmenities.includes(a.value)} onChange={() => toggleFacilityAmenity(a.value)} />
+                        <input type="checkbox" checked={selectedAccommodation?.facilityAmenities?.includes(a.value) || false} onChange={() => toggleFacilityAmenity(a.value)} />
                         <i className={`bi ${a.icon}`} style={{ marginRight: '4px' }}></i>{a.label}
                       </label>
                     ))}
@@ -1673,7 +1780,7 @@ const handleToggleSale = async (item) => {
                   <div className="checkbox-group">
                     {roomAmenities.map(a => (
                       <label key={a.value} className="checkbox-label">
-                        <input type="checkbox" checked={selectedAccommodation.roomAmenities.includes(a.value)} onChange={() => toggleRoomAmenity(a.value)} />
+                        <input type="checkbox" checked={selectedAccommodation?.roomAmenities?.includes(a.value) || false} onChange={() => toggleRoomAmenity(a.value)} />
                         <i className={`bi ${a.icon}`} style={{ marginRight: '4px' }}></i>{a.label}
                       </label>
                     ))}
@@ -1686,7 +1793,7 @@ const handleToggleSale = async (item) => {
                 <h4 style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: '12px', color: '#374151', borderBottom: '1px solid #e5e7eb', paddingBottom: '8px' }}>
                   <i className="bi bi-plus-circle" style={{ marginRight: '8px' }}></i>추가 옵션 (선택사항)
                 </h4>
-                {selectedAccommodation.addons.map((addon, idx) => (
+                {(selectedAccommodation?.accOptionList || []).map((addon, idx) => (
                   <div key={idx} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr auto', gap: '12px', marginBottom: '8px', alignItems: 'end' }}>
                     <div className="form-group" style={{ marginBottom: 0 }}>
                       <label>옵션명</label>
