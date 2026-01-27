@@ -531,7 +531,6 @@ function Notifications() {
                   display: 'flex',
                   alignItems: 'flex-start',
                   gap: 12,
-                  padding: '16px 0',
                   borderBottom: '1px solid #f1f5f9',
                   background: notification.isRead ? 'transparent' : '#fefce8',
                   margin: notification.isRead ? 0 : '0 -16px',

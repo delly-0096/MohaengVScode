@@ -106,7 +106,6 @@ const menuItems = [
     submenu: [
       { id: 'member-stats', title: '회원통계', path: '/statistics/members' },
       { id: 'service-stats', title: '서비스통계', path: '/statistics/services' },
-      { id: 'algorithm', title: '알고리즘', path: '/statistics/algorithm' },
       { id: 'logs', title: '로그관리', path: '/statistics/logs' }
     ]
   }

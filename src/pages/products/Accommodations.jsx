@@ -1,9 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import * as XLSX from 'xlsx';
 import './Products.css';
 import api from '../../api/api';
 import AccommodationMap from './AccommodationMap';
-import axios from 'axios';
-
 
 // 숙소 유형 목록
 const accommodationTypes = [
@@ -132,22 +131,14 @@ useEffect(() => {
 
 
   // 통계 계산
-  const stats = {
-  total: accommodationsData.length,
+const stats = useMemo(() => {
+  const total = accommodationsData.length;
+  const operating = accommodationsData.filter(a => a.approveStatus === '판매중').length;
+  const stopped = accommodationsData.filter(a => a.approveStatus === '판매중지').length;
+  const totalRooms = accommodationsData.reduce((sum, a) => sum + (a.totalRoomCnt || 0), 0);
 
-  operating: accommodationsData.filter(
-    a => a.approveStatus === '판매중'
-  ).length,
-
-  stopped: accommodationsData.filter(
-    a => a.approveStatus === '판매중단'
-  ).length,
-
-  totalRooms: accommodationsData.reduce(
-    (sum, a) => sum + Number(a.totalRooms || 0),
-    0
-  )
-};
+  return { total, operating, stopped, totalRooms };
+}, [accommodationsData]); // 리스트가 바뀔 때마다 숫자도 촥촥 바뀜!
 
   // 필터링된 데이터
  const filteredData = accommodationsData.filter(accommodation => {
@@ -328,15 +319,33 @@ const handleUpdateAccommodation = async (updatedData) => {
     setIsAddModalOpen(true);
   };
 
-  /* =======================
-   2. 숙소 논리 삭제 (Delete / Toggle)
-======================= */
+  // 엑셀 다운로드
+  const downloadExcel = () => {
+  // 1. 엑셀에 들어갈 데이터 정제 (한글 헤더로 예쁘게!)
+  const excelData = accommodationsData.map((acc, index) => ({
+    "번호": index + 1,
+    "숙소명": acc.accName,
+    "유형": acc.accCatCd === 'B02010500' ? '리조트' : '기타', // 아까 만든 getTypeLabel 써도 됨!
+    "지역": acc.addr1.split(' ')[0], // '제주특별자치도' 등 첫 단어만
+    "판매상태": acc.approveStatus,
+    "최저가": acc.minPrice ? `${acc.minPrice.toLocaleString()}원` : '정보없음',
+    "총객실": acc.totalRoomCnt || 0,
+    "등록일": acc.saleStartDt?.split(' ')[0] || '-'
+  }));
 
-  // 삭제 모달 열기
-  const openDeleteModal = (accommodation) => {
-    setSelectedAccommodation(accommodation);
-    setIsDeleteModalOpen(true);
-  };
+  // 2. 워크시트 생성
+  const worksheet = XLSX.utils.json_to_sheet(excelData);
+  
+  // 3. 워크북(파일) 생성 및 시트 추가
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "숙박상품리스트");
+
+  // 4. 파일 다운로드 실행
+  const fileName = `모행_숙박상품관리_${new Date().toISOString().split('T')[0]}.xlsx`;
+  XLSX.writeFile(workbook, fileName);
+  
+  console.log("📊 엑셀 뽑기 완료! 부장님께 고고!");
+};
 
  
   /**
@@ -412,15 +421,30 @@ const handleToggleSale = async (item) => {
   };
 
   // 상태 변경
-  const toggleStatus = (accommodation) => {
-    const newStatus = accommodation.status === '운영중' ? '운영중단' : '운영중';
-    setAccommodationsData(prev => prev.map(a =>
-      a.id === accommodation.id
-        ? { ...a, status: newStatus, lastModified: new Date().toISOString().split('T')[0] }
-        : a
-    ));
-  };
+const toggleStatus = async (accommodation) => {
+  // 현재 판매중이면 -> 차기 상태는 'N' (중지)
+  // 현재 판매중단이면 -> 차기 상태는 'Y' (판매)
+  const nextAprvYn = accommodation.approveStatus === '판매중' ? 'N' : 'Y';
 
+  try {
+    // 서버 파라미터명은 컨트롤러에 맞춰서 delYn으로 보내되, 값은 nextAprvYn을 담아!
+    const res = await api.patch('/admin/products/accommodations/toggle-sale', {
+      tripProdNo: accommodation.tripProdNo,
+      delYn: nextAprvYn // 서버가 받는 변수명이 delYn이라 일단 유지!
+    });
+
+    if (res.data > 0) {
+      setAccommodationsData(prev => prev.map(a =>
+        a.tripProdNo === accommodation.tripProdNo
+          ? { ...a, approveStatus: nextAprvYn === 'Y' ? '판매중' : '판매중지' }
+          : a
+      ));
+      console.log(`✅ [${accommodation.accName}] 상태 변경 완료! (APRV_YN: ${nextAprvYn})`);
+    }
+  } catch (error) {
+    console.error("토글 실패:", error);
+  }
+};
   // 입력 필드 변경 핸들러
   const handleInputChange = (field, value, subField = null) => {
   setSelectedAccommodation(prev => {
@@ -582,47 +606,61 @@ const handleToggleSale = async (item) => {
       }))
     }));
   };
+
+  // 숫자 포맷 함수
+  const formatNum = (num) => new Intl.NumberFormat('ko-KR').format(num);
   return (
     <div className="products-page">
       <div className="page-header">
         <h1>숙박 관리</h1>
+        <button className="btn-acc-excel" onClick={downloadExcel}>
+          <i className="bi bi-file-earmark-excel-fill me-2"></i>
+          엑셀 다운로드
+          </button>
       </div>
 
       {/* 통계 카드 */}
-      <div className="stats-grid">
+          <div className="stats-grid">
+        {/* 카드 1: 전체 숙박 */}
         <div className="stat-card">
           <div className="stat-icon blue">
-            <i className="bi bi-building"></i>
+            <i className="bi bi-building-fill"></i>
           </div>
           <div className="stat-content">
-            <span className="stat-value">{stats.total}</span>
+            <span className="stat-value">{formatNum(stats.total)}</span>
             <span className="stat-label">전체 숙박</span>
           </div>
         </div>
+
+        {/* 카드 2: 판매중 */}
         <div className="stat-card">
           <div className="stat-icon green">
-            <i className="bi bi-check-circle"></i>
+            <i className="bi bi-play-circle-fill"></i>
           </div>
           <div className="stat-content">
-            <span className="stat-value">{stats.operating}</span>
+            <span className="stat-value">{formatNum(stats.operating)}</span>
             <span className="stat-label">판매중</span>
           </div>
         </div>
+
+        {/* 카드 3: 판매중지 */}
         <div className="stat-card">
           <div className="stat-icon red">
-            <i className="bi bi-pause-circle"></i>
+            <i className="bi bi-stop-circle-fill"></i>
           </div>
           <div className="stat-content">
-            <span className="stat-value">{stats.stopped}</span>
-            <span className="stat-label">판매중단</span>
+            <span className="stat-value">{formatNum(stats.stopped)}</span>
+            <span className="stat-label">판매중지</span>
           </div>
         </div>
+
+        {/* 카드 4: 총 객실수 */}
         <div className="stat-card">
           <div className="stat-icon purple">
-            <i className="bi bi-door-open"></i>
+            <i className="bi bi-door-open-fill"></i>
           </div>
           <div className="stat-content">
-            <span className="stat-value">{stats.totalRooms}</span>
+            <span className="stat-value">{formatNum(stats.totalRooms)}</span>
             <span className="stat-label">총 객실수</span>
           </div>
         </div>
@@ -644,7 +682,7 @@ const handleToggleSale = async (item) => {
             <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
               <option value="all">전체 상태</option>
               <option value="판매중">판매중</option>
-              <option value="판매중단">판매중단</option>
+              <option value="판매중지">판매중지</option>
             </select>
             <select value={filterType} onChange={(e) => setFilterType(e.target.value)}>
               <option value="all">전체 유형</option>
@@ -708,11 +746,12 @@ const handleToggleSale = async (item) => {
                     <button className="btn-icon" title="수정" onClick={() => openEditModal(accommodation)}>
                       <i className="bi bi-pencil"></i>
                     </button>
-                    <button className="btn-icon" title="상태변경" onClick={() => toggleStatus(accommodation)}>
-                      <i className={`bi ${accommodation.approveStatus === '판매중' ? 'bi-pause' : 'bi-play'}`}></i>
-                    </button>
-                    <button className="btn-icon danger" title="삭제" onClick={() => openDeleteModal(accommodation)}>
-                      <i className="bi bi-trash"></i>
+                   <button 
+                      className={`btn-icon ${accommodation.approveStatus === '판매중' ? 'status-active' : 'status-inactive'}`}
+                      title={accommodation.approveStatus === '판매중' ? '판매 중지' : '판매 시작'} 
+                      onClick={() => toggleStatus(accommodation)}
+                    >
+                      <i className={`bi ${accommodation.approveStatus === '판매중' ? 'bi-pause-circle-fill' : 'bi-play-circle-fill'}`}></i>
                     </button>
                   </div>
                 </td>

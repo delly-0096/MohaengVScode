@@ -1,4 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, PointElement, LineElement, Title } from 'chart.js';
+import { Doughnut, Line } from 'react-chartjs-2';
+import api from '../../api/api';
 import {
   RiSearchLine,
   RiFilterLine,
@@ -24,143 +27,19 @@ import {
 } from 'react-icons/ri';
 import { Modal, ConfirmModal } from '../../components/common/Modal';
 
+ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, PointElement, LineElement, Title);
+
 // 환불 데이터 (사용자 페이지와 동일한 구조)
 const initialRefundsData = [
-  {
-    id: 'REF-20240115-001',
-    orderId: 'ORD-20240108-005678',
-    user: '정휴가',
-    email: 'vacation@naver.com',
-    phone: '010-5678-9012',
-    product: '설악산 짚라인 체험',
-    productImage: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=120&h=120&fit=crop&q=80',
-    useDate: '2024.01.15 (월) 11:00',
-    option: '1명',
-    seller: {
-      name: '설악짚라인',
-      bizNo: '567-89-01234',
-      phone: '033-567-8901'
-    },
-    originalPrice: 35000,
-    cancelFee: 3500,
-    refundAmount: 31500,
-    pointRefund: 350,
-    refundMethod: '신용카드 취소',
-    reason: '일정 변경',
-    reasonDetail: '급한 일정이 생겨서 취소하고 싶습니다.',
-    status: 'completed',
-    requestedAt: '2024-01-09 10:15:00',
-    completedAt: '2024-01-10 14:30:00'
-  },
-  {
-    id: 'REF-20240320-002',
-    orderId: 'ORD-20240315-001234',
-    user: '김여행',
-    email: 'travel@gmail.com',
-    phone: '010-1234-5678',
-    product: '제주 스쿠버다이빙 체험',
-    productImage: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=120&h=120&fit=crop&q=80',
-    useDate: '2024.04.20 (토) 14:00',
-    option: '2명',
-    seller: {
-      name: '제주다이빙센터',
-      bizNo: '123-45-67890',
-      phone: '064-123-4567'
-    },
-    originalPrice: 136000,
-    cancelFee: 0,
-    refundAmount: 136000,
-    pointRefund: 0,
-    refundMethod: '신용카드 취소',
-    reason: '일정 변경',
-    reasonDetail: '개인 사정으로 여행 일정을 변경해야 해서 취소 요청합니다.',
-    status: 'pending',
-    requestedAt: '2024-03-20 14:30:00'
-  },
-  {
-    id: 'REF-20240318-003',
-    orderId: 'ORD-20240314-001122',
-    user: '이모행',
-    email: 'mohaeng@naver.com',
-    phone: '010-2345-6789',
-    product: '제주 신라 호텔',
-    productImage: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=120&h=120&fit=crop&q=80',
-    useDate: '2024.04.20 - 2024.04.22 (2박)',
-    option: '디럭스룸',
-    seller: {
-      name: '제주 신라 호텔',
-      bizNo: '234-56-78901',
-      phone: '064-234-5678'
-    },
-    originalPrice: 320000,
-    cancelFee: 32000,
-    refundAmount: 288000,
-    pointRefund: 0,
-    refundMethod: '신용카드 취소',
-    reason: '단순 변심',
-    reasonDetail: '다른 여행지로 변경하고 싶습니다.',
-    status: 'approved',
-    requestedAt: '2024-03-18 11:20:00'
-  },
-  {
-    id: 'REF-20240316-004',
-    orderId: 'ORD-20240310-002233',
-    user: '박관광',
-    email: 'tour@daum.net',
-    phone: '010-3456-7890',
-    product: '롯데호텔 제주',
-    productImage: 'https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=120&h=120&fit=crop&q=80',
-    useDate: '2024.03.25 - 2024.03.26 (1박)',
-    option: '스탠다드룸',
-    seller: {
-      name: '호텔파라다이스',
-      bizNo: '345-67-89012',
-      phone: '064-345-6789'
-    },
-    originalPrice: 180000,
-    cancelFee: 0,
-    refundAmount: 180000,
-    pointRefund: 0,
-    refundMethod: '신용카드 취소',
-    reason: '상품 오류',
-    reasonDetail: '예약한 날짜에 객실이 없다는 연락을 받았습니다.',
-    status: 'completed',
-    requestedAt: '2024-03-16 09:45:00',
-    completedAt: '2024-03-16 15:30:00'
-  },
-  {
-    id: 'REF-20240315-005',
-    orderId: 'ORD-20240301-003344',
-    user: '최투어',
-    email: 'choi@gmail.com',
-    phone: '010-4567-8901',
-    product: '한라산 트레킹 투어',
-    productImage: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=120&h=120&fit=crop&q=80',
-    useDate: '2024.03.16 (토) 06:00',
-    option: '1명',
-    seller: {
-      name: '체험여행사',
-      bizNo: '456-78-90123',
-      phone: '064-456-7890'
-    },
-    originalPrice: 75000,
-    cancelFee: 75000,
-    refundAmount: 0,
-    pointRefund: 0,
-    refundMethod: '-',
-    reason: '일정 변경',
-    reasonDetail: '급한 일정이 생겨서 취소하고 싶습니다.',
-    status: 'rejected',
-    requestedAt: '2024-03-15 16:15:00',
-    rejectReason: '투어 시작 24시간 이내 취소 불가 상품입니다.'
-  }
+  
 ];
 
 const statusLabels = {
-  pending: { label: '검토중', className: 'badge-warning', icon: RiTimeLine },
-  approved: { label: '승인됨', className: 'badge-primary', icon: RiCheckboxCircleLine },
-  completed: { label: '환불완료', className: 'badge-success', icon: RiCheckboxCircleLine },
-  rejected: { label: '거절됨', className: 'badge-danger', icon: RiCloseCircleLine }
+  'PENDING': { label: '검토중', className: 'badge-warning' },
+  'APPROVED': { label: '승인됨', className: 'badge-info' },
+  'REFUNDED': { label: '환불완료', className: 'badge-success' },
+  'REJECTED': { label: '거절됨', className: 'badge-danger' },
+  'CANCEL': { label: '취소됨', className: 'badge-gray' }
 };
 
 // 취소 정책 안내
@@ -170,6 +49,7 @@ const cancelPolicies = [
   { days: '이용일 1~2일 전', fee: '50% 수수료' },
   { days: '이용일 당일', fee: '환불 불가' }
 ];
+
 
 function Refunds() {
   const [refundsData, setRefundsData] = useState(initialRefundsData);
@@ -183,11 +63,49 @@ function Refunds() {
   const [rejectModal, setRejectModal] = useState({ isOpen: false, refund: null });
   const [rejectReason, setRejectReason] = useState('');
 
-  const filteredData = refundsData.filter(r => {
-    const matchesSearch = r.user.includes(searchTerm) || r.product.includes(searchTerm) || r.id.includes(searchTerm) || r.seller.name.includes(searchTerm);
-    const matchesStatus = statusFilter === 'all' || r.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  // 환불 데이터 로드 (실제 구현 시 API 호출)
+  useEffect(() => {
+    // 여기서 API 호출로 환불 데이터 로드
+    // 예: api.get('/admin/transactions/refunds').then(res => setRefundsData(res.data));
+    setRefundsData(initialRefundsData);
+  }, []);
+
+// [1] 데이터 로드 및 통계 계산 통합
+const fetchRefundData = async () => {
+  try {
+    const res = await api.get('/admin/transactions/refunds', {
+      params: { 
+        keyword: searchTerm, 
+        status: statusFilter,
+        period: dateFilter 
+      }
+    });
+    
+    // 서버 응답: { list: [...], totalCount: 123 }
+    const list = res.data.list;
+    setRefundsData(list); // 테이블에 뿌릴 데이터
+    
+    // 통계 계산 (서버 데이터를 기준으로 실시간 갱신!)
+    setStats({
+      total: res.data.totalCount,
+      pending: list.filter(r => r.status === 'PENDING').length,
+      completed: list.filter(r => r.status === 'REFUNDED' || r.status === 'APPROVED').length,
+      totalAmount: list.filter(r => r.status === 'REFUNDED').reduce((sum, r) => sum + (r.refundAmount || 0), 0)
+    });
+  } catch (error) {
+    console.error("환불 목록 로드 실패:", error);
+  }
+};
+
+// [2] 필터링 로직 (서버 사이드 필터링을 하더라도 클라이언트에서 한 번 더 걸러주면 쾌적함!)
+const filteredData = refundsData.filter(r => {
+  const matchesSearch = 
+    (r.user?.includes(searchTerm)) || 
+    (r.product?.includes(searchTerm)) || 
+    (r.id?.toString().includes(searchTerm));
+  const matchesStatus = statusFilter === 'all' || r.status === statusFilter;
+  return matchesSearch && matchesStatus;
+});
 
   // 통계 계산
   const totalCount = refundsData.length;
@@ -206,11 +124,34 @@ function Refunds() {
     setApproveModal({ isOpen: true, refund });
   };
 
-  const handleApproveConfirm = () => {
-    setRefundsData(prev => prev.map(r => r.id === approveModal.refund.id ? { ...r, status: 'approved' } : r));
-    setApproveModal({ isOpen: false, refund: null });
-    alert('환불 요청이 승인되었습니다.');
-  };
+  const handleApproveConfirm = async () => {
+  const { refund } = approveModal; // 선택된 환불 요청 데이터
+
+  try {
+    // 1. 서버 API 호출 (환불 승인 처리)
+    const res = await api.post('/admin/refunds/approve', {
+      payNo: refund.id,              // 결제번호
+      refundAmt: refund.refundAmount, // 환불금액
+      refundPoint: refund.refundPoint // 환불포인트
+    });
+
+    if (res.data > 0) {
+      // 2. 성공 시 화면 상태 업데이트
+      setRefundsData(prev => 
+        prev.map(r => r.id === refund.id ? { ...r, status: 'completed' } : r)
+      );
+      
+      // 3. 통계 데이터도 다시 긁어오기
+      fetchRefundData(); 
+      
+      setApproveModal({ isOpen: false, refund: null });
+      alert('성공적으로 환불 처리가 완료되었습니다');
+    }
+  } catch (error) {
+    console.error("환불 승인 실패:", error);
+    alert("서버 통신 중 오류가 발생했습니다.");
+  }
+};
 
   // 거절
   const handleReject = (refund) => {
@@ -218,11 +159,60 @@ function Refunds() {
     setRejectModal({ isOpen: true, refund });
   };
 
-  const handleRejectConfirm = () => {
-    setRefundsData(prev => prev.map(r => r.id === rejectModal.refund.id ? { ...r, status: 'rejected', rejectReason: rejectReason } : r));
-    setRejectModal({ isOpen: false, refund: null });
-    setRejectReason('');
-    alert('환불 요청이 거절되었습니다.');
+  const handleRejectConfirm = async () => {
+  const { refund } = rejectModal;
+
+  try {
+    const res = await api.post('/api/admin/refunds/reject', {
+      payNo: refund.id,            // 결제번호
+      rejectReason: rejectReason   // 리더가 입력한 거절 사유
+    });
+
+    if (res.data > 0) {
+      // 화면 새로고침 없이 상태만 슥 바꾸기
+      setRefundsData(prev => 
+        prev.map(r => r.id === refund.id ? { ...r, status: 'REJECTED', reason: rejectReason } : r)
+      );
+      
+      setRejectModal({ isOpen: false, refund: null });
+      setRejectReason('');
+      alert('환불 요청이 거절 처리되었습니다.');
+      fetchRefundData(); // 통계 다시 계산!
+    }
+  } catch (error) {
+    console.error("거절 처리 실패:", error);
+  }
+};
+
+const reasons = (refundsData || []).reduce((acc, curr) => {
+    const reason = curr.reason || '기타'; 
+    acc[reason] = (acc[reason] || 0) + 1;
+    return acc;
+  }, {});
+
+  // 2. 차트용 객체 정의 (여기가 에러 난 부분!)
+  const doughnutData = {
+    labels: Object.keys(reasons),
+    datasets: [{
+      data: Object.values(reasons),
+      backgroundColor: ['#4A90D9', '#FF6384', '#FFCE56', '#4BC0C0', '#9966FF'],
+    }]
+  };
+
+  // 3. 월별 금액 데이터 가공
+  const monthlyRefunds = (refundsData || []).reduce((acc, curr) => {
+    const month = curr.requestedAt?.substring(0, 7) || '2026-01'; 
+    acc[month] = (acc[month] || 0) + (curr.refundAmount || 0);
+    return acc;
+  }, {});
+
+  const lineData = {
+    labels: Object.keys(monthlyRefunds).sort(),
+    datasets: [{
+      label: '월별 환불액',
+      data: Object.keys(monthlyRefunds).sort().map(m => monthlyRefunds[m]),
+      borderColor: '#8b5cf6',
+    }]
   };
 
   return (
@@ -233,9 +223,6 @@ function Refunds() {
           <p className="page-subtitle">
             환불 요청을 검토하고 처리합니다
           </p>
-        </div>
-        <div className="page-header-actions">
-          <button className="btn btn-secondary"><RiFileDownloadLine /> 엑셀 다운로드</button>
         </div>
       </div>
 
@@ -287,6 +274,22 @@ function Refunds() {
         </div>
       </div>
 
+    {/* 차트 섹션 */}
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '24px' }}>
+      <div className="card" style={{ padding: '20px', height: '350px' }}>
+        <h3 style={{ fontSize: '1rem', marginBottom: '15px' }}>취소 사유 비중</h3>
+        <div style={{ height: '250px', display: 'flex', justifyContent: 'center' }}>
+          <Doughnut data={doughnutData} options={{ maintainAspectRatio: false }} />
+        </div>
+      </div>
+      <div className="card" style={{ padding: '20px', height: '350px' }}>
+        <h3 style={{ fontSize: '1rem', marginBottom: '15px' }}>환불 금액 추이</h3>
+        <div style={{ height: '250px' }}>
+          <Line data={lineData} options={{ maintainAspectRatio: false }} />
+        </div>
+      </div>
+    </div>
+
       {pendingCount > 0 && (
         <div className="alert alert-warning mb-3" style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 16px', background: '#fef3c7', borderRadius: 8, marginBottom: 16 }}>
           <RiTimeLine style={{ color: '#f59e0b' }} />
@@ -334,43 +337,43 @@ function Refunds() {
                 <th style={{ width: 80 }}>관리</th>
               </tr>
             </thead>
-            <tbody>
+             <tbody>
               {filteredData.map(item => (
-                <tr key={item.id} style={{ opacity: item.status === 'rejected' ? 0.7 : 1 }}>
+                <tr key={item.id} style={{ opacity: item.status === 'REJECTED' ? 0.7 : 1 }}>
                   <td>
                     <img
-                      src={item.productImage}
+                      src={item.productImage || '/default-acc.png'} 
                       alt={item.product}
-                      style={{ width: 45, height: 45, borderRadius: 6, objectFit: 'cover', cursor: 'pointer' }}
-                      onClick={() => handleViewDetail(item)}
+                      style={{ width: 45, height: 45, borderRadius: 6, objectFit: 'cover' }}
                     />
                   </td>
                   <td>
                     <div>
-                      <div className="font-medium" style={{ cursor: 'pointer' }} onClick={() => handleViewDetail(item)}>{item.product}</div>
-                      <div className="text-secondary" style={{ fontSize: '0.75rem' }}>{item.seller.name}</div>
-                      <div className="text-secondary" style={{ fontSize: '0.7rem', color: '#6b7280' }}>{item.id}</div>
+                      <div className="font-medium">{item.product}</div> {/* 숙소명 */}
+                      <div className="text-secondary" style={{ fontSize: '0.75rem' }}>{item.seller?.name || '공식판매자'}</div>
+                      <div className="text-secondary" style={{ fontSize: '0.7rem' }}>{item.id}</div> {/* 결제번호 */}
                     </div>
                   </td>
                   <td>
                     <div>
-                      <div>{item.user}</div>
+                      <div>{item.user}</div> {/* 회원닉네임 */}
                       <div style={{ fontSize: '0.7rem', color: '#6b7280' }}>{item.email}</div>
                     </div>
                   </td>
                   <td style={{ fontSize: '0.85rem' }}>
-                    <div>{item.useDate.split(' ')[0]}</div>
-                    <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>{item.option}</div>
+                    <div>{item.useDate}</div> {/* 이용일자 */}
                   </td>
-                  <td>₩{item.originalPrice.toLocaleString()}</td>
-                  <td className="font-medium" style={{ color: item.status === 'rejected' ? '#9ca3af' : '#10b981' }}>
-                    {item.status === 'rejected' ? (
-                      <span style={{ color: '#ef4444' }}>₩0</span>
-                    ) : (
-                      `₩${item.refundAmount.toLocaleString()}`
-                    )}
+                  <td>₩{item.originalPrice?.toLocaleString()}</td> {/* 결제금액 */}
+                  <td className="font-medium" style={{ color: item.status === 'REJECTED' ? '#ef4444' : '#10b981' }}>
+                    ₩{item.refundAmount?.toLocaleString() || 0} {/* 환불금액 */}
                   </td>
-                  <td><span className="badge badge-gray" style={{ fontSize: '0.75rem', whiteSpace: 'nowrap' }}>{item.reason}</span></td>
+                  <td><span className="badge badge-gray">{item.reason}</span></td> {/* 취소사유 */}
+                  <td>
+                    <span className={`badge ${statusLabels[item.status]?.className}`}>
+                      {statusLabels[item.status]?.label || item.status}
+                    </span>
+                  </td>
+                  <td style={{ fontSize: '0.8rem' }}>{item.requestedAt}</td> {/* 취소일시 */}
                   <td>
                     <span className={`badge ${statusLabels[item.status].className}`} style={{ whiteSpace: 'nowrap' }}>
                       {statusLabels[item.status].label}
