@@ -135,33 +135,34 @@ const stats = useMemo(() => {
   const total = accommodationsData.length;
   const operating = accommodationsData.filter(a => a.approveStatus === '판매중').length;
   const stopped = accommodationsData.filter(a => a.approveStatus === '판매중지').length;
-  const totalRooms = accommodationsData.reduce((sum, a) => sum + (a.totalRoomCnt || 0), 0);
+  
+  // a.totalRooms (쿼리 별칭과 동일하게!)
+  const totalRooms = accommodationsData.reduce((sum, a) => sum + (Number(a.totalRooms) || 0), 0);
 
   return { total, operating, stopped, totalRooms };
-}, [accommodationsData]); // 리스트가 바뀔 때마다 숫자도 촥촥 바뀜!
+}, [accommodationsData]);
 
-  // 필터링된 데이터
- const filteredData = accommodationsData.filter(accommodation => {
-  const search = searchTerm.toLowerCase();
+// [수정] 필터링 및 정렬 로직
+const filteredData = useMemo(() => {
+  const data = accommodationsData.filter(accommodation => {
+    const search = searchTerm.toLowerCase();
+    const name = accommodation.accName || "";
+    const address = accommodation.addr1 || "";
 
-  const name = accommodation.accomName || "";
-  const address = accommodation.addr1 || "";
+    const matchesSearch = name.toLowerCase().includes(search) || address.toLowerCase().includes(search);
+    const matchesStatus = filterStatus === 'all' || accommodation.approveStatus === filterStatus;
+    // ... 나머지 필터 로직 그대로
+    return matchesSearch && matchesStatus;
+  });
 
-  const matchesSearch =
-    name.toLowerCase().includes(search) ||
-    address.toLowerCase().includes(search);
-
-  const matchesStatus =
-    filterStatus === 'all' || accommodation.status === filterStatus;
-
-  const matchesType =
-    filterType === 'all' || accommodation.type === filterType;
-
-  const matchesRegion =
-    filterRegion === 'all' || accommodation.region === filterRegion;
-
-  return matchesSearch && matchesStatus && matchesType && matchesRegion;
-});
+  // [핵심] 정렬: '승인대기' 상태를 최우선으로!
+  return data.sort((a, b) => {
+    if (a.approveStatus === '승인대기' && b.approveStatus !== '승인대기') return -1;
+    if (a.approveStatus !== '승인대기' && b.approveStatus === '승인대기') return 1;
+    // 그 외에는 최신 등록순
+    return new Date(b.regDt) - new Date(a.regDt);
+  });
+}, [accommodationsData, searchTerm, filterStatus]);
 
   // 금액 포맷
   const formatPrice = (price) => {
@@ -708,55 +709,111 @@ const toggleStatus = async (accommodation) => {
               <th>상품명</th>
               <th>유형</th>
               <th>지역</th>
-              <th>객실수</th>
+              <th>총 객실수</th>
+              <th>잔여 객실수</th>
               <th>최저가</th>
               <th>상태</th>
               <th style={{ width: '140px' }}>관리</th>
             </tr>
           </thead>
-          <tbody>
-            {filteredData.map(accommodation => (
-              <tr key={accommodation.tripProdNo}>
-                <td>
-                  <div className="product-name" onClick={() => openDetailModal(accommodation)}>
-                    {accommodation.accName}
-                  </div>
-                  {accommodation.starGrade > 0 && (
-                    <div style={{ fontSize: '0.75rem', color: '#d97706' }}>
-                      {'★'.repeat(accommodation.starGrade)}
-                    </div>
-                  )}
-                </td>
-                <td>
-                  <span className="badge badge-info">{getTypeLabel(accommodation.accCatCd)}</span>
-                </td>
-                <td>{getAreaLabel(accommodation.areaCode)}</td>
-                <td>{accommodation.totalRooms}개</td>
-                <td style={{ fontWeight: 500, color: '#2563eb' }}>{formatPrice(accommodation.minPrice)}</td>
-                <td>
-                  <span className={`status-badge ${accommodation.approveStatus === '판매중' ? 'active' : 'inactive'}`}>
-                    {accommodation.approveStatus}
-                  </span>
-                </td>
-                <td>
-                  <div className="action-buttons">
-                    <button className="btn-icon" title="상세보기" onClick={() => openDetailModal(accommodation)}>
-                      <i className="bi bi-eye"></i>
-                    </button>
-                    <button className="btn-icon" title="수정" onClick={() => openEditModal(accommodation)}>
-                      <i className="bi bi-pencil"></i>
-                    </button>
-                   <button 
-                      className={`btn-icon ${accommodation.approveStatus === '판매중' ? 'status-active' : 'status-inactive'}`}
-                      title={accommodation.approveStatus === '판매중' ? '판매 중지' : '판매 시작'} 
-                      onClick={() => toggleStatus(accommodation)}
-                    >
-                      <i className={`bi ${accommodation.approveStatus === '판매중' ? 'bi-pause-circle-fill' : 'bi-play-circle-fill'}`}></i>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+           <tbody>
+              {filteredData.map((accommodation) => {
+                console.log("숙소 한 줄 데이터:", accommodation);
+                // [핵심] 여기서 isPending을 정의해줘야 에러가 안 나!
+                const isPending = accommodation.approveStatus === '승인대기';
+
+                return (
+                  <tr 
+                    key={accommodation.tripProdNo}
+                    // [강조] 승인대기인 경우 배경색을 연한 파란색으로, 좌측에 굵은 선 추가!
+                    style={isPending ? { 
+                      backgroundColor: '#f0f7ff', 
+                      borderLeft: '4px solid #2563eb',
+                      transition: 'all 0.3s ease'
+                    } : {}}
+                  >
+                    <td>
+                      <div className="product-name" onClick={() => openDetailModal(accommodation)}>
+                        {accommodation.accName}
+                        {/* [NEW 뱃지] 신규 요청인 경우 이름 옆에 뙇! */}
+                        {isPending && (
+                          <span style={{ 
+                            marginLeft: '8px', 
+                            fontSize: '0.65rem', 
+                            background: '#2563eb', 
+                            color: '#fff', 
+                            padding: '2px 6px', 
+                            borderRadius: '4px',
+                            fontWeight: 'bold',
+                            verticalAlign: 'middle'
+                          }}>
+                            NEW
+                          </span>
+                        )}
+                      </div>
+                      {accommodation.starGrade > 0 && (
+                        <div style={{ fontSize: '0.75rem', color: '#d97706' }}>
+                          {'★'.repeat(accommodation.starGrade)}
+                        </div>
+                      )}
+                    </td>
+                    <td>
+                      <span className="badge badge-info">{getTypeLabel(accommodation.accCatCd)}</span>
+                    </td>
+                    <td>{getAreaLabel(accommodation.areaCode)}</td>
+                    <td>{accommodation.totalRooms || 0}개</td>
+                    {/* [추가] 잔여 객실 수 표시 로직 */}
+                      <td style={{ fontWeight: 600 }}>
+                        <span style={{ 
+                          color: accommodation.remainingCount <= 3 ? '#ef4444' : '#1e293b',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px'
+                        }}>
+                          <i className={`bi ${accommodation.remainingCount <= 3 ? 'bi-exclamation-triangle-fill' : 'bi-door-open'}`}></i>
+                          {accommodation.remainingCount || 0}개
+                        </span>
+                      </td>
+                    <td style={{ fontWeight: 500, color: '#2563eb' }}>{formatPrice(accommodation.minPrice)}</td>
+                    <td>
+                      <span className={`status-badge ${
+                        accommodation.approveStatus === '판매중' ? 'active' : 
+                        isPending ? 'pending' : 'inactive'
+                      }`}>
+                        {accommodation.approveStatus}
+                      </span>
+                    </td>
+                    <td>
+                      <div className="action-buttons">
+                        <button className="btn-icon" title="상세보기" onClick={() => openDetailModal(accommodation)}>
+                          <i className="bi bi-eye"></i>
+                        </button>
+                        
+                        {/* [관리 버튼 분기] 승인대기 상태면 '승인 전용 버튼' 노출! */}
+                        {isPending ? (
+                          <button 
+                            className="btn-icon status-active" 
+                            title="즉시 승인" 
+                            onClick={() => handleApprove(accommodation.tripProdNo)}
+                            style={{ color: '#10b981' }}
+                          >
+                            <i className="bi bi-check-circle-fill"></i>
+                          </button>
+                        ) : (
+                          <button 
+                            className={`btn-icon ${accommodation.approveStatus === '판매중' ? 'status-active' : 'status-inactive'}`}
+                            title={accommodation.approveStatus === '판매중' ? '판매 중지' : '판매 시작'} 
+                            onClick={() => toggleStatus(accommodation)}
+                          >
+                            <i className={`bi ${accommodation.approveStatus === '판매중' ? 'bi-pause-circle-fill' : 'bi-play-circle-fill'}`}></i>
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+
           </tbody>
         </table>
 
@@ -805,7 +862,7 @@ const toggleStatus = async (accommodation) => {
                           </span>
                           <span style={{ background: '#FFF7ED', color: '#EA580C', padding: '4px 10px', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 700 }}>
                             <i className="bi bi-star-fill me-1"></i>
-                            {selectedAccommodation.starRating > 0 ? `${selectedAccommodation.starRating}성급` : '무등급'}
+                            {selectedAccommodation.starGrade > 0 ? `${selectedAccommodation.starGrade}성급` : '무등급'}
                           </span>
                         </div>
                       </div>
@@ -815,7 +872,7 @@ const toggleStatus = async (accommodation) => {
                         <span className="label" style={{ fontSize: '0.85rem', color: '#94a3b8', fontWeight: 600, display: 'block', marginBottom: '6px' }}>운영 규모</span>
                         <div style={{ fontSize: '1rem', fontWeight: 700, color: '#334155' }}>
                           <i className="bi bi-door-open me-2" style={{ color: '#64748b' }}></i>
-                          총 {selectedAccommodation.totalRooms}개 객실
+                          총 {selectedAccommodation.totalRooms || 0}개 객실
                         </div>
                       </div>
                     </div>
