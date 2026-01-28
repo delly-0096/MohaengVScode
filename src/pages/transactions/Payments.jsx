@@ -17,7 +17,8 @@ import {
   RiPercentLine,
   RiCoinLine,
   RiRefund2Line,
-  RiCalendarLine
+  RiCalendarLine,
+  RiShoppingBagLine
 } from 'react-icons/ri';
 import { Modal } from '../../components/common/Modal';
 
@@ -34,8 +35,7 @@ function Payments() {
     totalCount: 0, 
     completedCount: 0, 
     pendingCount: 0, 
-    cancelledCount: 0,
-    totalAmount: 0 
+    totalRevenue: 0 
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -44,16 +44,22 @@ function Payments() {
   const [dateFilter, setDateFilter] = useState('1month');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [detailModal, setDetailModal] = useState({ isOpen: false, payment: null });
+  const [totalRecord, setTotalRecord] = useState(0);
+  const pageSize = 10;
+  const [detailModal, setDetailModal] = useState({ isOpen: false, payment: null, details: [] });
 
   // 통계 데이터 로딩
   const fetchStats = async () => {
     try {
       const res = await axios.get('http://localhost:8272/api/admin/transactions/payments/stats');
-      setStats(res.data);
+      setStats({
+        totalCount: res.data.TOTAL_COUNT || 0,
+        completedCount: res.data.COMPLETED_COUNT || 0,
+        pendingCount: res.data.PENDING_COUNT || 0,
+        totalRevenue: res.data.TOTAL_REVENUE || 0
+      });
     } catch (err) {
       console.error("통계 로딩 실패:", err);
-      // 통계는 실패해도 목록은 보여줌
     }
   };
 
@@ -61,24 +67,33 @@ function Payments() {
   const fetchPayments = async () => {
     setLoading(true);
     setError(null);
+    
+    console.log('🔍 검색 파라미터:', {
+      page: currentPage,
+      searchWord: searchTerm.trim(),
+      searchType: statusFilter === 'all' ? '' : statusFilter
+    });
+    
     try {
       const res = await axios.get('http://localhost:8272/api/admin/transactions/payments/list', {
         params: { 
-          page: currentPage, 
-          searchTerm: searchTerm.trim(), 
-          statusFilter, 
-          dateFilter 
+          page: currentPage,
+          searchWord: searchTerm.trim(),
+          searchType: statusFilter === 'all' ? '' : statusFilter
         }
       });
       
-      // 응답 구조에 따라 유연하게 처리
-      if (res.data.dataList) {
-        setPaymentsData(res.data.dataList);
-        setTotalPages(res.data.totalPages || 1);
-      } else if (Array.isArray(res.data)) {
-        setPaymentsData(res.data);
+      console.log('✅ 응답 데이터:', res.data);
+      
+      // PaginationInfoVO 구조에 맞게 처리
+      if (res.data) {
+        setPaymentsData(res.data.dataList || []);
+        setTotalRecord(res.data.totalRecord || 0);
+        setTotalPages(res.data.totalPage || 1);
       } else {
         setPaymentsData([]);
+        setTotalRecord(0);
+        setTotalPages(1);
       }
     } catch (err) {
       console.error("결제 목록 로딩 실패:", err);
@@ -97,7 +112,7 @@ function Payments() {
   // 필터/페이지 변경시 재로딩
   useEffect(() => {
     fetchPayments();
-  }, [currentPage, statusFilter, dateFilter]);
+  }, [currentPage, statusFilter]); // statusFilter 변경시 자동으로 fetchPayments 호출
 
   // 포맷팅 함수들
   const formatBrno = (num) => {
@@ -126,18 +141,19 @@ function Payments() {
   };
 
   // 검색 처리
-  const handleSearch = (e) => {
-    if (e.key === 'Enter' || e.type === 'click') {
-      setCurrentPage(1);
-      fetchPayments();
-    }
+  const handleSearch = () => {
+    setCurrentPage(1);
+    fetchPayments();
   };
 
   // 엑셀 다운로드
   const handleExcelDownload = async () => {
     try {
       const response = await axios.get('http://localhost:8272/api/admin/transactions/payments/excel', {
-        params: { searchTerm, statusFilter, dateFilter },
+        params: { 
+          searchWord: searchTerm,
+          searchType: statusFilter === 'all' ? '' : statusFilter
+        },
         responseType: 'blob'
       });
       
@@ -157,13 +173,23 @@ function Payments() {
   // 상세보기
   const handleViewDetail = async (payment) => {
     try {
-      // 상세 정보가 필요한 경우 추가 API 호출
+      // 회원용과 동일한 API 구조 사용
       const res = await axios.get(`http://localhost:8272/api/admin/transactions/payments/${payment.payNo}`);
-      setDetailModal({ isOpen: true, payment: res.data });
+      
+      if (res.data && res.data.master) {
+        // master와 details를 포함한 전체 데이터 전달
+        setDetailModal({ 
+          isOpen: true, 
+          payment: res.data.master,
+          details: res.data.details || []
+        });
+      } else {
+        // API 실패시 기본 데이터로 모달 열기
+        setDetailModal({ isOpen: true, payment, details: [] });
+      }
     } catch (err) {
       console.error("상세 정보 로딩 실패:", err);
-      // API 실패시 기본 데이터로 모달 열기
-      setDetailModal({ isOpen: true, payment });
+      setDetailModal({ isOpen: true, payment, details: [] });
     }
   };
 
@@ -208,7 +234,7 @@ function Payments() {
         <StatCard 
           bg="linear-gradient(135deg, #8b5cf6, #7c3aed)" 
           icon={<RiMoneyDollarCircleLine />} 
-          value={`₩${(stats.totalAmount || 0).toLocaleString()}`} 
+          value={`₩${(stats.totalRevenue || 0).toLocaleString()}`} 
           label="총 결제금액" 
           color="#8b5cf6"
         />
@@ -223,10 +249,10 @@ function Payments() {
             <input 
               type="text" 
               className="form-input" 
-              placeholder="주문번호, 회원명, 상품명, 판매자 검색" 
+              placeholder="주문번호, 회원명, 상품명 검색" 
               value={searchTerm} 
               onChange={(e) => setSearchTerm(e.target.value)}
-              onKeyPress={handleSearch}
+              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
             />
           </div>
           <div className="filter-group" style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -236,29 +262,22 @@ function Payments() {
               value={statusFilter} 
               onChange={(e) => {
                 setStatusFilter(e.target.value);
-                setCurrentPage(1);
+                setCurrentPage(1); // 페이지를 1로 리셋 (useEffect가 자동으로 fetchPayments 호출)
               }}
               style={{ width: 'auto' }}
             >
               <option value="all">전체 상태</option>
               <option value="WAIT">이용 예정</option>
               <option value="DONE">이용 완료</option>
-              <option value="CANCEL">취소/환불</option>
+              {/* <option value="CANCEL">취소/환불</option> */}
             </select>
-            <select 
-              className="form-input form-select" 
-              value={dateFilter} 
-              onChange={(e) => {
-                setDateFilter(e.target.value);
-                setCurrentPage(1);
-              }}
-              style={{ width: 'auto' }}
+            <button 
+              className="btn btn-primary" 
+              onClick={handleSearch}
+              style={{ marginLeft: '8px' }}
             >
-              <option value="1month">최근 1개월</option>
-              <option value="3months">최근 3개월</option>
-              <option value="6months">최근 6개월</option>
-              <option value="all">전체</option>
-            </select>
+              <RiSearchLine /> 검색
+            </button>
           </div>
         </div>
 
@@ -385,23 +404,117 @@ function Payments() {
         </div>
 
         {/* 페이지네이션 */}
-        {!loading && paymentsData.length > 0 && (
-          <div className="pagination">
-            <button 
-              className="pagination-btn" 
+        {!loading && paymentsData.length > 0 && totalPages > 1 && (
+          <div className="pagination-container" style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            gap: '4px',
+            marginTop: '20px',
+            paddingBottom: '20px'
+          }}>
+            {/* 맨 처음 */}
+            <button
+              className="btn-page"
+              onClick={() => setCurrentPage(1)}
+              disabled={currentPage === 1}
+              style={{
+                padding: '8px 12px',
+                border: '1px solid #e5e7eb',
+                borderRadius: '6px',
+                background: currentPage === 1 ? '#f3f4f6' : '#fff',
+                cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+                color: currentPage === 1 ? '#9ca3af' : '#374151'
+              }}
+            >
+              <i className="bi bi-chevron-double-left"></i>
+            </button>
+            
+            {/* 이전 */}
+            <button
+              className="btn-page"
               onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
               disabled={currentPage === 1}
+              style={{
+                padding: '8px 12px',
+                border: '1px solid #e5e7eb',
+                borderRadius: '6px',
+                background: currentPage === 1 ? '#f3f4f6' : '#fff',
+                cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+                color: currentPage === 1 ? '#9ca3af' : '#374151'
+              }}
             >
-              &lt;
+              <i className="bi bi-chevron-left"></i>
             </button>
-            <button className="pagination-btn active">{currentPage}</button>
-            <button 
-              className="pagination-btn" 
-              onClick={() => setCurrentPage(prev => prev + 1)}
-              disabled={currentPage >= totalPages}
+            
+            {/* 페이지 번호들 */}
+            {(() => {
+              const blockSize = 5;
+              const startPage = Math.floor((currentPage - 1) / blockSize) * blockSize + 1;
+              const endPage = Math.min(startPage + blockSize - 1, totalPages);
+              const pages = [];
+              
+              for (let i = startPage; i <= endPage; i++) {
+                pages.push(
+                  <button
+                    key={i}
+                    onClick={() => setCurrentPage(i)}
+                    style={{
+                      padding: '8px 14px',
+                      border: '1px solid',
+                      borderColor: currentPage === i ? '#3b82f6' : '#e5e7eb',
+                      borderRadius: '6px',
+                      background: currentPage === i ? '#3b82f6' : '#fff',
+                      color: currentPage === i ? '#fff' : '#374151',
+                      cursor: 'pointer',
+                      fontWeight: currentPage === i ? 600 : 400
+                    }}
+                  >
+                    {i}
+                  </button>
+                );
+              }
+              return pages;
+            })()}
+            
+            {/* 다음 */}
+            <button
+              className="btn-page"
+              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages}
+              style={{
+                padding: '8px 12px',
+                border: '1px solid #e5e7eb',
+                borderRadius: '6px',
+                background: currentPage === totalPages ? '#f3f4f6' : '#fff',
+                cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+                color: currentPage === totalPages ? '#9ca3af' : '#374151'
+              }}
             >
-              &gt;
+              <i className="bi bi-chevron-right"></i>
             </button>
+            
+            {/* 맨 끝 */}
+            <button
+              className="btn-page"
+              onClick={() => setCurrentPage(totalPages)}
+              disabled={currentPage === totalPages}
+              style={{
+                padding: '8px 12px',
+                border: '1px solid #e5e7eb',
+                borderRadius: '6px',
+                background: currentPage === totalPages ? '#f3f4f6' : '#fff',
+                cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+                color: currentPage === totalPages ? '#9ca3af' : '#374151'
+              }}
+            >
+              <i className="bi bi-chevron-double-right"></i>
+            </button>
+            
+            {/* 페이지 정보 */}
+            <span style={{ marginLeft: '16px', color: '#6b7280', fontSize: '0.875rem' }}>
+              총 {totalRecord}개 중 {(currentPage - 1) * pageSize + 1}-{Math.min(currentPage * pageSize, totalRecord)}
+            </span>
           </div>
         )}
       </div>
@@ -409,44 +522,56 @@ function Payments() {
       {/* 상세보기 모달 */}
       <Modal
         isOpen={detailModal.isOpen}
-        onClose={() => setDetailModal({ isOpen: false, payment: null })}
+        onClose={() => setDetailModal({ isOpen: false, payment: null, details: [] })}
         title="결제 상세정보"
         size="large"
       >
         {detailModal.payment && (
           <div style={{ maxHeight: '70vh', overflowY: 'auto' }}>
             {/* 상태 뱃지 */}
-            <div style={{ textAlign: 'center', padding: 16, background: '#f8fafc', borderRadius: 8, marginBottom: 20 }}>
-              <span className={`badge ${statusLabels[detailModal.payment.payStatus]?.className}`} style={{ fontSize: '0.9rem', padding: '8px 16px' }}>
-                {statusLabels[detailModal.payment.payStatus]?.label}
-              </span>
-            </div>
+
 
             {/* 상품 정보 */}
-            <div style={{ display: 'flex', gap: 16, padding: 16, background: '#f8fafc', borderRadius: 8, marginBottom: 20 }}>
-              {detailModal.payment.productImage && (
-                <img
-                  src={detailModal.payment.productImage}
-                  alt={detailModal.payment.prodName || detailModal.payment.itemTitle}
-                  style={{ width: 100, height: 100, borderRadius: 8, objectFit: 'cover' }}
-                />
-              )}
-              <div style={{ flex: 1 }}>
-                <h4 style={{ margin: '0 0 8px 0', fontSize: '1.1rem' }}>
-                  {detailModal.payment.prodName || detailModal.payment.itemTitle}
-                </h4>
-                {detailModal.payment.useDate && (
-                  <p style={{ margin: '4px 0', fontSize: '0.9rem', color: '#64748b' }}>
-                    {detailModal.payment.useDate}
-                  </p>
-                )}
-                {detailModal.payment.option && (
-                  <p style={{ margin: '4px 0', fontSize: '0.9rem', color: '#64748b' }}>
-                    {detailModal.payment.option}
-                  </p>
-                )}
+
+
+            {/* 상세 상품 목록 (회원용처럼 추가) */}
+            {detailModal.details && detailModal.details.length > 0 && (
+              <div style={{ marginBottom: 20, paddingBottom: 16, borderBottom: '1px solid #e2e8f0' }}>
+                <h5 style={{ fontSize: '0.9rem', fontWeight: 600, color: '#334155', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <RiShoppingBagLine /> 구매 상품 목록
+                </h5>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {detailModal.details.map((item, index) => {
+                    // 이미지 경로 처리
+
+
+                    return (
+                      <div key={index} style={{ 
+                        display: 'flex', 
+                        gap: 15, 
+                        padding: 12, 
+                        background: '#f8fafc', 
+                        borderRadius: 8,
+                        alignItems: 'center'
+                      }}>
+                        
+                        <div style={{ flex: 1 }}>
+                          <h4 style={{ margin: '0 0 5px 0', fontSize: '16px', fontWeight: 600 }}>
+                            {item.PROD_NAME}
+                          </h4>
+                          <p style={{ margin: '0', fontSize: '14px', color: '#64748b' }}>
+                            {item.USE_INFO}
+                          </p>
+                          <p style={{ margin: '0', fontSize: '14px', color: '#64748b' }}>
+                            {item.QUANTITY}개 | ₩{Number(item.ITEM_TOTAL_PRICE || 0).toLocaleString()}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* 결제 정보 */}
             <div style={{ marginBottom: 20, paddingBottom: 16, borderBottom: '1px solid #e2e8f0' }}>
@@ -456,16 +581,16 @@ function Payments() {
               <div className="detail-list">
                 <div className="detail-item">
                   <span className="detail-label">주문번호</span>
-                  <span className="detail-value font-medium">{detailModal.payment.orderNo}</span>
+                  <span className="detail-value font-medium">{detailModal.payment.orderNo || detailModal.payment.ORDER_NO}</span>
                 </div>
                 <div className="detail-item">
                   <span className="detail-label">결제일시</span>
-                  <span className="detail-value">{formatDate(detailModal.payment.payDt)}</span>
+                  <span className="detail-value">{detailModal.payment.payDt || detailModal.payment.PAY_DT}</span>
                 </div>
                 <div className="detail-item">
                   <span className="detail-label">결제수단</span>
                   <span className="detail-value">
-                    {detailModal.payment.payMethodCd}
+                    {detailModal.payment.payMethodCd || detailModal.payment.PAY_METHOD_CD}
                     {detailModal.payment.cardNo && detailModal.payment.cardNo !== '-' && ` (${detailModal.payment.cardNo})`}
                   </span>
                 </div>
@@ -482,35 +607,39 @@ function Payments() {
                   <span className="detail-label">상품 금액</span>
                   <span className="detail-value">
                     ₩{(
-                      (detailModal.payment.discount || 0) + 
-                      (detailModal.payment.usePoint || 0) + 
-                      (detailModal.payment.payTotalAmt || 0)
+                      (detailModal.payment.TOTAL_DISCOUNT || detailModal.payment.discount || 0) +
+                      (detailModal.payment.USE_POINT || detailModal.payment.usePoint || 0) +
+                      (detailModal.payment.PAY_TOTAL_AMT || detailModal.payment.payTotalAmt || 0)
                     ).toLocaleString()}
                   </span>
                 </div>
                 <div className="detail-item">
                   <span className="detail-label"><RiPercentLine style={{ marginRight: 4 }} />할인</span>
                   <span className="detail-value" style={{ color: '#ef4444' }}>
-                    {detailModal.payment.discount > 0 ? `-₩${detailModal.payment.discount.toLocaleString()}` : '₩0'}
+                    {(detailModal.payment.TOTAL_DISCOUNT || detailModal.payment.discount || 0) > 0 
+                      ? `-₩${(detailModal.payment.TOTAL_DISCOUNT || detailModal.payment.discount || 0).toLocaleString()}` 
+                      : '₩0'}
                   </span>
                 </div>
                 <div className="detail-item">
                   <span className="detail-label"><RiCoinLine style={{ marginRight: 4 }} />포인트 사용</span>
                   <span className="detail-value" style={{ color: '#ef4444' }}>
-                    {detailModal.payment.usePoint > 0 ? `-₩${detailModal.payment.usePoint.toLocaleString()}` : '₩0'}
+                    {(detailModal.payment.USE_POINT || detailModal.payment.usePoint || 0) > 0 
+                      ? `-₩${(detailModal.payment.USE_POINT || detailModal.payment.usePoint || 0).toLocaleString()}` 
+                      : '₩0'}
                   </span>
                 </div>
                 <div className="detail-item" style={{ borderTop: '1px solid #e2e8f0', marginTop: 8, paddingTop: 12 }}>
                   <span className="detail-label font-medium">총 결제금액</span>
                   <span className="detail-value font-medium" style={{ fontSize: '1.125rem', color: 'var(--primary-color)' }}>
-                    ₩{detailModal.payment.payTotalAmt.toLocaleString()}
+                    ₩{(detailModal.payment.PAY_TOTAL_AMT || detailModal.payment.payTotalAmt || 0).toLocaleString()}
                   </span>
                 </div>
               </div>
             </div>
 
             {/* 적립 정보 */}
-            {detailModal.payment.payStatus !== 'CANCEL' && (
+            {(detailModal.payment.PAY_STATUS || detailModal.payment.payStatus) !== 'CANCEL' && (
               <div style={{ marginBottom: 20, paddingBottom: 16, borderBottom: '1px solid #e2e8f0' }}>
                 <h5 style={{ fontSize: '0.9rem', fontWeight: 600, color: '#334155', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
                   <RiCoinLine /> 적립 정보
@@ -519,7 +648,7 @@ function Payments() {
                   <div className="detail-item">
                     <span className="detail-label">적립 포인트</span>
                     <span className="detail-value" style={{ color: 'var(--primary-color)', fontWeight: 600 }}>
-                      +{Math.floor(detailModal.payment.payTotalAmt * 0.1).toLocaleString()}P
+                      +{Math.floor((detailModal.payment.PAY_TOTAL_AMT || detailModal.payment.payTotalAmt || 0) * 0.1).toLocaleString()}P
                     </span>
                   </div>
                 </div>
@@ -579,15 +708,15 @@ function Payments() {
               <div className="detail-list">
                 <div className="detail-item">
                   <span className="detail-label">결제자명</span>
-                  <span className="detail-value">{detailModal.payment.memName}</span>
+                  <span className="detail-value">{detailModal.payment.MEM_NAME || detailModal.payment.memName}</span>
                 </div>
                 <div className="detail-item">
                   <span className="detail-label"><RiPhoneLine style={{ marginRight: 4 }} />연락처</span>
-                  <span className="detail-value">{formatTel(detailModal.payment.memTel)}</span>
+                  <span className="detail-value">{formatTel(detailModal.payment.MEM_TEL || detailModal.payment.memTel)}</span>
                 </div>
                 <div className="detail-item">
                   <span className="detail-label"><RiMailLine style={{ marginRight: 4 }} />이메일</span>
-                  <span className="detail-value">{detailModal.payment.memEmail}</span>
+                  <span className="detail-value">{detailModal.payment.MEM_EMAIL || detailModal.payment.memEmail}</span>
                 </div>
               </div>
             </div>
@@ -600,15 +729,15 @@ function Payments() {
               <div className="detail-list">
                 <div className="detail-item">
                   <span className="detail-label">상호명</span>
-                  <span className="detail-value">{detailModal.payment.bzmnNm}</span>
+                  <span className="detail-value">{detailModal.payment.BZMN_NM || detailModal.payment.bzmnNm || '정보 없음'}</span>
                 </div>
                 <div className="detail-item">
                   <span className="detail-label">사업자번호</span>
-                  <span className="detail-value">{formatBrno(detailModal.payment.brno)}</span>
+                  <span className="detail-value">{formatBrno(detailModal.payment.BRNO || detailModal.payment.brno)}</span>
                 </div>
                 <div className="detail-item">
                   <span className="detail-label">연락처</span>
-                  <span className="detail-value">{formatTel(detailModal.payment.compTel)}</span>
+                  <span className="detail-value">{formatTel(detailModal.payment.COMP_TEL || detailModal.payment.compTel)}</span>
                 </div>
               </div>
             </div>
