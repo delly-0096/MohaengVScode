@@ -29,27 +29,27 @@ import { Modal, ConfirmModal } from '../../components/common/Modal';
 const initialBusinessData = [
   {
     id: 1,
-    visibleId: 'BIZ001',
-    visibleUserId: 'tourkorea01',
-    companyName: '(주)투어코리아',
-    businessNo: '1234567890',
-    businessLicense: 'license_tourkorea.pdf',
-    ceoName: '김대표',
-    ecommerceNo: '제2024-서울강남-0001호',
-    companyWebsite: 'https://tourkorea.com',
-    companyDescription: '국내외 패키지 여행 전문 여행사입니다. 20년 이상의 경험과 노하우로 고객님께 최고의 여행을 선사합니다.',
-    companyPostcode: '06134',
-    companyAddress: '서울시 강남구 테헤란로 123',
-    companyAddressDetail: '5층 501호',
-    managerName: '박담당',
-    managerPhone: '01012345678',
-    managerEmail: 'manager@tourkorea.com',
-    bankName: 'KB국민은행',
-    accountNumber: '123456789012',
-    accountHolder: '(주)투어코리아',
-    joinDate: '2024-01-10',
-    status: 'approved',
-    products: 15,
+    visibleId: 'BIZ0075',
+    visibleUserId: 'grandhayyt',
+    companyName: '그랜드하얏트 제주',
+    businessNo: '0512312561',
+    businessLicense: 'license_grandhayyt.pdf',
+    ceoName: '그랜드',
+    ecommerceNo: '제2000-제주특별-1231호',
+    companyWebsite: 'https://grandhayyt.com',
+    companyDescription: '그랜드 하얏트 제주는 제주국제공항에서 차로 약 10분가량 떨어져 있습니다. 주변 관광지로는 산책하기 좋은 한라 수목원이 차로 약 7분, 멋진 경관의 이호테우 해수욕장이 차로 약 12분, 구경거리가 가득한 동문수산시장이 차로 약 20분가량 소요됩니다. 호텔에는 아름다운 뷰를 감상하며 수영을 즐길 수 있는 인피니티 풀과 프리미엄 스파 뿐만 아니라, 키즈 아케이드, 피트니스 센터 등이 마련되어 있습니다. 또한, 컨시어지 서비스와 룸서비스, 와이파이 등 여러 서비스도 이용하실 수 있습니다.',
+    companyPostcode: '63082',
+    companyAddress: '제주특별자치도 제주시 노연로 12',
+    companyAddressDetail: '그랜드하얏트 제',
+    managerName: '그랜드',
+    managerPhone: '0294913112',
+    managerEmail: 'jeju@grandhayyt.com',
+    bankName: '하나은행',
+    accountNumber: '01203132133',
+    accountHolder: '그랜드',
+    joinDate: '2026-01-27',
+    status: 'pending',
+    products: 0,
     logo: null,
     agreeTerms: true,
     agreePrivacy: true,
@@ -64,27 +64,27 @@ const initialBusinessData = [
   },
   {
     id: 2,
-    visibleId: 'BIZ002',
-    visibleUserId: 'skytravel22',
-    companyName: '스카이트래블',
-    businessNo: '2345678901',
-    businessLicense: 'license_skytravel.pdf',
-    ceoName: '이사장',
-    ecommerceNo: '제2024-서울중구-0015호',
-    companyWebsite: 'https://skytravel.com',
-    companyDescription: '항공권 전문 판매 업체입니다. 국내외 모든 항공사 최저가 보장!',
-    companyPostcode: '04539',
-    companyAddress: '서울시 중구 을지로 456',
-    companyAddressDetail: '3층',
-    managerName: '최담당',
-    managerPhone: '01023456789',
-    managerEmail: 'manager@skytravel.com',
-    bankName: '신한은행',
-    accountNumber: '234567890123',
-    accountHolder: '스카이트래블',
-    joinDate: '2024-02-15',
-    status: 'approved',
-    products: 8,
+    visibleId: 'BIZ0072',
+    visibleUserId: 'a009',
+    companyName: '데레사리조트',
+    businessNo: '1234567899',
+    businessLicense: 'license_deresaresort.pdf',
+    ceoName: '김데레사',
+    ecommerceNo: '제2025-서울강남-12013호',
+    companyWebsite: 'https://deresaresort.com',
+    companyDescription: '태안 해수욕장 앞 엄청 크고 멋진 리조트가 있습니다. 사계절 내내 놀러 오기 좋은 곳에서 편히 쉬다 가세요 :)',
+    companyPostcode: '34908',
+    companyAddress: '대전 중구 계룡로 846',
+    companyAddressDetail: '대덕인재개발원',
+    managerName: '김데레사',
+    managerPhone: '0101234123',
+    managerEmail: 'deresa@resort.com',
+    bankName: '카카오뱅크',
+    accountNumber: '010110110110',
+    accountHolder: '김데레사',
+    joinDate: '2026-01-21',
+    status: 'rejected',
+    products: 0,
     logo: null,
     agreeTerms: true,
     agreePrivacy: true,
@@ -98,27 +98,27 @@ const initialBusinessData = [
   },
   {
     id: 3,
-    visibleId: 'BIZ003',
-    visibleUserId: 'paradise33',
-    companyName: '호텔파라다이스',
-    businessNo: '3456789012',
-    businessLicense: 'license_paradise.pdf',
-    ceoName: '박호텔',
-    ecommerceNo: '제2024-부산해운대-0023호',
-    companyWebsite: 'https://hotelparadise.com',
-    companyDescription: '해운대 최고급 리조트 호텔입니다. 오션뷰 객실과 프리미엄 서비스를 제공합니다.',
-    companyPostcode: '48094',
-    companyAddress: '부산시 해운대구 해변로 789',
-    companyAddressDetail: '',
-    managerName: '김매니저',
-    managerPhone: '01034567890',
-    managerEmail: 'manager@hotelparadise.com',
+    visibleId: 'BIZ0069',
+    visibleUserId: 'a008',
+    companyName: '둘리투어',
+    businessNo: '1234132113',
+    businessLicense: 'license_dullitour.pdf',
+    ceoName: '고둘리',
+    ecommerceNo: '제2025-대전탄방-10000호',
+    companyWebsite: 'https://dullitour.com',
+    companyDescription: '둘리투어에서 제대로 된 여행을 선보이겠습니다',
+    companyPostcode: '34908',
+    companyAddress: '대전 중구 계룡로 846',
+    companyAddressDetail: '대덕인재개발원',
+    managerName: '고둘리',
+    managerPhone: '0101122112',
+    managerEmail: 'dulli@tour.com',
     bankName: '하나은행',
-    accountNumber: '345678901234',
-    accountHolder: '호텔파라다이스',
-    joinDate: '2024-03-20',
-    status: 'pending',
-    products: 0,
+    accountNumber: '010230132103',
+    accountHolder: '고둘리',
+    joinDate: '2026-01-12',
+    status: 'approved',
+    products: 7,
     logo: null,
     agreeTerms: true,
     agreePrivacy: true,
@@ -132,27 +132,27 @@ const initialBusinessData = [
   },
   {
     id: 4,
-    visibleId: 'BIZ004',
-    visibleUserId: 'experience44',
-    companyName: '체험여행사',
-    businessNo: '4567890123',
-    businessLicense: 'license_experience.pdf',
-    ceoName: '최체험',
-    ecommerceNo: '제2024-제주시-0005호',
-    companyWebsite: 'https://experience.com',
-    companyDescription: '제주도 체험 프로그램 전문 여행사입니다. 감귤따기, 승마, 스쿠버다이빙 등 다양한 체험을 제공합니다.',
-    companyPostcode: '63084',
-    companyAddress: '제주시 애월읍 체험로 101',
-    companyAddressDetail: '1층',
-    managerName: '정담당',
-    managerPhone: '01045678901',
-    managerEmail: 'manager@experience.com',
-    bankName: 'NH농협은행',
-    accountNumber: '456789012345',
-    accountHolder: '체험여행사',
-    joinDate: '2024-04-25',
+    visibleId: 'BIZ0047',
+    visibleUserId: 'a006',
+    companyName: '여행가자',
+    businessNo: '1231323132',
+    businessLicense: 'license_yeohaenggaja .pdf',
+    ceoName: '김여행',
+    ecommerceNo: '제2022-대전탄방-12133호',
+    companyWebsite: 'https://yeohaenggaja.com',
+    companyDescription: '여행 갈 사람 모두 모여라!!!!@!@',
+    companyPostcode: '34908',
+    companyAddress: '대전 중구 계룡로 846',
+    companyAddressDetail: '대덕인재개발원',
+    managerName: '박투어',
+    managerPhone: '01012313213',
+    managerEmail: 'trip@trip.com',
+    bankName: '우리은행',
+    accountNumber: '9201230123',
+    accountHolder: '김여행',
+    joinDate: '2026-01-07',
     status: 'approved',
-    products: 22,
+    products: 5,
     logo: null,
     agreeTerms: true,
     agreePrivacy: true,
@@ -166,27 +166,27 @@ const initialBusinessData = [
   },
   {
     id: 5,
-    visibleId: 'BIZ005',
-    visibleUserId: 'globaltour55',
-    companyName: '글로벌투어',
-    businessNo: '5678901234',
-    businessLicense: 'license_global.pdf',
-    ceoName: '정글로벌',
-    ecommerceNo: '제2024-서울서초-0042호',
-    companyWebsite: 'https://globaltour.com',
-    companyDescription: '해외여행 전문 여행사입니다. 유럽, 미주, 동남아 등 전세계 여행 상품을 취급합니다.',
-    companyPostcode: '06615',
-    companyAddress: '서울시 서초구 서초대로 202',
-    companyAddressDetail: '10층 1001호',
-    managerName: '강담당',
-    managerPhone: '01056789012',
-    managerEmail: 'manager@globaltour.com',
-    bankName: '우리은행',
-    accountNumber: '567890123456',
-    accountHolder: '글로벌투어',
-    joinDate: '2024-05-30',
-    status: 'rejected',
-    products: 0,
+    visibleId: 'BIZ0045',
+    visibleUserId: 'a005',
+    companyName: '보람투어',
+    businessNo: '1231321323',
+    businessLicense: 'license_boramtour.pdf',
+    ceoName: '김보람',
+    ecommerceNo: '제2024-서울강남-12313호',
+    companyWebsite: 'https://boramtour.com',
+    companyDescription: '보람투어입니다',
+    companyPostcode: '06232',
+    companyAddress: '서울 강남구 강남대로 지하 396',
+    companyAddressDetail: '보람투어',
+    managerName: '김보람',
+    managerPhone: '0102131123',
+    managerEmail: 'eee@eee.eee',
+    bankName: 'KB국민은행',
+    accountNumber: '12313231321',
+    accountHolder: '김보람',
+    joinDate: '2026-01-05',
+    status: 'approved',
+    products: 7,
     logo: null,
     agreeTerms: true,
     agreePrivacy: true,
@@ -201,26 +201,26 @@ const initialBusinessData = [
   {
     id: 6,
     visibleId: 'BIZ006',
-    visibleUserId: 'healingstay66',
-    companyName: '힐링스테이',
-    businessNo: '6789012345',
-    businessLicense: 'license_healing.pdf',
-    ceoName: '강힐링',
-    ecommerceNo: '제2024-강원평창-0008호',
-    companyWebsite: 'https://healingstay.com',
-    companyDescription: '평창의 자연 속에서 힐링할 수 있는 펜션입니다. 스파, 바베큐 시설 완비.',
-    companyPostcode: '25377',
-    companyAddress: '강원도 평창군 힐링로 303',
-    companyAddressDetail: '',
-    managerName: '윤담당',
-    managerPhone: '01067890123',
-    managerEmail: 'manager@healingstay.com',
-    bankName: 'IBK기업은행',
-    accountNumber: '678901234567',
-    accountHolder: '힐링스테이',
-    joinDate: '2024-06-05',
+    visibleUserId: 'a002',
+    companyName: '데레사여행',
+    businessNo: '1231213213',
+    businessLicense: 'license_deresayeohaeng .pdf',
+    ceoName: '김데레사',
+    ecommerceNo: '제2025-대전서구-12919호',
+    companyWebsite: 'https://deresayeohaeng .com',
+    companyDescription: '저희 데레사여행은 언제나 편안함을 추구합니다',
+    companyPostcode: '35279',
+    companyAddress: '대전 서구 계룡로 198',
+    companyAddressDetail: '계룡로 어딘가',
+    managerName: '김데레사',
+    managerPhone: '01012341234',
+    managerEmail: 'deresa@trip.com',
+    bankName: 'KB국민은행',
+    accountNumber: '0101201230132',
+    accountHolder: '김데레사',
+    joinDate: '2026-01-02',
     status: 'approved',
-    products: 5,
+    products: 18,
     logo: null,
     agreeTerms: true,
     agreePrivacy: true,
@@ -331,6 +331,45 @@ function BusinessMembers() {
     const matchesStatus = statusFilter === 'all' || biz.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
+
+  // 엑셀(CSV) 다운로드 핸들러
+  const handleExcelDownload = () => {
+    // 1. 헤더 정의
+    const headers = ['회원번호', '아이디', '회사명', '사업주', '사업자번호', '담당자', '연락처', '가입일', '상품수', '상태'];
+    
+    // 2. 데이터 행 변환
+    const rows = filteredBusinesses.map(biz => [
+      biz.visibleId,
+      biz.visibleUserId,
+      biz.companyName,
+      biz.ceoName,
+      biz.businessNo,
+      biz.managerName,
+      biz.managerPhone,
+      biz.joinDate,
+      biz.products,
+      statusLabels[biz.status].label
+    ]);
+
+    // 3. CSV 내용 생성 (쉼표로 구분, 한글 깨짐 방지를 위해 BOM 추가)
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.join(','))
+    ].join('\n');
+
+    // 4. 다운로드 로직 (Blob 이용)
+    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    
+    const timestamp = new Date().toISOString().split('T')[0];
+    link.href = url;
+    link.setAttribute('download', `mohaeng_business_members_${timestamp}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
 
   const pendingCount = businessData.filter(b => b.status === 'pending').length;
 
@@ -539,7 +578,7 @@ function BusinessMembers() {
           </p>
         </div>
         <div className="page-header-actions">
-          <button className="btn btn-outline">
+          <button className="btn btn-outline" onClick={handleExcelDownload}>
             <RiDownloadLine /> 엑셀 다운로드
           </button>
           <button className="btn btn-primary" onClick={handleRegister}>
@@ -669,10 +708,10 @@ function BusinessMembers() {
 
         {/* 페이지네이션 */}
         <div className="pagination">
-          <button className="pagination-btn" disabled>&lt;</button>
+          {/* <button className="pagination-btn" disabled>&lt;</button> */}
           <button className="pagination-btn active">1</button>
-          <button className="pagination-btn">2</button>
-          <button className="pagination-btn">&gt;</button>
+          {/* <button className="pagination-btn">2</button> */}
+          {/* <button className="pagination-btn">&gt;</button> */}
         </div>
       </div>
 
@@ -918,21 +957,6 @@ function BusinessMembers() {
                   <span className="detail-value">{detailModal.business.products}개</span>
                 </div>
               </div>
-            </div>
-
-            {/* 관리 기능 */}
-            <div style={{ marginTop: 24, paddingTop: 16, borderTop: '1px solid #e5e7eb' }}>
-              <button
-                className="btn btn-outline"
-                style={{ width: '100%' }}
-                onClick={() => {
-                  setDetailModal({ isOpen: false, business: null });
-                  handlePasswordChange(detailModal.business);
-                }}
-              >
-                <RiLockLine style={{ marginRight: 8 }} />
-                비밀번호 변경
-              </button>
             </div>
           </div>
         )}
