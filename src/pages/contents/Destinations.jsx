@@ -38,7 +38,7 @@ const bestSeasonOptions = [
   { value: 'all', label: '연중' }
 ];
 
-// 샘플 데이터 (국내 여행지만)
+// 샘플 데이터 (국내 관광지만)
 const initialDestinationsData = [
   {
     id: 1,
@@ -56,7 +56,7 @@ const initialDestinationsData = [
     status: 'active',
     isPopular: true,
     ranking: 1,
-    description: '대한민국 최남단의 아름다운 섬. 한라산, 올레길, 해변 등 다양한 자연경관과 맛있는 흑돼지, 해산물을 즐길 수 있는 국내 최고의 여행지입니다.',
+    description: '대한민국 최남단의 아름다운 섬. 한라산, 올레길, 해변 등 다양한 자연경관과 맛있는 흑돼지, 해산물을 즐길 수 있는 국내 최고의 관광지입니다.',
     imageUrl: 'https://images.unsplash.com/photo-1590650046871-92c887180603?w=800&q=80',
     images: [
       'https://images.unsplash.com/photo-1590650046871-92c887180603?w=800&q=80',
@@ -149,7 +149,7 @@ const initialDestinationsData = [
     status: 'active',
     isPopular: false,
     ranking: 5,
-    description: '남해안의 낭만적인 항구 도시. 아름다운 밤바다와 해상케이블카, 맛있는 해산물 요리로 연인들에게 특히 인기 있는 여행지입니다.',
+    description: '남해안의 낭만적인 항구 도시. 아름다운 밤바다와 해상케이블카, 맛있는 해산물 요리로 연인들에게 특히 인기 있는 관광지입니다.',
     imageUrl: 'https://images.unsplash.com/photo-1544550581-5f7ceaf7f992?w=800&q=80',
     images: [],
     createdAt: '2024-02-20',
@@ -259,7 +259,7 @@ const initialDestinationsData = [
     status: 'active',
     isPopular: false,
     ranking: 10,
-    description: '호반의 도시 춘천. 아름다운 남이섬과 맛있는 닭갈비, 막국수로 유명한 강원도의 대표 여행지입니다.',
+    description: '호반의 도시 춘천. 아름다운 남이섬과 맛있는 닭갈비, 막국수로 유명한 강원도의 대표 관광지입니다.',
     imageUrl: 'https://images.unsplash.com/photo-1544550581-5f7ceaf7f992?w=800&q=80',
     images: [],
     createdAt: '2024-02-28',
@@ -405,7 +405,7 @@ function Destinations() {
     };
     setDestinationsData(prev => [newDestination, ...prev]);
     setAddModal(false);
-    alert('여행지가 등록되었습니다.');
+    alert('관광지가 등록되었습니다.');
   };
 
   // 수정
@@ -421,7 +421,7 @@ function Destinations() {
     };
     setDestinationsData(prev => prev.map(d => d.id === editForm.id ? updatedData : d));
     setEditModal({ isOpen: false, destination: null });
-    alert('여행지 정보가 수정되었습니다.');
+    alert('관광지 정보가 수정되었습니다.');
   };
 
   // 삭제
@@ -432,7 +432,7 @@ function Destinations() {
   const handleDeleteConfirm = () => {
     setDestinationsData(prev => prev.filter(d => d.id !== deleteModal.destination.id));
     setDeleteModal({ isOpen: false, destination: null });
-    alert('여행지가 삭제되었습니다.');
+    alert('관광지가 삭제되었습니다.');
   };
 
   // 인기 토글
@@ -500,11 +500,11 @@ function Destinations() {
       {/* 기본 정보 */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
         <div className="form-group">
-          <label className="form-label">여행지명 *</label>
+          <label className="form-label">관광지명 *</label>
           <input
             type="text"
             className="form-input"
-            placeholder="여행지명을 입력하세요"
+            placeholder="관광지명을 입력하세요"
             value={editForm.name || ''}
             onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
           />
@@ -616,14 +616,14 @@ function Destinations() {
         <textarea
           className="form-input"
           rows={4}
-          placeholder="여행지 소개를 입력하세요"
+          placeholder="관광지 소개를 입력하세요"
           value={editForm.description || ''}
           onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
           style={{ resize: 'vertical' }}
         />
       </div>
 
-      {/* 인기 여행지 설정 */}
+      {/* 인기 관광지 설정 */}
       <div className="form-group">
         <label className="checkbox-label" style={{ cursor: 'pointer' }}>
           <input
@@ -631,7 +631,7 @@ function Destinations() {
             checked={editForm.isPopular || false}
             onChange={(e) => setEditForm({ ...editForm, isPopular: e.target.checked })}
           />
-          <span style={{ marginLeft: 8 }}>인기 여행지로 설정 (메인 페이지에 노출)</span>
+          <span style={{ marginLeft: 8 }}>인기 관광지로 설정 (메인 페이지에 노출)</span>
         </label>
       </div>
     </div>
@@ -640,13 +640,13 @@ function Destinations() {
   return (
     <div className="products-page">
       <div className="page-header">
-        <h1>여행지 정보 관리</h1>
+        <h1>관광지 정보 관리</h1>
         <div className="header-actions">
           <button className="btn btn-outline">
             <i className="bi bi-download"></i> 엑셀 다운로드
           </button>
           <button className="btn btn-primary" onClick={handleAdd}>
-            <RiAddLine /> 여행지 추가
+            <RiAddLine /> 관광지 추가
           </button>
         </div>
       </div>
@@ -657,7 +657,7 @@ function Destinations() {
           <div className="stat-icon blue"><i className="bi bi-geo-alt"></i></div>
           <div className="stat-content">
             <span className="stat-value">{stats.total}</span>
-            <span className="stat-label">전체 여행지</span>
+            <span className="stat-label">전체 관광지</span>
           </div>
         </div>
         <div className="stat-card">
@@ -671,7 +671,7 @@ function Destinations() {
           <div className="stat-icon yellow"><i className="bi bi-star"></i></div>
           <div className="stat-content">
             <span className="stat-value">{stats.popular}</span>
-            <span className="stat-label">인기 여행지</span>
+            <span className="stat-label">인기 관광지</span>
           </div>
         </div>
         <div className="stat-card">
@@ -697,7 +697,7 @@ function Destinations() {
             <i className="bi bi-search"></i>
             <input
               type="text"
-              placeholder="여행지명, 국가, 태그 검색..."
+              placeholder="관광지명, 국가, 태그 검색..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -744,7 +744,7 @@ function Destinations() {
           <thead>
             <tr>
               <th style={{ width: 50 }}>순위</th>
-              <th>여행지</th>
+              <th>관광지</th>
               <th>지역</th>
               <th>여행 스타일</th>
               <th>일정 포함</th>
@@ -822,7 +822,7 @@ function Destinations() {
                 <td>
                   <button
                     className={`btn-icon ${item.isPopular ? 'warning' : ''}`}
-                    title={item.isPopular ? '인기 여행지' : '일반'}
+                    title={item.isPopular ? '인기 관광지' : '일반'}
                     onClick={() => togglePopular(item)}
                     style={{ background: item.isPopular ? '#FEF3C7' : 'var(--bg-color)', color: item.isPopular ? '#D97706' : 'var(--text-light)' }}
                   >
@@ -849,7 +849,7 @@ function Destinations() {
         {filteredData.length === 0 && (
           <div className="empty-state">
             <i className="bi bi-geo-alt"></i>
-            <p>조건에 맞는 여행지가 없습니다.</p>
+            <p>조건에 맞는 관광지가 없습니다.</p>
           </div>
         )}
       </div>
@@ -858,7 +858,7 @@ function Destinations() {
       <Modal
         isOpen={detailModal.isOpen}
         onClose={() => setDetailModal({ isOpen: false, destination: null })}
-        title="여행지 상세정보"
+        title="관광지 상세정보"
         size="large"
       >
         {detailModal.destination && (
@@ -881,7 +881,7 @@ function Destinations() {
             {/* 기본 정보 */}
             <div className="detail-list">
               <div className="detail-item">
-                <span className="detail-label"><RiMapPinLine /> 여행지명</span>
+                <span className="detail-label"><RiMapPinLine /> 관광지명</span>
                 <span className="detail-value">{detailModal.destination.name}</span>
               </div>
               <div className="detail-item">
@@ -1009,7 +1009,7 @@ function Destinations() {
       <Modal
         isOpen={addModal}
         onClose={() => setAddModal(false)}
-        title="여행지 추가"
+        title="관광지 추가"
         size="large"
         footer={
           <>
@@ -1025,7 +1025,7 @@ function Destinations() {
       <Modal
         isOpen={editModal.isOpen}
         onClose={() => setEditModal({ isOpen: false, destination: null })}
-        title="여행지 수정"
+        title="관광지 수정"
         size="large"
         footer={
           <>
@@ -1042,12 +1042,12 @@ function Destinations() {
         isOpen={deleteModal.isOpen}
         onClose={() => setDeleteModal({ isOpen: false, destination: null })}
         onConfirm={handleDeleteConfirm}
-        title="여행지 삭제"
+        title="관광지 삭제"
         message={
           <>
-            정말 "<strong>{deleteModal.destination?.name}</strong>" 여행지를 삭제하시겠습니까?<br/>
+            정말 "<strong>{deleteModal.destination?.name}</strong>" 관광지를 삭제하시겠습니까?<br />
             <span style={{ color: '#DC2626' }}>
-              이 여행지가 포함된 {formatNumber(deleteModal.destination?.scheduleCount || 0)}개의 일정에 영향을 줄 수 있습니다.
+              이 관광지가 포함된 {formatNumber(deleteModal.destination?.scheduleCount || 0)}개의 일정에 영향을 줄 수 있습니다.
             </span>
           </>
         }
