@@ -85,8 +85,8 @@ function Logs() {
 
   const filteredLogs = logsData.filter(log => {
     const matchesSearch = log.message.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          log.source.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          log.detail.toLowerCase().includes(searchTerm.toLowerCase());
+      log.source.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      log.detail.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesLevel = levelFilter === 'all' || log.level === levelFilter;
     const matchesCategory = categoryFilter === 'all' || log.category === categoryFilter;
     return matchesSearch && matchesLevel && matchesCategory;

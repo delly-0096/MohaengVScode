@@ -9,7 +9,7 @@ const PAGE_TITLES = {
   '/members/general': '일반회원 관리',
   '/members/business': '기업회원 관리',
   '/members/reports': '신고 관리',
-  '/contents/destinations': '여행지 정보 관리',
+  '/contents/destinations': '관광지 정보 관리',
   '/contents/community': '커뮤니티 관리',
   '/contents/products': '기업상품 관리',
   '/contents/talk': '여행톡 관리',

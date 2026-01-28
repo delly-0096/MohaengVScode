@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import './Products.css';
 
 // 국내 공항 목록
@@ -33,16 +33,10 @@ const initialFlightsData = [
     aircraftType: 'Boeing 737-900',
     economyPrice: 89000,
     businessPrice: 0,
-    firstPrice: 0,
     economySeats: 45,
     businessSeats: 0,
-    firstSeats: 0,
     checkedBaggage: '15kg x 1개',
     cabinBaggage: '10kg x 1개',
-    hasMeal: false,
-    hasEntertainment: false,
-    hasWifi: false,
-    hasUsb: true,
     saleStartDate: '2024-12-01',
     saleEndDate: '2024-12-20',
     flightDate: '2024-12-25',
@@ -62,16 +56,10 @@ const initialFlightsData = [
     aircraftType: 'Airbus A321',
     economyPrice: 85000,
     businessPrice: 0,
-    firstPrice: 0,
     economySeats: 23,
     businessSeats: 0,
-    firstSeats: 0,
     checkedBaggage: '15kg x 1개',
     cabinBaggage: '10kg x 1개',
-    hasMeal: false,
-    hasEntertainment: false,
-    hasWifi: false,
-    hasUsb: true,
     saleStartDate: '2024-12-02',
     saleEndDate: '2024-12-22',
     flightDate: '2024-12-26',
@@ -91,16 +79,10 @@ const initialFlightsData = [
     aircraftType: 'Boeing 737-800',
     economyPrice: 65000,
     businessPrice: 0,
-    firstPrice: 0,
     economySeats: 0,
     businessSeats: 0,
-    firstSeats: 0,
     checkedBaggage: '15kg x 1개',
     cabinBaggage: '10kg x 1개',
-    hasMeal: false,
-    hasEntertainment: false,
-    hasWifi: false,
-    hasUsb: true,
     saleStartDate: '2024-12-03',
     saleEndDate: '2024-12-23',
     flightDate: '2024-12-27',
@@ -120,16 +102,10 @@ const initialFlightsData = [
     aircraftType: 'Boeing 737-800',
     economyPrice: 72000,
     businessPrice: 0,
-    firstPrice: 0,
     economySeats: 120,
     businessSeats: 0,
-    firstSeats: 0,
     checkedBaggage: '15kg x 1개',
     cabinBaggage: '10kg x 1개',
-    hasMeal: false,
-    hasEntertainment: false,
-    hasWifi: false,
-    hasUsb: true,
     saleStartDate: '2024-12-05',
     saleEndDate: '2024-12-25',
     flightDate: '2024-12-28',
@@ -149,16 +125,10 @@ const initialFlightsData = [
     aircraftType: 'Boeing 737-800',
     economyPrice: 59000,
     businessPrice: 0,
-    firstPrice: 0,
     economySeats: 89,
     businessSeats: 0,
-    firstSeats: 0,
     checkedBaggage: '15kg x 1개',
     cabinBaggage: '10kg x 1개',
-    hasMeal: false,
-    hasEntertainment: false,
-    hasWifi: false,
-    hasUsb: true,
     saleStartDate: '2024-12-10',
     saleEndDate: '2024-12-28',
     flightDate: '2024-12-30',
@@ -178,16 +148,10 @@ const initialFlightsData = [
     aircraftType: 'Airbus A321',
     economyPrice: 55000,
     businessPrice: 0,
-    firstPrice: 0,
     economySeats: 65,
     businessSeats: 0,
-    firstSeats: 0,
     checkedBaggage: '15kg x 1개',
     cabinBaggage: '10kg x 1개',
-    hasMeal: false,
-    hasEntertainment: false,
-    hasWifi: false,
-    hasUsb: true,
     saleStartDate: '2024-12-08',
     saleEndDate: '2024-12-26',
     flightDate: '2024-12-29',
@@ -207,20 +171,14 @@ const initialFlightsData = [
     aircraftType: 'Boeing 737-800',
     economyPrice: 78000,
     businessPrice: 0,
-    firstPrice: 0,
     economySeats: 34,
     businessSeats: 0,
-    firstSeats: 0,
     checkedBaggage: '15kg x 1개',
     cabinBaggage: '10kg x 1개',
-    hasMeal: false,
-    hasEntertainment: false,
-    hasWifi: false,
-    hasUsb: true,
     saleStartDate: '2024-12-05',
     saleEndDate: '2024-12-25',
     flightDate: '2024-12-28',
-    status: '판매중지',
+    status: '매진',
     businessName: '대한항공(주)',
     createdAt: '2024-12-05',
     lastModified: '2024-12-20'
@@ -236,16 +194,10 @@ const initialFlightsData = [
     aircraftType: 'Airbus A320',
     economyPrice: 82000,
     businessPrice: 0,
-    firstPrice: 0,
     economySeats: 42,
     businessSeats: 0,
-    firstSeats: 0,
     checkedBaggage: '15kg x 1개',
     cabinBaggage: '10kg x 1개',
-    hasMeal: false,
-    hasEntertainment: false,
-    hasWifi: false,
-    hasUsb: true,
     saleStartDate: '2024-12-06',
     saleEndDate: '2024-12-24',
     flightDate: '2024-12-27',
@@ -259,6 +211,12 @@ const initialFlightsData = [
 // 항공사 목록
 const airlines = ['대한항공', '아시아나항공', '티웨이항공', '진에어', '제주항공', '에어부산', '이스타항공'];
 
+
+function fetchFlightList() {
+  console.log("asdfasdf");
+};
+
+// main
 function Flights() {
   const [flightsData, setFlightsData] = useState(initialFlightsData);
   const [searchTerm, setSearchTerm] = useState('');
@@ -266,25 +224,26 @@ function Flights() {
   const [filterAirline, setFilterAirline] = useState('all');
   const [selectedFlight, setSelectedFlight] = useState(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
-  // 통계 계산
+  useEffect(() => {
+    fetchFlightList();
+  }, []);
+
+
+  // 통계 계산 - 판매종료
   const stats = {
     total: flightsData.length,
     active: flightsData.filter(f => f.status === '판매중').length,
     soldout: flightsData.filter(f => f.status === '매진').length,
-    inactive: flightsData.filter(f => f.status === '판매중지').length
   };
 
   // 필터링된 데이터
   const filteredData = flightsData.filter(flight => {
     const matchesSearch = flight.flightNo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         flight.airline.includes(searchTerm) ||
-                         flight.departure.includes(searchTerm) ||
-                         flight.arrival.includes(searchTerm) ||
-                         flight.businessName.includes(searchTerm);
+      flight.airline.includes(searchTerm) ||
+      flight.departure.includes(searchTerm) ||
+      flight.arrival.includes(searchTerm) ||
+      flight.businessName.includes(searchTerm);
     const matchesStatus = filterStatus === 'all' || flight.status === filterStatus;
     const matchesAirline = filterAirline === 'all' || flight.airline === filterAirline;
     return matchesSearch && matchesStatus && matchesAirline;
@@ -312,88 +271,6 @@ function Flights() {
     setIsDetailModalOpen(true);
   };
 
-  // 수정 모달 열기
-  const openEditModal = (flight) => {
-    setSelectedFlight({ ...flight });
-    setIsEditModalOpen(true);
-  };
-
-  // 추가 모달 열기
-  const openAddModal = () => {
-    setSelectedFlight({
-      id: null,
-      flightNo: '',
-      airline: '대한항공',
-      departure: '',
-      arrival: '',
-      departureTime: '',
-      arrivalTime: '',
-      aircraftType: '',
-      economyPrice: 0,
-      businessPrice: 0,
-      firstPrice: 0,
-      economySeats: 0,
-      businessSeats: 0,
-      firstSeats: 0,
-      checkedBaggage: '',
-      cabinBaggage: '',
-      hasMeal: false,
-      hasEntertainment: false,
-      hasWifi: false,
-      hasUsb: false,
-      saleStartDate: '',
-      saleEndDate: '',
-      flightDate: '',
-      status: '판매중',
-      businessName: '',
-      createdAt: new Date().toISOString().split('T')[0],
-      lastModified: new Date().toISOString().split('T')[0]
-    });
-    setIsAddModalOpen(true);
-  };
-
-  // 삭제 모달 열기
-  const openDeleteModal = (flight) => {
-    setSelectedFlight(flight);
-    setIsDeleteModalOpen(true);
-  };
-
-  // 항공권 저장 (추가/수정)
-  const saveFlight = () => {
-    if (selectedFlight.id) {
-      // 수정
-      setFlightsData(prev => prev.map(f =>
-        f.id === selectedFlight.id
-          ? { ...selectedFlight, lastModified: new Date().toISOString().split('T')[0] }
-          : f
-      ));
-    } else {
-      // 추가
-      const newId = Math.max(...flightsData.map(f => f.id)) + 1;
-      setFlightsData(prev => [...prev, { ...selectedFlight, id: newId }]);
-    }
-    setIsEditModalOpen(false);
-    setIsAddModalOpen(false);
-  };
-
-  // 항공권 삭제
-  const deleteFlight = () => {
-    setFlightsData(prev => prev.filter(f => f.id !== selectedFlight.id));
-    setIsDeleteModalOpen(false);
-  };
-
-  // 상태 변경
-  const toggleStatus = (flight) => {
-    const statusOrder = ['판매중', '판매중지', '매진'];
-    const currentIndex = statusOrder.indexOf(flight.status);
-    const newStatus = statusOrder[(currentIndex + 1) % statusOrder.length];
-    setFlightsData(prev => prev.map(f =>
-      f.id === flight.id
-        ? { ...f, status: newStatus, lastModified: new Date().toISOString().split('T')[0] }
-        : f
-    ));
-  };
-
   // 입력 필드 변경 핸들러
   const handleInputChange = (field, value) => {
     setSelectedFlight(prev => ({
@@ -402,21 +279,10 @@ function Flights() {
     }));
   };
 
-  // 기내 서비스 목록
-  const services = [
-    { key: 'hasMeal', label: '기내식' },
-    { key: 'hasEntertainment', label: '엔터테인먼트' },
-    { key: 'hasWifi', label: 'WiFi' },
-    { key: 'hasUsb', label: 'USB 충전' }
-  ];
-
   return (
     <div className="products-page">
       <div className="page-header">
         <h1>항공권 관리</h1>
-        <button className="btn btn-primary" onClick={openAddModal}>
-          <i className="bi bi-plus-lg"></i> 항공권 등록
-        </button>
       </div>
 
       {/* 통계 카드 */}
@@ -448,15 +314,6 @@ function Flights() {
             <span className="stat-label">매진</span>
           </div>
         </div>
-        <div className="stat-card">
-          <div className="stat-icon yellow">
-            <i className="bi bi-pause-circle"></i>
-          </div>
-          <div className="stat-content">
-            <span className="stat-value">{stats.inactive}</span>
-            <span className="stat-label">판매중지</span>
-          </div>
-        </div>
       </div>
 
       {/* 필터 및 검색 */}
@@ -466,7 +323,7 @@ function Flights() {
             <i className="bi bi-search"></i>
             <input
               type="text"
-              placeholder="편명, 항공사, 출발지, 도착지, 사업자명 검색..."
+              placeholder="편명, 항공사, 출발지, 도착지 검색..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -475,7 +332,6 @@ function Flights() {
             <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
               <option value="all">전체 상태</option>
               <option value="판매중">판매중</option>
-              <option value="판매중지">판매중지</option>
               <option value="매진">매진</option>
             </select>
             <select value={filterAirline} onChange={(e) => setFilterAirline(e.target.value)}>
@@ -538,15 +394,6 @@ function Flights() {
                   <div className="action-buttons">
                     <button className="btn-icon" title="상세보기" onClick={() => openDetailModal(flight)}>
                       <i className="bi bi-eye"></i>
-                    </button>
-                    <button className="btn-icon" title="수정" onClick={() => openEditModal(flight)}>
-                      <i className="bi bi-pencil"></i>
-                    </button>
-                    <button className="btn-icon" title="상태변경" onClick={() => toggleStatus(flight)}>
-                      <i className={`bi ${flight.status === '판매중' ? 'bi-pause' : 'bi-play'}`}></i>
-                    </button>
-                    <button className="btn-icon danger" title="삭제" onClick={() => openDeleteModal(flight)}>
-                      <i className="bi bi-trash"></i>
                     </button>
                   </div>
                 </td>
@@ -645,11 +492,6 @@ function Flights() {
                       <div style={{ fontSize: '1.1rem', fontWeight: 600, color: '#2563eb' }}>{formatPrice(selectedFlight.businessPrice || 0)}</div>
                       <div style={{ fontSize: '0.8rem', color: '#059669', marginTop: '4px' }}>잔여 {selectedFlight.businessSeats || 0}석</div>
                     </div>
-                    <div style={{ padding: '16px', background: '#fef3c7', borderRadius: '8px', textAlign: 'center' }}>
-                      <div style={{ fontSize: '0.85rem', color: '#6b7280', marginBottom: '4px' }}>퍼스트</div>
-                      <div style={{ fontSize: '1.1rem', fontWeight: 600, color: '#2563eb' }}>{formatPrice(selectedFlight.firstPrice || 0)}</div>
-                      <div style={{ fontSize: '0.8rem', color: '#059669', marginTop: '4px' }}>잔여 {selectedFlight.firstSeats || 0}석</div>
-                    </div>
                   </div>
                 </div>
 
@@ -665,339 +507,15 @@ function Flights() {
                     <span className="value">{selectedFlight.cabinBaggage || '-'}</span>
                   </div>
                 </div>
-
-                {/* 기내 서비스 */}
-                <div className="detail-section">
-                  <h3><i className="bi bi-cup-hot"></i> 기내 서비스</h3>
-                  <div className="amenities-list" style={{ marginTop: '8px' }}>
-                    {selectedFlight.hasMeal && <span className="amenity-tag">기내식</span>}
-                    {selectedFlight.hasEntertainment && <span className="amenity-tag">엔터테인먼트</span>}
-                    {selectedFlight.hasWifi && <span className="amenity-tag">WiFi</span>}
-                    {selectedFlight.hasUsb && <span className="amenity-tag">USB 충전</span>}
-                    {!selectedFlight.hasMeal && !selectedFlight.hasEntertainment && !selectedFlight.hasWifi && !selectedFlight.hasUsb && (
-                      <span style={{ color: '#6b7280', fontSize: '0.875rem' }}>제공되는 서비스 없음</span>
-                    )}
-                  </div>
-                </div>
               </div>
             </div>
             <div className="modal-footer">
               <button className="btn btn-secondary" onClick={() => setIsDetailModalOpen(false)}>닫기</button>
-              <button className="btn btn-primary" onClick={() => { setIsDetailModalOpen(false); openEditModal(selectedFlight); }}>수정</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* 수정/추가 모달 */}
-      {(isEditModalOpen || isAddModalOpen) && selectedFlight && (
-        <div className="modal-overlay" onClick={() => { setIsEditModalOpen(false); setIsAddModalOpen(false); }}>
-          <div className="modal-content large" onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>{isAddModalOpen ? '항공권 등록' : '항공권 수정'}</h2>
-              <button className="modal-close" onClick={() => { setIsEditModalOpen(false); setIsAddModalOpen(false); }}>
-                <i className="bi bi-x-lg"></i>
-              </button>
-            </div>
-            <div className="modal-body">
-              {/* 항공편 정보 */}
-              <div style={{ marginBottom: '24px' }}>
-                <h4 style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: '12px', color: '#374151', borderBottom: '1px solid #e5e7eb', paddingBottom: '8px' }}>
-                  <i className="bi bi-airplane" style={{ marginRight: '8px' }}></i>항공편 정보
-                </h4>
-                <div className="form-grid">
-                  <div className="form-group">
-                    <label>항공사 *</label>
-                    <select
-                      value={selectedFlight.airline}
-                      onChange={(e) => handleInputChange('airline', e.target.value)}
-                    >
-                      {airlines.map(airline => (
-                        <option key={airline} value={airline}>{airline}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="form-group">
-                    <label>항공편명 *</label>
-                    <input
-                      type="text"
-                      value={selectedFlight.flightNo}
-                      onChange={(e) => handleInputChange('flightNo', e.target.value)}
-                      placeholder="예: KE123"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>출발지 *</label>
-                    <select
-                      value={selectedFlight.departure}
-                      onChange={(e) => handleInputChange('departure', e.target.value)}
-                    >
-                      <option value="">선택하세요</option>
-                      {domesticAirports.map(airport => (
-                        <option key={airport.code} value={`${airport.name}(${airport.code})`}>
-                          {airport.name}({airport.code})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="form-group">
-                    <label>도착지 *</label>
-                    <select
-                      value={selectedFlight.arrival}
-                      onChange={(e) => handleInputChange('arrival', e.target.value)}
-                    >
-                      <option value="">선택하세요</option>
-                      {domesticAirports.map(airport => (
-                        <option key={airport.code} value={`${airport.name}(${airport.code})`}>
-                          {airport.name}({airport.code})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="form-group">
-                    <label>출발 시간 *</label>
-                    <input
-                      type="time"
-                      value={selectedFlight.departureTime}
-                      onChange={(e) => handleInputChange('departureTime', e.target.value)}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>도착 시간 *</label>
-                    <input
-                      type="time"
-                      value={selectedFlight.arrivalTime}
-                      onChange={(e) => handleInputChange('arrivalTime', e.target.value)}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>기종</label>
-                    <input
-                      type="text"
-                      value={selectedFlight.aircraftType}
-                      onChange={(e) => handleInputChange('aircraftType', e.target.value)}
-                      placeholder="예: Boeing 737-800"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>사업자명 *</label>
-                    <input
-                      type="text"
-                      value={selectedFlight.businessName}
-                      onChange={(e) => handleInputChange('businessName', e.target.value)}
-                      placeholder="사업자명을 입력하세요"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* 좌석 등급별 가격 */}
-              <div style={{ marginBottom: '24px' }}>
-                <h4 style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: '12px', color: '#374151', borderBottom: '1px solid #e5e7eb', paddingBottom: '8px' }}>
-                  <i className="bi bi-cash-stack" style={{ marginRight: '8px' }}></i>좌석 등급별 가격
-                </h4>
-                <div className="form-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
-                  <div className="form-group">
-                    <label>이코노미 가격 (원)</label>
-                    <input
-                      type="number"
-                      value={selectedFlight.economyPrice}
-                      onChange={(e) => handleInputChange('economyPrice', parseInt(e.target.value) || 0)}
-                      min="0"
-                      step="1000"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>비즈니스 가격 (원)</label>
-                    <input
-                      type="number"
-                      value={selectedFlight.businessPrice}
-                      onChange={(e) => handleInputChange('businessPrice', parseInt(e.target.value) || 0)}
-                      min="0"
-                      step="1000"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>퍼스트 가격 (원)</label>
-                    <input
-                      type="number"
-                      value={selectedFlight.firstPrice}
-                      onChange={(e) => handleInputChange('firstPrice', parseInt(e.target.value) || 0)}
-                      min="0"
-                      step="1000"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* 좌석 등급별 잔여석 */}
-              <div style={{ marginBottom: '24px' }}>
-                <h4 style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: '12px', color: '#374151', borderBottom: '1px solid #e5e7eb', paddingBottom: '8px' }}>
-                  <i className="bi bi-person-workspace" style={{ marginRight: '8px' }}></i>좌석 등급별 잔여석
-                </h4>
-                <div className="form-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
-                  <div className="form-group">
-                    <label>이코노미 잔여석</label>
-                    <input
-                      type="number"
-                      value={selectedFlight.economySeats}
-                      onChange={(e) => handleInputChange('economySeats', parseInt(e.target.value) || 0)}
-                      min="0"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>비즈니스 잔여석</label>
-                    <input
-                      type="number"
-                      value={selectedFlight.businessSeats}
-                      onChange={(e) => handleInputChange('businessSeats', parseInt(e.target.value) || 0)}
-                      min="0"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>퍼스트 잔여석</label>
-                    <input
-                      type="number"
-                      value={selectedFlight.firstSeats}
-                      onChange={(e) => handleInputChange('firstSeats', parseInt(e.target.value) || 0)}
-                      min="0"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* 수하물 정보 */}
-              <div style={{ marginBottom: '24px' }}>
-                <h4 style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: '12px', color: '#374151', borderBottom: '1px solid #e5e7eb', paddingBottom: '8px' }}>
-                  <i className="bi bi-luggage" style={{ marginRight: '8px' }}></i>수하물 정보
-                </h4>
-                <div className="form-grid">
-                  <div className="form-group">
-                    <label>무료 위탁 수하물</label>
-                    <input
-                      type="text"
-                      value={selectedFlight.checkedBaggage}
-                      onChange={(e) => handleInputChange('checkedBaggage', e.target.value)}
-                      placeholder="예: 23kg x 1개"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>기내 수하물</label>
-                    <input
-                      type="text"
-                      value={selectedFlight.cabinBaggage}
-                      onChange={(e) => handleInputChange('cabinBaggage', e.target.value)}
-                      placeholder="예: 10kg x 1개"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* 기내 서비스 */}
-              <div style={{ marginBottom: '24px' }}>
-                <h4 style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: '12px', color: '#374151', borderBottom: '1px solid #e5e7eb', paddingBottom: '8px' }}>
-                  <i className="bi bi-cup-hot" style={{ marginRight: '8px' }}></i>기내 서비스
-                </h4>
-                <div className="checkbox-group">
-                  {services.map(service => (
-                    <label key={service.key} className="checkbox-label">
-                      <input
-                        type="checkbox"
-                        checked={selectedFlight[service.key]}
-                        onChange={(e) => handleInputChange(service.key, e.target.checked)}
-                      />
-                      {service.label}
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              {/* 판매 기간 */}
-              <div style={{ marginBottom: '24px' }}>
-                <h4 style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: '12px', color: '#374151', borderBottom: '1px solid #e5e7eb', paddingBottom: '8px' }}>
-                  <i className="bi bi-calendar-range" style={{ marginRight: '8px' }}></i>판매 기간
-                </h4>
-                <div className="form-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
-                  <div className="form-group">
-                    <label>운항일 *</label>
-                    <input
-                      type="date"
-                      value={selectedFlight.flightDate}
-                      onChange={(e) => handleInputChange('flightDate', e.target.value)}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>판매 시작일</label>
-                    <input
-                      type="date"
-                      value={selectedFlight.saleStartDate}
-                      onChange={(e) => handleInputChange('saleStartDate', e.target.value)}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>판매 종료일</label>
-                    <input
-                      type="date"
-                      value={selectedFlight.saleEndDate}
-                      onChange={(e) => handleInputChange('saleEndDate', e.target.value)}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* 상태 (수정 시에만) */}
-              {isEditModalOpen && (
-                <div>
-                  <h4 style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: '12px', color: '#374151', borderBottom: '1px solid #e5e7eb', paddingBottom: '8px' }}>
-                    <i className="bi bi-toggle-on" style={{ marginRight: '8px' }}></i>판매 상태
-                  </h4>
-                  <div className="form-group" style={{ maxWidth: '200px' }}>
-                    <select
-                      value={selectedFlight.status}
-                      onChange={(e) => handleInputChange('status', e.target.value)}
-                    >
-                      <option value="판매중">판매중</option>
-                      <option value="판매중지">판매중지</option>
-                      <option value="매진">매진</option>
-                    </select>
-                  </div>
-                </div>
-              )}
-            </div>
-            <div className="modal-footer">
-              <button className="btn btn-secondary" onClick={() => { setIsEditModalOpen(false); setIsAddModalOpen(false); }}>취소</button>
-              <button className="btn btn-primary" onClick={saveFlight}>
-                {isAddModalOpen ? '등록' : '저장'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 삭제 확인 모달 */}
-      {isDeleteModalOpen && selectedFlight && (
-        <div className="modal-overlay" onClick={() => setIsDeleteModalOpen(false)}>
-          <div className="modal-content small" onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>항공권 삭제</h2>
-              <button className="modal-close" onClick={() => setIsDeleteModalOpen(false)}>
-                <i className="bi bi-x-lg"></i>
-              </button>
-            </div>
-            <div className="modal-body">
-              <div className="confirm-message">
-                <i className="bi bi-exclamation-triangle text-warning"></i>
-                <p>정말로 <strong>{selectedFlight.flightNo}</strong> 항공권을 삭제하시겠습니까?</p>
-                <p className="text-muted">이 작업은 되돌릴 수 없습니다.</p>
-              </div>
-            </div>
-            <div className="modal-footer">
-              <button className="btn btn-secondary" onClick={() => setIsDeleteModalOpen(false)}>취소</button>
-              <button className="btn btn-danger" onClick={deleteFlight}>삭제</button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
