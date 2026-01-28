@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   RiSearchLine,
   RiFilterLine,
@@ -6,153 +6,245 @@ import {
   RiEyeLine,
   RiCheckLine,
   RiCloseLine,
-  RiDeleteBinLine,
   RiUserLine,
   RiCalendarLine,
   RiFileTextLine,
-  RiFlag2Line
+  RiFlag2Line,
+  RiShieldLine
 } from 'react-icons/ri';
-import { Modal, ConfirmModal } from '../../components/common/Modal';
 
-// 더미 데이터
-const initialReportsData = [
-  { id: 1, type: '여행톡', targetId: 'TK-1234', reporter: '김신고', reporterId: 'user001', reported: '이악성', reportedId: 'user010', reason: '욕설/비방', content: '게시글에서 욕설을 사용함', reportDate: '2024-12-15', status: 'pending' },
-  { id: 2, type: '여행기록', targetId: 'TL-5678', reporter: '박정의', reporterId: 'user002', reported: '최도배', reportedId: 'user011', reason: '도배/스팸', content: '동일 내용 반복 게시', reportDate: '2024-12-14', status: 'pending' },
-  { id: 3, type: '여행톡', targetId: 'TK-9012', reporter: '김신고', reporterId: 'user001', reported: '강사기', reportedId: 'user012', reason: '사기/허위정보', content: '허위 여행 정보 게시', reportDate: '2024-12-13', status: 'processed', processedDate: '2024-12-14', processResult: '해당 게시글을 삭제하고 작성자에게 경고 조치했습니다.' },
-  { id: 4, type: '여행톡', targetId: 'TK-7890', reporter: '김신고', reporterId: 'user001', reported: '서광고', reportedId: 'user013', reason: '광고/홍보', content: '상업적 광고 게시', reportDate: '2024-12-11', status: 'processed', processedDate: '2024-12-12', processResult: '광고성 게시글로 확인되어 삭제 처리했습니다.' },
-  { id: 5, type: '여행기록', targetId: 'TL-1357', reporter: '이신고자', reporterId: 'user004', reported: '이악성', reportedId: 'user010', reason: '저작권 침해', content: '타인의 사진 무단 사용', reportDate: '2024-12-10', status: 'pending' },
-  { id: 6, type: '여행톡', targetId: 'TK-2468', reporter: '박정의', reporterId: 'user002', reported: '이악성', reportedId: 'user010', reason: '욕설/비방', content: '댓글에서 인신공격', reportDate: '2024-12-09', status: 'processed', processedDate: '2024-12-10', processResult: '해당 댓글 삭제 및 3일 활동 제한 조치' },
-  { id: 7, type: '여행기록', targetId: 'TL-3579', reporter: '김신고', reporterId: 'user001', reported: '최도배', reportedId: 'user011', reason: '도배/스팸', content: '같은 내용 여러 번 게시', reportDate: '2024-12-08', status: 'pending' },
-  { id: 8, type: '여행톡', targetId: 'TK-1234', reporter: '오정직', reporterId: 'user005', reported: '이악성', reportedId: 'user010', reason: '욕설/비방', content: '반복적인 비속어 사용', reportDate: '2024-12-07', status: 'pending' }
-];
+import api from '../../api/api';
 
+// 상태 라벨
 const statusLabels = {
-  pending: { label: '처리대기', className: 'badge-warning' },
-  processed: { label: '처리완료', className: 'badge-success' },
-  dismissed: { label: '기각', className: 'badge-gray' }
+  WAIT: { label: '처리대기', className: 'badge-warning' },
+  DONE: { label: '처리완료', className: 'badge-success' }
 };
 
-const typeLabels = {
-  '여행톡': 'badge-primary',
-  '여행기록': 'badge-success'
+// 신고 출처 라벨
+const targetTypeLabels = {
+  PROD_REVIEW: { label: '상품 리뷰', className: 'badge-primary' },
+  TRIP_RECORD: { label: '여행 기록', className: 'badge-success' },
+  BOARD: { label: '여행톡', className: 'badge-info' },
+  COMMENTS: { label: '댓글', className: 'badge-secondary' },
+  CHAT: { label: '채팅', className: 'badge-gray' }
 };
 
+// 제재 수위 라벨
+const procResultLabels = {
+  WARNING: { label: '경고', className: 'badge-warning' },
+  BAN_7: { label: '7일 정지', className: 'badge-danger' },
+  BAN_30: { label: '30일 정지', className: 'badge-danger' },
+  BLACKLIST: { label: '영구 정지', className: 'badge-danger' },
+  REJECTED: { label: '기각', className: 'badge-gray' }
+};
+
+// 신고 사유 라벨  
 const reasonLabels = {
-  '욕설/비방': 'badge-danger',
-  '도배/스팸': 'badge-warning',
-  '사기/허위정보': 'badge-danger',
-  '광고/홍보': 'badge-gray',
-  '저작권 침해': 'badge-danger'
+  SPAM: { label: '스팸/도배', className: 'badge-warning' },
+  ABUSE: { label: '욕설/비방', className: 'badge-danger' },
+  FALSE: { label: '허위정보', className: 'badge-danger' },
+  COPYRIGHT: { label: '저작권 침해', className: 'badge-danger' },
+  PRIVACY: { label: '개인정보 노출', className: 'badge-danger' },
+  ADVERTISE: { label: '광고/홍보', className: 'badge-gray' },
+  ETC: { label: '기타', className: 'badge-secondary' }
 };
+
+// Modal 컴포넌트
+function Modal({ isOpen, onClose, title, children, size = 'medium', footer }) {
+  useEffect(() => {
+    const handleEsc = (e) => { if (e.key === 'Escape') onClose(); };
+    if (isOpen) {
+      document.addEventListener('keydown', handleEsc);
+      document.body.style.overflow = 'hidden';
+    }
+    return () => {
+      document.removeEventListener('keydown', handleEsc);
+      document.body.style.overflow = 'unset';
+    }
+  }, [isOpen, onClose]);
+
+  if (!isOpen) return null;
+
+  const sizeClass = { small: 'modal-small', medium: 'modal-medium', large: 'modal-large' }[size] || 'modal-medium';
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className={`modal-container ${sizeClass}`} onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <h2 className="modal-title">{title}</h2>
+          <button className="modal-close" onClick={onClose}>×</button>
+        </div>
+        <div className="modal-body">{children}</div>
+        {footer && <div className="modal-footer">{footer}</div>}
+      </div>
+    </div>
+  );
+}
 
 function Reports() {
-  const [reportsData, setReportsData] = useState(initialReportsData);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [typeFilter, setTypeFilter] = useState('all');
+  // 상태 관리
+  const [reportsData, setReportsData] = useState([]);
+  const [pagination, setPagination] = useState({ currentPage: 1, totalPage: 1, totalRecord: 0 });
+  const [searchWord, setSearchWord] = useState('');
+  const [procStatusFilter, setProcStatusFilter] = useState('all');
+  const [targetTypeFilter, setTargetTypeFilter] = useState('all');
+  const [procResultFilter, setProcResultFilter] = useState('all');
 
   // 모달 상태
   const [detailModal, setDetailModal] = useState({ isOpen: false, report: null });
   const [processModal, setProcessModal] = useState({ isOpen: false, report: null });
-  const [dismissModal, setDismissModal] = useState({ isOpen: false, report: null });
-  const [deleteModal, setDeleteModal] = useState({ isOpen: false, report: null });
-  const [processContent, setProcessContent] = useState('');
+  const [rejectModal, setRejectModal] = useState({ isOpen: false, report: null });
+  const [blacklistReleaseModal, setBlacklistReleaseModal] = useState({ isOpen: false, blacklistNo: null });
 
-  const filteredReports = reportsData.filter(report => {
-    const matchesSearch = report.reporter.includes(searchTerm) ||
-                          report.reported.includes(searchTerm) ||
-                          report.content.includes(searchTerm);
-    const matchesStatus = statusFilter === 'all' || report.status === statusFilter;
-    const matchesType = typeFilter === 'all' || report.type === typeFilter;
-    return matchesSearch && matchesStatus && matchesType;
-  });
+  // 제재 처리 폼
+  const [procResult, setProcResult] = useState('WARNING');
+  const [adminMemo, setAdminMemo] = useState('');
+  const [rejRsn, setRejRsn] = useState('');
 
-  const pendingCount = reportsData.filter(r => r.status === 'pending').length;
-
-  // 신고 횟수 계산 (해당 사용자가 신고한 횟수)
-  const getReportCount = (reporterId) => {
-    return reportsData.filter(r => r.reporterId === reporterId).length;
+  // 함수 선언
+  const fetchReports = async (page) => {
+    try {
+      const response = await api.get('/admin/report', {
+        params: {
+          currentPage: page,
+          searchWord: searchWord,
+          procStatus: procStatusFilter,
+          targetType: targetTypeFilter,
+          procResult: procResultFilter
+        }
+      });
+      setReportsData(response.data.dataList || []);
+      setPagination({
+        currentPage: response.data.currentPage,
+        totalPage: response.data.totalPage,
+        totalRecord: response.data.totalRecord
+      });
+    } catch (err) {
+      console.error('신고 목록 조회 실패', err);
+    }
   };
 
-  // 피신고 횟수 계산 (해당 사용자가 신고당한 횟수)
-  const getReportedCount = (reportedId) => {
-    return reportsData.filter(r => r.reportedId === reportedId).length;
+  useEffect(() => {
+    fetchReports(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleSearch = () => fetchReports(1);
+
+  // 신고 상세 조회
+  const handleViewDetail = async (report) => {
+    try {
+      const response = await api.get(`/admin/report/${report.rptNo}`);
+      setDetailModal({ isOpen: true, report: response.data });
+    } catch (error) {
+      alert('상세 정보 조회 실패');
+      console.error(error);
+    }
   };
 
-  // 대상(채팅방/여행기록) 신고 횟수 계산
-  const getTargetReportCount = (targetId) => {
-    return reportsData.filter(r => r.targetId === targetId).length;
-  };
-
-  // 대기 신고 보기
-  const handleShowPending = () => {
-    setStatusFilter('pending');
-  };
-
-  // 상세보기
-  const handleViewDetail = (report) => {
-    setDetailModal({ isOpen: true, report });
-  };
-
-  // 제재 처리
-  const handleProcess = (report) => {
-    setProcessContent('');
+  // 제재 처리 모달 열기
+  const handleOpenProcessModal = (report) => {
+    setProcResult('WARNING');
+    setAdminMemo('');
     setProcessModal({ isOpen: true, report });
   };
 
-  const handleProcessSubmit = () => {
-    const now = new Date().toISOString().split('T')[0];
-    setReportsData(prev => prev.map(r =>
-      r.id === processModal.report.id
-        ? { ...r, status: 'processed', processedDate: now, processResult: processContent || '제재 조치가 완료되었습니다.' }
-        : r
-    ));
-    setProcessModal({ isOpen: false, report: null });
-    setProcessContent('');
-    alert('신고가 처리되었습니다. 피신고자에게 제재 조치가 적용됩니다.');
+  // 제재 처리 제출
+  const handleProcessSubmit = async () => {
+    if (!adminMemo.trim()) {
+      alert('처리 사유를 입력해주세요.');
+      return;
+    }
+
+    try {
+      const response = await api.put(`/admin/report/${processModal.report.rptNo}/process`, {
+        procResult,
+        adminMemo
+      });
+
+      if (response.status === 200) {
+        alert('신고가 처리되었습니다.');
+        setProcessModal({ isOpen: false, report: null });
+        setProcResult('WARNING');
+        setAdminMemo('');
+        fetchReports(pagination.currentPage);
+      }
+    } catch (error) {
+      alert(error.response?.data?.message || '신고 처리에 실패했습니다.');
+      console.error(error);
+    }
   };
 
-  // 기각
-  const handleDismiss = (report) => {
-    setProcessContent('');
-    setDismissModal({ isOpen: true, report });
+  // 기각 모달 열기
+  const handleOpenRejectModal = (report) => {
+    setRejRsn('');
+    setRejectModal({ isOpen: true, report });
   };
 
-  const handleDismissSubmit = () => {
-    const now = new Date().toISOString().split('T')[0];
-    setReportsData(prev => prev.map(r =>
-      r.id === dismissModal.report.id
-        ? { ...r, status: 'dismissed', processedDate: now, processResult: processContent || '신고 사유에 해당하지 않아 기각 처리되었습니다.' }
-        : r
-    ));
-    setDismissModal({ isOpen: false, report: null });
-    setProcessContent('');
-    alert('신고가 기각되었습니다.');
+  // 기각 제출
+  const handleRejectSubmit = async () => {
+    if (!rejRsn.trim()) {
+      alert('기각 사유를 입력해주세요.');
+      return;
+    }
+
+    try {
+      const response = await api.put(`/admin/report/${rejectModal.report.rptNo}/reject`, {
+        rejRsn
+      });
+
+      if (response.status === 200) {
+        alert('신고가 기각되었습니다.');
+        setRejectModal({ isOpen: false, report: null });
+        setRejRsn('');
+        fetchReports(pagination.currentPage);
+      }
+    } catch (error) {
+      alert(error.response?.data?.message || '신고 기각에 실패했습니다.');
+      console.error(error);
+    }
   };
 
-  // 삭제
-  const handleDelete = (report) => {
-    setDeleteModal({ isOpen: true, report });
-  };
+  // 블랙리스트 해제
+  const handleBlacklistRelease = async () => {
+    if (!blacklistReleaseModal.blacklistNo) return;
 
-  const handleDeleteConfirm = () => {
-    setReportsData(prev => prev.filter(r => r.id !== deleteModal.report.id));
-    setDeleteModal({ isOpen: false, report: null });
-    alert('신고 기록이 삭제되었습니다.');
+    try {
+      const response = await api.put(`/admin/report/blacklist/${blacklistReleaseModal.blacklistNo}`);
+
+      if (response.status === 200) {
+        alert('블랙리스트가 해제되었습니다.');
+        setBlacklistReleaseModal({ isOpen: false, blacklistNo: null });
+        fetchReports(pagination.currentPage);
+      }
+    } catch (error) {
+      alert(error.response?.data?.message || '블랙리스트 해제에 실패했습니다.');
+      console.error(error);
+    }
   };
 
   // 상세보기에서 처리하기
   const handleProcessFromDetail = () => {
     const report = detailModal.report;
     setDetailModal({ isOpen: false, report: null });
-    handleProcess(report);
+    handleOpenProcessModal(report);
   };
 
   // 상세보기에서 기각하기
-  const handleDismissFromDetail = () => {
+  const handleRejectFromDetail = () => {
     const report = detailModal.report;
     setDetailModal({ isOpen: false, report: null });
-    handleDismiss(report);
+    handleOpenRejectModal(report);
+  };
+
+  // 처리대기 건수
+  const pendingCount = reportsData.filter(r => r.procStatus === 'WAIT').length;
+
+  // 대기 신고 보기
+  const handleShowPending = () => {
+    setProcStatusFilter('WAIT');
+    fetchReports(1);
   };
 
   return (
@@ -161,7 +253,7 @@ function Reports() {
         <div>
           <h1 className="page-title">신고 관리</h1>
           <p className="page-subtitle">
-            총 {filteredReports.length}건의 신고가 있습니다.
+            총 {pagination.totalRecord}건의 신고가 있습니다.
             {pendingCount > 0 && (
               <span className="text-danger"> (처리대기 {pendingCount}건)</span>
             )}
@@ -182,41 +274,59 @@ function Reports() {
         {/* 필터 바 */}
         <div className="filter-bar">
           <div className="search-bar">
-            <RiSearchLine className="search-bar-icon" />
+            <span className="search-bar-icon">🔍</span>
             <input
               type="text"
               className="form-input"
               placeholder="신고자, 피신고자, 내용 검색"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              value={searchWord}
+              onChange={(e) => setSearchWord(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
             />
           </div>
 
           <div className="filter-group">
-            <RiFilterLine />
             <select
               className="form-input form-select"
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              value={procStatusFilter}
+              onChange={(e) => setProcStatusFilter(e.target.value)}
               style={{ width: 'auto' }}
             >
-              <option value="all">전체 상태</option>
-              <option value="pending">처리대기</option>
-              <option value="processed">처리완료</option>
-              <option value="dismissed">기각</option>
+              <option value="all">전체 처리상태</option>
+              <option value="WAIT">처리대기</option>
+              <option value="DONE">처리완료</option>
             </select>
           </div>
 
           <div className="filter-group">
             <select
               className="form-input form-select"
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value)}
+              value={targetTypeFilter}
+              onChange={(e) => setTargetTypeFilter(e.target.value)}
               style={{ width: 'auto' }}
             >
-              <option value="all">전체 유형</option>
-              <option value="여행톡">여행톡</option>
-              <option value="여행기록">여행기록</option>
+              <option value="all">전체 신고출처</option>
+              <option value="PROD_REVIEW">상품 리뷰</option>
+              <option value="TRIP_RECORD">여행 기록</option>
+              <option value="BOARD">여행톡</option>
+              <option value="COMMENTS">댓글</option>
+              <option value="CHAT">채팅</option>
+            </select>
+          </div>
+
+          <div className="filter-group">
+            <select
+              className="form-input form-select"
+              value={procResultFilter}
+              onChange={(e) => setProcResultFilter(e.target.value)}
+              style={{ width: 'auto' }}
+            >
+              <option value="all">전체 제재수위</option>
+              <option value="WARNING">경고</option>
+              <option value="BAN_7">7일 정지</option>
+              <option value="BAN_30">30일 정지</option>
+              <option value="BLACKLIST">영구 정지</option>
+              <option value="REJECTED">기각</option>
             </select>
           </div>
         </div>
@@ -226,83 +336,76 @@ function Reports() {
           <table className="table">
             <thead>
               <tr>
-                <th>유형</th>
+                <th>신고번호</th>
+                <th>신고출처</th>
                 <th>신고사유</th>
                 <th>신고자</th>
                 <th>피신고자</th>
-                <th>내용</th>
                 <th>신고일</th>
-                <th>상태</th>
-                <th style={{ width: 150 }}>관리</th>
+                <th>처리상태</th>
+                <th>제재수위</th>
+                <th style={{ width: 120 }}>관리</th>
               </tr>
             </thead>
             <tbody>
-              {filteredReports.map(report => (
-                <tr key={report.id}>
+              {reportsData.map(report => (
+                <tr key={report.rptNo}>
+                  <td>{report.rptNo}</td>
                   <td>
-                    <div>
-                      <span className={`badge ${typeLabels[report.type]}`}>
-                        {report.type}
+                    <span className={`badge ${targetTypeLabels[report.targetType]?.className || 'badge-gray'}`}>
+                      {targetTypeLabels[report.targetType]?.label || report.targetType}
+                    </span>
+                  </td>
+                  <td>
+                    <span className={`badge ${reasonLabels[report.ctgryCd]?.className || 'badge-gray'}`}>
+                      {reasonLabels[report.ctgryCd]?.label || report.ctgryCd}
+                    </span>
+                  </td>
+                  <td>
+                    <div>{report.reqMemName || report.reqMemId}</div>
+                  </td>
+                  <td>
+                    <div className="text-danger font-medium">
+                      {report.targetMemName || report.targetMemId}
+                    </div>
+                  </td>
+                  <td>{report.reqDt ? report.reqDt.split('T')[0] : '-'}</td>
+                  <td>
+                    <span className={`badge ${statusLabels[report.procStatus]?.className || 'badge-gray'}`}>
+                      {statusLabels[report.procStatus]?.label || report.procStatus}
+                    </span>
+                  </td>
+                  <td>
+                    {report.procResult && (
+                      <span className={`badge ${procResultLabels[report.procResult]?.className || 'badge-gray'}`}>
+                        {procResultLabels[report.procResult]?.label || report.procResult}
                       </span>
-                    </div>
-                    {(report.type === '여행톡' || report.type === '여행기록') && (
-                      <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: 4 }}>
-                        {report.targetId}
-                        <span style={{
-                          marginLeft: 6,
-                          padding: '1px 6px',
-                          background: getTargetReportCount(report.targetId) >= 3 ? '#fee2e2' : '#f3f4f6',
-                          borderRadius: 4,
-                          color: getTargetReportCount(report.targetId) >= 3 ? '#dc2626' : '#6b7280',
-                          fontWeight: getTargetReportCount(report.targetId) >= 3 ? 600 : 400
-                        }}>
-                          신고 {getTargetReportCount(report.targetId)}회
-                        </span>
-                      </div>
                     )}
-                  </td>
-                  <td>
-                    <span className={`badge ${reasonLabels[report.reason] || 'badge-gray'}`}>
-                      {report.reason}
-                    </span>
-                  </td>
-                  <td>
-                    <div>{report.reporter}</div>
-                    <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>
-                      신고 {getReportCount(report.reporterId)}회
-                    </div>
-                  </td>
-                  <td>
-                    <div className="text-danger font-medium">{report.reported}</div>
-                    <div style={{ fontSize: '0.75rem', color: '#ef4444' }}>
-                      피신고 {getReportedCount(report.reportedId)}회
-                    </div>
-                  </td>
-                  <td className="truncate" style={{ maxWidth: 200 }}>{report.content}</td>
-                  <td>{report.reportDate}</td>
-                  <td>
-                    <span className={`badge ${statusLabels[report.status].className}`}>
-                      {statusLabels[report.status].label}
-                    </span>
+                    {report.procResult === 'BLACKLIST' && report.blacklistNo && (
+                      <button
+                        className="btn btn-sm btn-warning"
+                        style={{ marginLeft: 8, fontSize: '0.75rem', padding: '2px 8px' }}
+                        onClick={() => setBlacklistReleaseModal({ isOpen: true, blacklistNo: report.blacklistNo })}
+                      >
+                        해제
+                      </button>
+                    )}
                   </td>
                   <td>
                     <div className="table-actions">
                       <button className="table-action-btn" title="상세보기" onClick={() => handleViewDetail(report)}>
                         <RiEyeLine />
                       </button>
-                      {report.status === 'pending' && (
+                      {report.procStatus === 'WAIT' && (
                         <>
-                          <button className="table-action-btn" title="제재" style={{ color: 'var(--danger-color)' }} onClick={() => handleProcess(report)}>
+                          <button className="table-action-btn" title="제재" style={{ color: 'var(--danger-color)' }} onClick={() => handleOpenProcessModal(report)}>
                             <RiCheckLine />
                           </button>
-                          <button className="table-action-btn" title="기각" style={{ color: 'var(--warning-color)' }} onClick={() => handleDismiss(report)}>
+                          <button className="table-action-btn" title="기각" style={{ color: 'var(--warning-color)' }} onClick={() => handleOpenRejectModal(report)}>
                             <RiCloseLine />
                           </button>
                         </>
                       )}
-                      <button className="table-action-btn delete" title="삭제" onClick={() => handleDelete(report)}>
-                        <RiDeleteBinLine />
-                      </button>
                     </div>
                   </td>
                 </tr>
@@ -313,9 +416,11 @@ function Reports() {
 
         {/* 페이지네이션 */}
         <div className="pagination">
-          <button className="pagination-btn" disabled>&lt;</button>
-          <button className="pagination-btn active">1</button>
-          <button className="pagination-btn">&gt;</button>
+          <button className="pagination-btn" disabled={pagination.currentPage === 1} onClick={() => fetchReports(pagination.currentPage - 1)}>&lt;</button>
+          {pagination.totalPage > 0 && [...Array(Math.min(pagination.totalPage, 5))].map((_, i) => (
+            <button key={i} className={`pagination-btn ${pagination.currentPage === i + 1 ? 'active' : ''}`} onClick={() => fetchReports(i + 1)}>{i + 1}</button>
+          ))}
+          <button className="pagination-btn" disabled={pagination.currentPage === pagination.totalPage} onClick={() => fetchReports(pagination.currentPage + 1)}>&gt;</button>
         </div>
       </div>
 
@@ -325,10 +430,10 @@ function Reports() {
         onClose={() => setDetailModal({ isOpen: false, report: null })}
         title="신고 상세"
         size="large"
-        footer={detailModal.report?.status === 'pending' ? (
+        footer={detailModal.report?.procStatus === 'WAIT' ? (
           <>
             <button className="btn btn-secondary" onClick={() => setDetailModal({ isOpen: false, report: null })}>닫기</button>
-            <button className="btn btn-warning" onClick={handleDismissFromDetail}>기각</button>
+            <button className="btn btn-warning" onClick={handleRejectFromDetail}>기각</button>
             <button className="btn btn-danger" onClick={handleProcessFromDetail}>제재하기</button>
           </>
         ) : null}
@@ -337,97 +442,96 @@ function Reports() {
           <div>
             <div className="detail-list" style={{ marginBottom: 20 }}>
               <div className="detail-item">
-                <span className="detail-label"><RiFlag2Line /> 유형</span>
-                <span className="detail-value">
-                  <span className={`badge ${typeLabels[detailModal.report.type]}`}>
-                    {detailModal.report.type}
-                  </span>
-                </span>
+                <span className="detail-label">신고번호</span>
+                <span className="detail-value">{detailModal.report.rptNo}</span>
               </div>
               <div className="detail-item">
-                <span className="detail-label"><RiFileTextLine /> 대상 ID</span>
+                <span className="detail-label"><RiFlag2Line /> 신고출처</span>
                 <span className="detail-value">
-                  {detailModal.report.targetId}
-                  {(detailModal.report.type === '여행톡' || detailModal.report.type === '여행기록') && (
-                    <span style={{
-                      marginLeft: 8,
-                      padding: '2px 8px',
-                      background: getTargetReportCount(detailModal.report.targetId) >= 3 ? '#fee2e2' : '#f3f4f6',
-                      borderRadius: 4,
-                      fontSize: '0.75rem',
-                      color: getTargetReportCount(detailModal.report.targetId) >= 3 ? '#dc2626' : '#6b7280',
-                      fontWeight: getTargetReportCount(detailModal.report.targetId) >= 3 ? 600 : 500
-                    }}>
-                      이 {detailModal.report.type === '여행톡' ? '채팅방' : '기록글'} 총 {getTargetReportCount(detailModal.report.targetId)}회 신고됨
-                    </span>
-                  )}
+                  <span className={`badge ${targetTypeLabels[detailModal.report.targetType]?.className || 'badge-gray'}`}>
+                    {targetTypeLabels[detailModal.report.targetType]?.label || detailModal.report.targetType}
+                  </span>
                 </span>
               </div>
               <div className="detail-item">
                 <span className="detail-label"><RiAlertLine /> 신고 사유</span>
                 <span className="detail-value">
-                  <span className={`badge ${reasonLabels[detailModal.report.reason] || 'badge-gray'}`}>
-                    {detailModal.report.reason}
+                  <span className={`badge ${reasonLabels[detailModal.report.ctgryCd]?.className || 'badge-gray'}`}>
+                    {reasonLabels[detailModal.report.ctgryCd]?.label || detailModal.report.ctgryCd}
                   </span>
                 </span>
               </div>
               <div className="detail-item">
                 <span className="detail-label"><RiUserLine /> 신고자</span>
-                <span className="detail-value">
-                  {detailModal.report.reporter}
-                  <span style={{ marginLeft: 8, padding: '2px 8px', background: '#f3f4f6', borderRadius: 4, fontSize: '0.75rem', color: '#6b7280' }}>
-                    총 {getReportCount(detailModal.report.reporterId)}회 신고
-                  </span>
-                </span>
+                <span className="detail-value">{detailModal.report.reqMemName || detailModal.report.reqMemNo}</span>
               </div>
               <div className="detail-item">
                 <span className="detail-label"><RiUserLine /> 피신고자</span>
                 <span className="detail-value">
-                  <span style={{ color: 'var(--danger-color)', fontWeight: 500 }}>{detailModal.report.reported}</span>
-                  <span style={{ marginLeft: 8, padding: '2px 8px', background: '#fee2e2', borderRadius: 4, fontSize: '0.75rem', color: '#ef4444' }}>
-                    총 {getReportedCount(detailModal.report.reportedId)}회 피신고
+                  <span style={{ color: 'var(--danger-color)', fontWeight: 500 }}>
+                    {detailModal.report.targetMemName || detailModal.report.targetMemNo}
                   </span>
                 </span>
               </div>
               <div className="detail-item">
                 <span className="detail-label"><RiCalendarLine /> 신고일</span>
-                <span className="detail-value">{detailModal.report.reportDate}</span>
+                <span className="detail-value">
+                  {detailModal.report.reqDt ? detailModal.report.reqDt.split('T')[0] : '-'}
+                </span>
               </div>
               <div className="detail-item">
-                <span className="detail-label">상태</span>
+                <span className="detail-label">처리상태</span>
                 <span className="detail-value">
-                  <span className={`badge ${statusLabels[detailModal.report.status].className}`}>
-                    {statusLabels[detailModal.report.status].label}
+                  <span className={`badge ${statusLabels[detailModal.report.procStatus]?.className || 'badge-gray'}`}>
+                    {statusLabels[detailModal.report.procStatus]?.label || detailModal.report.procStatus}
                   </span>
                 </span>
               </div>
+              {detailModal.report.procResult && (
+                <div className="detail-item">
+                  <span className="detail-label">제재수위</span>
+                  <span className="detail-value">
+                    <span className={`badge ${procResultLabels[detailModal.report.procResult]?.className || 'badge-gray'}`}>
+                      {procResultLabels[detailModal.report.procResult]?.label || detailModal.report.procResult}
+                    </span>
+                  </span>
+                </div>
+              )}
             </div>
 
             <div style={{ marginBottom: 20 }}>
-              <h4 style={{ marginBottom: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
-                <RiFileTextLine /> 신고 내용
+              <h4 style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: 12, color: '#374151', borderBottom: '1px solid #e5e7eb', paddingBottom: 8 }}>
+                <RiFileTextLine style={{ marginRight: 6, verticalAlign: 'middle' }} />
+                신고 내용
               </h4>
               <div style={{ padding: 16, background: 'var(--bg-color)', borderRadius: 8, lineHeight: 1.6 }}>
-                {detailModal.report.content}
+                {detailModal.report.content || '내용 없음'}
               </div>
             </div>
 
-            {detailModal.report.status !== 'pending' && detailModal.report.processResult && (
+            {detailModal.report.procStatus === 'DONE' && (
               <div>
-                <h4 style={{ marginBottom: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <RiCheckLine /> 처리 결과
+                <h4 style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: 12, color: '#374151', borderBottom: '1px solid #e5e7eb', paddingBottom: 8 }}>
+                  <RiCheckLine style={{ marginRight: 6, verticalAlign: 'middle' }} />
+                  처리 결과
                 </h4>
                 <div style={{
                   padding: 16,
-                  background: detailModal.report.status === 'processed' ? '#FEE2E2' : '#F3F4F6',
+                  background: detailModal.report.procResult === 'REJECTED' ? '#F3F4F6' : '#FEE2E2',
                   borderRadius: 8,
                   lineHeight: 1.6,
-                  borderLeft: `4px solid ${detailModal.report.status === 'processed' ? 'var(--danger-color)' : 'var(--text-secondary)'}`
+                  borderLeft: `4px solid ${detailModal.report.procResult === 'REJECTED' ? 'var(--text-secondary)' : 'var(--danger-color)'}`
                 }}>
-                  <div style={{ marginBottom: 8, fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-                    처리일: {detailModal.report.processedDate}
-                  </div>
-                  {detailModal.report.processResult}
+                  {detailModal.report.prodDt && (
+                    <div style={{ marginBottom: 8, fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                      처리일: {detailModal.report.prodDt.split('T')[0]}
+                    </div>
+                  )}
+                  {detailModal.report.procResult === 'REJECTED' ? (
+                    <div><strong>기각 사유:</strong> {detailModal.report.rejRsn || '사유 없음'}</div>
+                  ) : (
+                    <div><strong>처리 내용:</strong> {detailModal.report.adminMemo || '내용 없음'}</div>
+                  )}
                 </div>
               </div>
             )}
@@ -451,40 +555,51 @@ function Reports() {
         {processModal.report && (
           <div>
             <div style={{ marginBottom: 20, padding: 16, background: '#FEE2E2', borderRadius: 8, borderLeft: '4px solid var(--danger-color)' }}>
-              <div style={{ marginBottom: 8, display: 'flex', gap: 8 }}>
-                <span className={`badge ${typeLabels[processModal.report.type]}`}>
-                  {processModal.report.type}
-                </span>
-                <span className={`badge ${reasonLabels[processModal.report.reason] || 'badge-gray'}`}>
-                  {processModal.report.reason}
+              <div style={{ marginBottom: 8 }}>
+                <strong>피신고자: </strong>
+                <span style={{ color: 'var(--danger-color)', fontWeight: 600 }}>
+                  {processModal.report.targetMemName || processModal.report.targetMemNo}
                 </span>
               </div>
-              <div style={{ marginBottom: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
-                <strong>피신고자: </strong>
-                <span style={{ color: 'var(--danger-color)', fontWeight: 600 }}>{processModal.report.reported}</span>
-                <span style={{ padding: '2px 8px', background: '#fca5a5', borderRadius: 4, fontSize: '0.75rem', color: '#991b1b', fontWeight: 600 }}>
-                  총 {getReportedCount(processModal.report.reportedId)}회 피신고
+              <div style={{ marginBottom: 8 }}>
+                <strong>신고 사유: </strong>
+                <span className={`badge ${reasonLabels[processModal.report.ctgryCd]?.className || 'badge-gray'}`}>
+                  {reasonLabels[processModal.report.ctgryCd]?.label || processModal.report.ctgryCd}
                 </span>
               </div>
               <div style={{ color: 'var(--text-secondary)' }}>
-                <strong>신고 내용: </strong>{processModal.report.content}
+                <strong>신고 내용: </strong>{processModal.report.content || '내용 없음'}
               </div>
             </div>
 
+            <div className="form-group" style={{ marginBottom: 16 }}>
+              <label className="form-label">제재 수위 *</label>
+              <select
+                className="form-input form-select"
+                value={procResult}
+                onChange={(e) => setProcResult(e.target.value)}
+              >
+                <option value="WARNING">경고 (콘텐츠 숨김)</option>
+                <option value="BAN_7">7일 이용정지 (콘텐츠 숨김 + 계정 7일 차단)</option>
+                <option value="BAN_30">30일 이용정지 (콘텐츠 숨김 + 계정 30일 차단)</option>
+                <option value="BLACKLIST">영구 정지 (콘텐츠 숨김 + 계정 영구 차단)</option>
+              </select>
+            </div>
+
             <div className="form-group">
-              <label className="form-label">처리 내용 (피신고자에게 적용될 제재)</label>
+              <label className="form-label">처리 사유 *</label>
               <textarea
                 className="form-input"
                 rows={5}
-                placeholder="예: 해당 게시글을 삭제하고 7일간 글쓰기 제한 조치를 적용했습니다."
-                value={processContent}
-                onChange={(e) => setProcessContent(e.target.value)}
+                placeholder="예: 반복적인 욕설 사용으로 7일 이용정지 처리했습니다."
+                value={adminMemo}
+                onChange={(e) => setAdminMemo(e.target.value)}
                 style={{ resize: 'vertical' }}
               />
             </div>
 
             <div style={{ padding: 12, background: '#FEF3C7', borderRadius: 8, fontSize: '0.875rem' }}>
-              <strong>안내:</strong> 제재 적용 시 피신고자에게 알림이 발송되며, 신고자에게 처리 결과가 통보됩니다.
+              <strong>안내:</strong> 기각을 제외한 모든 제재는 해당 콘텐츠를 자동으로 숨김 처리합니다.
             </div>
           </div>
         )}
@@ -492,62 +607,78 @@ function Reports() {
 
       {/* 기각 모달 */}
       <Modal
-        isOpen={dismissModal.isOpen}
-        onClose={() => setDismissModal({ isOpen: false, report: null })}
+        isOpen={rejectModal.isOpen}
+        onClose={() => setRejectModal({ isOpen: false, report: null })}
         title="신고 기각"
         size="medium"
         footer={
           <>
-            <button className="btn btn-secondary" onClick={() => setDismissModal({ isOpen: false, report: null })}>취소</button>
-            <button className="btn btn-warning" onClick={handleDismissSubmit}>기각</button>
+            <button className="btn btn-secondary" onClick={() => setRejectModal({ isOpen: false, report: null })}>취소</button>
+            <button className="btn btn-warning" onClick={handleRejectSubmit}>기각</button>
           </>
         }
       >
-        {dismissModal.report && (
+        {rejectModal.report && (
           <div>
             <div style={{ marginBottom: 20, padding: 16, background: 'var(--bg-color)', borderRadius: 8 }}>
               <div style={{ marginBottom: 8 }}>
-                <span className={`badge ${typeLabels[dismissModal.report.type]}`}>
-                  {dismissModal.report.type}
-                </span>
-                {' '}
-                <span className={`badge ${reasonLabels[dismissModal.report.reason] || 'badge-gray'}`}>
-                  {dismissModal.report.reason}
+                <strong>피신고자:</strong> {rejectModal.report.targetMemName || rejectModal.report.targetMemNo}
+              </div>
+              <div style={{ marginBottom: 8 }}>
+                <strong>신고 사유: </strong>
+                <span className={`badge ${reasonLabels[rejectModal.report.ctgryCd]?.className || 'badge-gray'}`}>
+                  {reasonLabels[rejectModal.report.ctgryCd]?.label || rejectModal.report.ctgryCd}
                 </span>
               </div>
-              <div><strong>피신고자:</strong> {dismissModal.report.reported}</div>
-              <div style={{ marginTop: 8, color: 'var(--text-secondary)' }}>{dismissModal.report.content}</div>
+              <div style={{ color: 'var(--text-secondary)' }}>
+                {rejectModal.report.content || '내용 없음'}
+              </div>
             </div>
 
             <p style={{ marginBottom: 16 }}>
               이 신고를 <strong>기각</strong>하시겠습니까?<br />
-              기각된 신고는 처리되지 않으며, 신고자에게 결과가 통보됩니다.
+              기각된 신고는 처리되지 않으며, 콘텐츠는 그대로 유지됩니다.
             </p>
 
             <div className="form-group">
-              <label className="form-label">기각 사유 (선택)</label>
+              <label className="form-label">기각 사유 *</label>
               <textarea
                 className="form-input"
                 rows={3}
-                placeholder="예: 신고 사유에 해당하지 않습니다."
-                value={processContent}
-                onChange={(e) => setProcessContent(e.target.value)}
+                placeholder="예: 신고 사유가 타당하지 않습니다."
+                value={rejRsn}
+                onChange={(e) => setRejRsn(e.target.value)}
               />
             </div>
           </div>
         )}
       </Modal>
 
-      {/* 삭제 확인 모달 */}
-      <ConfirmModal
-        isOpen={deleteModal.isOpen}
-        onClose={() => setDeleteModal({ isOpen: false, report: null })}
-        onConfirm={handleDeleteConfirm}
-        title="신고 기록 삭제"
-        message={`이 신고 기록을 삭제하시겠습니까? 삭제된 기록은 복구할 수 없습니다.`}
-        confirmText="삭제"
-        type="danger"
-      />
+      {/* 블랙리스트 해제 확인 모달 */}
+      <Modal
+        isOpen={blacklistReleaseModal.isOpen}
+        onClose={() => setBlacklistReleaseModal({ isOpen: false, blacklistNo: null })}
+        title="블랙리스트 해제"
+        size="small"
+        footer={
+          <>
+            <button className="btn btn-secondary" onClick={() => setBlacklistReleaseModal({ isOpen: false, blacklistNo: null })}>취소</button>
+            <button className="btn btn-warning" onClick={handleBlacklistRelease}>해제</button>
+          </>
+        }
+      >
+        <div>
+          <p style={{ marginBottom: 16 }}>
+            <RiShieldLine size={48} style={{ color: 'var(--warning-color)', display: 'block', margin: '0 auto 16px' }} />
+          </p>
+          <p style={{ textAlign: 'center', marginBottom: 16 }}>
+            이 회원의 블랙리스트를 <strong>해제</strong>하시겠습니까?
+          </p>
+          <div style={{ padding: 12, background: '#FEF3C7', borderRadius: 8, fontSize: '0.875rem' }}>
+            <strong>안내:</strong> 해제 시 해당 회원은 다시 정상적으로 서비스를 이용할 수 있습니다.
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
