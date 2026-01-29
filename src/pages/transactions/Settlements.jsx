@@ -550,7 +550,6 @@ const finalPendingSettlement = Math.round(pendingSettlement || 0);
                 <th style={{ width: 100 }}>매출액</th>
                 <th style={{ width: 90 }}>수수료</th>
                 <th style={{ width: 100 }}>정산금액</th>
-                <th style={{ width: 70 }}>증감</th>
                 <th style={{ width: 75 }}>상태</th>
                 <th style={{ width: 90 }}>관리</th>
               </tr>
@@ -607,19 +606,7 @@ const finalPendingSettlement = Math.round(pendingSettlement || 0);
                     <td>₩{Number(sales).toLocaleString()}</td>
                     <td style={{ color: '#f59e0b' }}>-₩{Math.round(Number(fee)).toLocaleString()}</td>
                     <td className="font-medium" style={{ color: '#10b981' }}>₩{Math.round(Number(settlement)).toLocaleString()}</td>
-                    <td>
-                      {item.changeRate > 0 ? (
-                        <span style={{ color: '#10b981', display: 'flex', alignItems: 'center', gap: 2, fontSize: '0.85rem' }}>
-                          <RiArrowUpLine /> +{item.changeRate}%
-                        </span>
-                      ) : item.changeRate < 0 ? (
-                        <span style={{ color: '#ef4444', display: 'flex', alignItems: 'center', gap: 2, fontSize: '0.85rem' }}>
-                          <RiArrowDownLine /> {item.changeRate}%
-                        </span>
-                      ) : (
-                        <span style={{ color: '#6b7280', fontSize: '0.85rem' }}>0%</span>
-                      )}
-                    </td>
+                  
                     <td>
                       <span className={`badge ${statusConfig.className}`} style={{ whiteSpace: 'nowrap' }}>
                         {statusConfig.label}
