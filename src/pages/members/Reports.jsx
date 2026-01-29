@@ -48,6 +48,8 @@ const reasonLabels = {
   COPYRIGHT: { label: '저작권 침해', className: 'badge-danger' },
   PRIVACY: { label: '개인정보 노출', className: 'badge-danger' },
   ADVERTISE: { label: '광고/홍보', className: 'badge-gray' },
+  other: { label: '기타', className: 'badge-secondary' },
+  OTHER: { label: '기타', className: 'badge-secondary' },
   ETC: { label: '기타', className: 'badge-secondary' }
 };
 
