@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   RiSearchLine,
   RiFilterLine,
@@ -20,6 +20,7 @@ import {
   RiDeleteBinLine
 } from 'react-icons/ri';
 import { Modal, ConfirmModal } from '../../components/common/Modal';
+import api from '../../api/api';
 
 // 로그 카테고리
 const categories = [
@@ -67,8 +68,10 @@ const categoryConfig = {
   security: { label: '보안', color: '#DC2626', bg: '#FEE2E2' }
 };
 
+
 function Logs() {
   const [searchTerm, setSearchTerm] = useState('');
+  const [dataList, setDataList] = useState([]);
   const [levelFilter, setLevelFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [selectedPeriod, setSelectedPeriod] = useState('today');
@@ -83,6 +86,46 @@ function Logs() {
     { id: '3months', label: '최근 3개월' }
   ];
 
+  // db에서 실제 로그목록 가져오기
+  const fetchLogList = (page = 1) => {
+    api.get(`/admin/statistics/logs`, {
+      params: {
+        currentPage: page,
+        // searchWord: searchTerm,
+        searchType: categories,
+      }
+    }).then(res => {
+      console.log("res : ", res.data.dataList);
+      setDataList(res.data.dataList || []);
+      console.log("dataList : ", dataList);
+
+    }).catch(err => console.error("목록 로딩 실패:", err));
+  };
+
+  useEffect(() => {
+    console.log("초기화");
+    fetchLogList();
+  }, [])
+
+  // 불러온 내역 가져오기
+  // const filteredLogs = dataList.filter(log => {
+  //   console.log("log : ", log);
+
+  //   // const matchesSearch = log.message.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  //   //   log.source.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  //   //   log.detail.toLowerCase().includes(searchTerm.toLowerCase());
+  //   // const matchesLevel = levelFilter === 'all' || log.level === levelFilter;
+  //   // const matchesCategory = categoryFilter === 'all' || log.category === categoryFilter;
+  //   return "";
+
+  // });
+
+  // const totalCount = dataList.length;
+  // const errorCount = dataList.filter(l => l.level === 'ERROR').length;
+  // const warningCount = dataList.filter(l => l.level === 'WARNING').length;
+  // const infoCount = dataList.filter(l => l.level === 'INFO').length;
+
+  // default 데이터
   const filteredLogs = logsData.filter(log => {
     const matchesSearch = log.message.toLowerCase().includes(searchTerm.toLowerCase()) ||
       log.source.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -380,6 +423,7 @@ function Logs() {
           </table>
         </div>
 
+        {/* 페이지 네이션 */}
         <div className="pagination">
           <button className="pagination-btn" disabled>&lt;</button>
           <button className="pagination-btn active">1</button>
