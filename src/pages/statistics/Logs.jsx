@@ -3,7 +3,6 @@ import {
   RiSearchLine,
   RiFilterLine,
   RiRefreshLine,
-  RiDownloadLine,
   RiAlertLine,
   RiCheckLine,
   RiInformationLine,
@@ -21,6 +20,7 @@ import {
 } from 'react-icons/ri';
 import { Modal, ConfirmModal } from '../../components/common/Modal';
 import api from '../../api/api';
+import './Logs.css';
 
 // 로그 카테고리
 const categories = [
@@ -72,12 +72,12 @@ const categoryConfig = {
 
 // 시작일 얻기
 const getToday = () => {
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = String(today.getMonth() + 1).padStart(2, '0'); // 월은 0부터 시작하므로 +1
-    const day = String(today.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0'); // 월은 0부터 시작하므로 +1
+  const day = String(today.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
 
 function Logs() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -85,9 +85,9 @@ function Logs() {
   const [levelFilter, setLevelFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [selectedPeriod, setSelectedPeriod] = useState('today');
-  const [dateRange, setDateRange] = useState({ 
-    start: getToday(), 
-    end: getToday() 
+  const [dateRange, setDateRange] = useState({
+    start: getToday(),
+    end: getToday()
   });
   const [detailModal, setDetailModal] = useState({ isOpen: false, log: null });
   const [confirmModal, setConfirmModal] = useState({ isOpen: false });
@@ -126,33 +126,48 @@ function Logs() {
 
     const matchesSearch = log.msg.toLowerCase().includes(searchTerm.toLowerCase()) ||
       log.source.toLowerCase().includes(searchTerm.toLowerCase());
-      // log.detail.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesLevel = levelFilter === 'all' || log.level === levelFilter;
     const matchesCategory = categoryFilter === 'all' || log.category === categoryFilter;
+
+    // const logDate = log.regDt.split('T')[0];
+    // const matchesDate = logDate >= dateRange.start && logDate <= dateRange.end;
     return matchesSearch && matchesLevel && matchesCategory;
   });
+
+  // 기간 선택 핸들러
+  const handlePeriodChange = (periodId) => {
+    setSelectedPeriod(periodId);
+    const end = getToday(); // 종료일은 무조건 오늘
+    let start = new Date();
+
+    if (periodId === 'today') {
+      // 시작일 그대로 (오늘)
+    } else if (periodId === 'week') {
+      start.setDate(start.getDate() - 7);
+    } else if (periodId === 'month') {
+      start.setMonth(start.getMonth() - 1);
+    } else if (periodId === '3months') {
+      start.setMonth(start.getMonth() - 3);
+    }
+
+    const startYear = start.getFullYear();
+    const startMonth = String(start.getMonth() + 1).padStart(2, '0');
+    const startDate = String(start.getDate()).padStart(2, '0');
+
+    setDateRange({
+      start: `${startYear}-${startMonth}-${startDate}`,
+      end: end
+    });
+  };
+
 
   const totalCount = dataList.length;
   const errorCount = dataList.filter(l => l.level === 'ERROR').length;
   const warningCount = dataList.filter(l => l.level === 'WARNING').length;
   const infoCount = dataList.filter(l => l.level === 'INFO').length;
-console.log("errorCount : ",errorCount);
-console.log("warningCount : ",warningCount);
-console.log("infoCount : ",infoCount);
-  // default 데이터
-  // const filteredLogs = logsData.filter(log => {
-  //   const matchesSearch = log.message.toLowerCase().includes(searchTerm.toLowerCase()) ||
-  //     log.source.toLowerCase().includes(searchTerm.toLowerCase()) ||
-  //     log.detail.toLowerCase().includes(searchTerm.toLowerCase());
-  //   const matchesLevel = levelFilter === 'all' || log.level === levelFilter;
-  //   const matchesCategory = categoryFilter === 'all' || log.category === categoryFilter;
-  //   return matchesSearch && matchesLevel && matchesCategory;
-  // });
-
-  // const totalCount = logsData.length;
-  // const errorCount = logsData.filter(l => l.level === 'ERROR').length;
-  // const warningCount = logsData.filter(l => l.level === 'WARNING').length;
-  // const infoCount = logsData.filter(l => l.level === 'INFO').length;
+  console.log("errorCount : ", errorCount);
+  console.log("warningCount : ", warningCount);
+  console.log("infoCount : ", infoCount);
 
   const handleViewDetail = (log) => {
     setDetailModal({ isOpen: true, log });
@@ -181,9 +196,9 @@ console.log("infoCount : ",infoCount);
           <button className="btn btn-secondary" onClick={() => window.location.reload()}>
             <RiRefreshLine /> 새로고침
           </button>
-          <button className="btn btn-secondary">
+          {/* <button className="btn btn-secondary">
             <RiDownloadLine /> 로그 다운로드
-          </button>
+          </button> */}
         </div>
       </div>
 
@@ -196,7 +211,7 @@ console.log("infoCount : ",infoCount);
                 <button
                   key={period.id}
                   className={`btn ${selectedPeriod === period.id ? 'btn-primary' : 'btn-secondary'}`}
-                  onClick={() => setSelectedPeriod(period.id)}
+                  onClick={() => handlePeriodChange(period.id)}
                   style={{ padding: '8px 16px' }}
                 >
                   {period.label}
@@ -229,50 +244,87 @@ console.log("infoCount : ",infoCount);
       {/* 통계 카드 */}
       <div className="stats-grid mb-3">
         <div className="stat-card">
-          <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #6B7280 0%, #4B5563 100%)', color: 'white' }}>
-            <RiServerLine />
-          </div>
-          <div className="stat-content">
-            <div className="stat-value">{totalCount}</div>
-            <div className="stat-label">전체 로그</div>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #60A5FA 0%, #2563EB 100%)', color: 'white' }}>
-            <RiInformationLine />
-          </div>
-          <div className="stat-content">
-            <div className="stat-value">{infoCount}</div>
-            <div className="stat-label">INFO</div>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #FBBF24 0%, #D97706 100%)', color: 'white' }}>
-            <RiAlertLine />
-          </div>
-          <div className="stat-content">
-            <div className="stat-value">{warningCount}</div>
-            <div className="stat-label">WARNING</div>
-            {warningCount > 0 && <div className="stat-change negative">주의 필요</div>}
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #F87171 0%, #DC2626 100%)', color: 'white' }}>
-            <RiErrorWarningLine />
-          </div>
-          <div className="stat-content">
-            <div className="stat-value">{errorCount}</div>
-            <div className="stat-label">ERROR</div>
-            {/* 추가된 막대 그래프 배경 */}
-            <div className="stat-progress-bg">
-              {/* 실제 비중을 계산하여 width로 적용 (전체 중 에러 비율) */}
-              <div 
-                className="stat-progress-bar error" 
-                style={{ width: `${totalCount > 0 ? (errorCount / totalCount) * 100 : 0}%` }}
-              ></div>
+          <div className="stat-header">
+            <div className="stat-label-group">
+              <RiServerLine style={{ color: '#4b5563' }} />
+              <span>전체 로그</span>
             </div>
-            {errorCount > 0 && <div className="stat-change negative">확인 필요</div>}
+            <div className="stat-value-group">
+              <span>{totalCount}건</span>
+              <span className="stat-percent">(100%)</span>
+            </div>
           </div>
+          <div className="progress-bg">
+            <div className="progress-fill" style={{ width: '100%', backgroundColor: '#4b5563' }} />
+          </div>
+        </div>
+
+        {/* 2. INFO */}
+        <div className="stat-card">
+          <div className="stat-header">
+            <div className="stat-label-group">
+              <RiInformationLine style={{ color: '#2563eb' }} />
+              <span>INFO</span>
+            </div>
+            <div className="stat-value-group">
+              <span>{infoCount}건</span>
+              <span className="stat-percent">
+                ({totalCount > 0 ? ((infoCount / totalCount) * 100).toFixed(1) : 0}%)
+              </span>
+            </div>
+          </div>
+          <div className="progress-bg">
+            <div className="progress-fill" style={{
+              width: `${totalCount > 0 ? (infoCount / totalCount) * 100 : 0}%`,
+              backgroundColor: '#2563eb'
+            }} />
+          </div>
+        </div>
+
+        {/* 3. WARNING */}
+        <div className="stat-card">
+          <div className="stat-header">
+            <div className="stat-label-group">
+              <RiAlertLine style={{ color: '#d97706' }} />
+              <span>WARNING</span>
+            </div>
+            <div className="stat-value-group">
+              <span>{warningCount}건</span>
+              <span className="stat-percent">
+                ({totalCount > 0 ? ((warningCount / totalCount) * 100).toFixed(1) : 0}%)
+              </span>
+            </div>
+          </div>
+          <div className="progress-bg">
+            <div className="progress-fill" style={{
+              width: `${totalCount > 0 ? (warningCount / totalCount) * 100 : 0}%`,
+              backgroundColor: '#d97706'
+            }} />
+          </div>
+          {warningCount > 0 && <div className="stat-alert" style={{ color: '#d97706' }}>⚠️ 주의 필요</div>}
+        </div>
+
+        {/* 4. ERROR */}
+        <div className="stat-card">
+          <div className="stat-header">
+            <div className="stat-label-group">
+              <RiErrorWarningLine style={{ color: '#dc2626' }} />
+              <span>ERROR</span>
+            </div>
+            <div className="stat-value-group">
+              <span>{errorCount}건</span>
+              <span className="stat-percent">
+                ({totalCount > 0 ? ((errorCount / totalCount) * 100).toFixed(1) : 0}%)
+              </span>
+            </div>
+          </div>
+          <div className="progress-bg">
+            <div className="progress-fill" style={{
+              width: `${totalCount > 0 ? (errorCount / totalCount) * 100 : 0}%`,
+              backgroundColor: '#dc2626'
+            }} />
+          </div>
+          {errorCount > 0 && <div className="stat-alert" style={{ color: '#dc2626' }}>🚨 확인 필요</div>}
         </div>
       </div>
 
@@ -375,7 +427,23 @@ console.log("infoCount : ",infoCount);
             <tbody>
               {filteredLogs.map(log => {
                 const LevelIcon = levelConfig[log.level].icon;
-                const catConfig = categoryConfig['auth'];
+
+                // 타입 매칭
+                const getCategoryByMsg = (msg) => {
+                  if (!msg) return 'system'; // 메시지가 없으면 바로 system 반환
+
+                  const text = msg.toLowerCase();
+                  if (text.includes('login') || text.includes('인증') || text.includes('로그인')) return 'auth';
+                  if (text.includes('pay') || text.includes('결제')) return 'payment';
+                  if (text.includes('book') || text.includes('예약')) return 'booking';
+                  if (text.includes('api') || text.includes('호출')) return 'api';
+                  if (text.includes('security') || text.includes('보안') || text.includes('접근')) return 'security';
+                  return 'system'; // 매칭되는 게 없으면 기본값
+                };
+                // 2. 매칭된 키워드로 설정값 가져오기
+                const keyword = getCategoryByMsg(log.msg);
+                const catConfig = categoryConfig[keyword];
+
                 return (
                   <tr key={log.systemLogNo} style={{ background: log.level === 'ERROR' ? '#FEF2F2' : log.level === 'WARNING' ? '#FFFBEB' : 'transparent' }}>
                     <td style={{ fontFamily: 'monospace', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
@@ -468,8 +536,24 @@ console.log("infoCount : ",infoCount);
         {detailModal.log && (() => {
           const log = detailModal.log;
           const LevelIcon = levelConfig[log.level].icon;
-          const catConfig = categoryConfig['auth'];
-          console.log("catConfig : ",catConfig);
+
+          // 타입 매칭
+          const getCategoryByMsg = (msg) => {
+            if (!msg) return 'system'; // 메시지가 없으면 바로 system 반환
+
+            const text = msg.toLowerCase();
+            if (text.includes('login') || text.includes('인증') || text.includes('로그인')) return 'auth';
+            if (text.includes('pay') || text.includes('결제')) return 'payment';
+            if (text.includes('book') || text.includes('예약')) return 'booking';
+            if (text.includes('api') || text.includes('호출')) return 'api';
+            if (text.includes('security') || text.includes('보안') || text.includes('접근')) return 'security';
+            return 'system'; // 매칭되는 게 없으면 기본값
+          };
+          // 2. 매칭된 키워드로 설정값 가져오기
+          const keyword = getCategoryByMsg(log.msg);
+          const catConfig = categoryConfig[keyword];
+
+          console.log("catConfig : ", catConfig);
           return (
             <div>
               {/* 헤더 */}
