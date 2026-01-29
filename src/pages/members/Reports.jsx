@@ -43,12 +43,23 @@ const procResultLabels = {
 const reasonLabels = {
   SPAM: { label: '스팸/도배', className: 'badge-warning' },
   ABUSE: { label: '욕설/비방', className: 'badge-danger' },
+  FRAUD: { label: '사기', className: 'badge-danger' },  // ← FRAUD 추가
   FALSE: { label: '허위정보', className: 'badge-danger' },
   COPYRIGHT: { label: '저작권 침해', className: 'badge-danger' },
   PRIVACY: { label: '개인정보 노출', className: 'badge-danger' },
   ADVERTISE: { label: '광고/홍보', className: 'badge-gray' },
   ETC: { label: '기타', className: 'badge-secondary' }
 };
+
+// ******************************* 헬퍼 함수 추가
+const getReasonLabel = (ctgryCd) => {
+  if (!ctgryCd) return { label: ctgryCd, className: 'badge-gray' };
+  
+  // 대소문자 무시하고 찾기
+  const upperKey = ctgryCd.toUpperCase();
+  return reasonLabels[upperKey] || { label: ctgryCd, className: 'badge-gray' };
+};
+// ******************************* 헬퍼 함수 추가 끝
 
 // Modal 컴포넌트
 function Modal({ isOpen, onClose, title, children, size = 'medium', footer }) {
@@ -357,9 +368,15 @@ function Reports() {
                     </span>
                   </td>
                   <td>
+                    {/* 수정함 */}
+                    <span className={`badge ${getReasonLabel(report.ctgryCd).className}`}>
+                      {getReasonLabel(report.ctgryCd).label}
+                    </span>
+                    {/* 기존것 
                     <span className={`badge ${reasonLabels[report.ctgryCd]?.className || 'badge-gray'}`}>
                       {reasonLabels[report.ctgryCd]?.label || report.ctgryCd}
-                    </span>
+                    </span>       
+                     */}
                   </td>
                   <td>
                     <div>{report.reqMemName || report.reqMemId}</div>
