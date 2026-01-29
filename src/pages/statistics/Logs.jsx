@@ -52,6 +52,7 @@ const logsData = [
   { id: 15, timestamp: '2024-12-18 13:55:10', level: 'INFO', category: 'auth', source: 'AuthService', message: '비밀번호 변경', detail: 'userId: user789, method: forgot_password', ip: '175.223.45.89', userId: 'user789' }
 ];
 
+// 로그 레벨
 const levelConfig = {
   INFO: { icon: RiInformationLine, className: 'badge-primary', color: '#2563EB', bg: '#DBEAFE' },
   WARNING: { icon: RiAlertLine, className: 'badge-warning', color: '#D97706', bg: '#FEF3C7' },
@@ -59,6 +60,7 @@ const levelConfig = {
   SUCCESS: { icon: RiCheckLine, className: 'badge-success', color: '#059669', bg: '#D1FAE5' }
 };
 
+// 로그 카테고리별 ui
 const categoryConfig = {
   auth: { label: '인증', color: '#2563EB', bg: '#DBEAFE' },
   payment: { label: '결제', color: '#059669', bg: '#D1FAE5' },
@@ -68,6 +70,14 @@ const categoryConfig = {
   security: { label: '보안', color: '#DC2626', bg: '#FEE2E2' }
 };
 
+// 시작일 얻기
+const getToday = () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0'); // 월은 0부터 시작하므로 +1
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
 
 function Logs() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -75,7 +85,10 @@ function Logs() {
   const [levelFilter, setLevelFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [selectedPeriod, setSelectedPeriod] = useState('today');
-  const [dateRange, setDateRange] = useState({ start: '2024-12-18', end: '2024-12-18' });
+  const [dateRange, setDateRange] = useState({ 
+    start: getToday(), 
+    end: getToday() 
+  });
   const [detailModal, setDetailModal] = useState({ isOpen: false, log: null });
   const [confirmModal, setConfirmModal] = useState({ isOpen: false });
 
@@ -91,7 +104,7 @@ function Logs() {
     api.get(`/admin/statistics/logs`, {
       params: {
         currentPage: page,
-        // searchWord: searchTerm,
+        searchWord: searchTerm,
         searchType: categories,
       }
     }).then(res => {
@@ -105,40 +118,41 @@ function Logs() {
   useEffect(() => {
     console.log("초기화");
     fetchLogList();
-  }, [])
+  }, []);
 
   // 불러온 내역 가져오기
-  // const filteredLogs = dataList.filter(log => {
-  //   console.log("log : ", log);
+  const filteredLogs = dataList.filter(log => {
+    // console.log("log : ", log);
 
-  //   // const matchesSearch = log.message.toLowerCase().includes(searchTerm.toLowerCase()) ||
-  //   //   log.source.toLowerCase().includes(searchTerm.toLowerCase()) ||
-  //   //   log.detail.toLowerCase().includes(searchTerm.toLowerCase());
-  //   // const matchesLevel = levelFilter === 'all' || log.level === levelFilter;
-  //   // const matchesCategory = categoryFilter === 'all' || log.category === categoryFilter;
-  //   return "";
-
-  // });
-
-  // const totalCount = dataList.length;
-  // const errorCount = dataList.filter(l => l.level === 'ERROR').length;
-  // const warningCount = dataList.filter(l => l.level === 'WARNING').length;
-  // const infoCount = dataList.filter(l => l.level === 'INFO').length;
-
-  // default 데이터
-  const filteredLogs = logsData.filter(log => {
-    const matchesSearch = log.message.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      log.source.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      log.detail.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = log.msg.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      log.source.toLowerCase().includes(searchTerm.toLowerCase());
+      // log.detail.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesLevel = levelFilter === 'all' || log.level === levelFilter;
     const matchesCategory = categoryFilter === 'all' || log.category === categoryFilter;
     return matchesSearch && matchesLevel && matchesCategory;
   });
 
-  const totalCount = logsData.length;
-  const errorCount = logsData.filter(l => l.level === 'ERROR').length;
-  const warningCount = logsData.filter(l => l.level === 'WARNING').length;
-  const infoCount = logsData.filter(l => l.level === 'INFO').length;
+  const totalCount = dataList.length;
+  const errorCount = dataList.filter(l => l.level === 'ERROR').length;
+  const warningCount = dataList.filter(l => l.level === 'WARNING').length;
+  const infoCount = dataList.filter(l => l.level === 'INFO').length;
+console.log("errorCount : ",errorCount);
+console.log("warningCount : ",warningCount);
+console.log("infoCount : ",infoCount);
+  // default 데이터
+  // const filteredLogs = logsData.filter(log => {
+  //   const matchesSearch = log.message.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  //     log.source.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  //     log.detail.toLowerCase().includes(searchTerm.toLowerCase());
+  //   const matchesLevel = levelFilter === 'all' || log.level === levelFilter;
+  //   const matchesCategory = categoryFilter === 'all' || log.category === categoryFilter;
+  //   return matchesSearch && matchesLevel && matchesCategory;
+  // });
+
+  // const totalCount = logsData.length;
+  // const errorCount = logsData.filter(l => l.level === 'ERROR').length;
+  // const warningCount = logsData.filter(l => l.level === 'WARNING').length;
+  // const infoCount = logsData.filter(l => l.level === 'INFO').length;
 
   const handleViewDetail = (log) => {
     setDetailModal({ isOpen: true, log });
@@ -153,6 +167,7 @@ function Logs() {
     setConfirmModal({ isOpen: false });
   };
 
+  /* 페이지 시작 */
   return (
     <div className="page">
       <div className="page-header">
@@ -188,6 +203,7 @@ function Logs() {
                 </button>
               ))}
             </div>
+            {/* 날짜별 선택 */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <RiCalendarLine />
               <input
@@ -247,6 +263,14 @@ function Logs() {
           <div className="stat-content">
             <div className="stat-value">{errorCount}</div>
             <div className="stat-label">ERROR</div>
+            {/* 추가된 막대 그래프 배경 */}
+            <div className="stat-progress-bg">
+              {/* 실제 비중을 계산하여 width로 적용 (전체 중 에러 비율) */}
+              <div 
+                className="stat-progress-bar error" 
+                style={{ width: `${totalCount > 0 ? (errorCount / totalCount) * 100 : 0}%` }}
+              ></div>
+            </div>
             {errorCount > 0 && <div className="stat-change negative">확인 필요</div>}
           </div>
         </div>
@@ -351,13 +375,13 @@ function Logs() {
             <tbody>
               {filteredLogs.map(log => {
                 const LevelIcon = levelConfig[log.level].icon;
-                const catConfig = categoryConfig[log.category];
+                const catConfig = categoryConfig['auth'];
                 return (
-                  <tr key={log.id} style={{ background: log.level === 'ERROR' ? '#FEF2F2' : log.level === 'WARNING' ? '#FFFBEB' : 'transparent' }}>
+                  <tr key={log.systemLogNo} style={{ background: log.level === 'ERROR' ? '#FEF2F2' : log.level === 'WARNING' ? '#FFFBEB' : 'transparent' }}>
                     <td style={{ fontFamily: 'monospace', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                         <RiTimeLine size={12} />
-                        {log.timestamp}
+                        {log.regDt.split('T')[0]} {log.regDt.split('T')[1]}
                       </div>
                     </td>
                     <td>
@@ -402,7 +426,7 @@ function Logs() {
                       </span>
                     </td>
                     <td style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>
-                      {log.message}
+                      {log.msg}
                     </td>
                     <td style={{ fontFamily: 'monospace', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                       {log.ip}
@@ -440,10 +464,12 @@ function Logs() {
         title="로그 상세"
         size="medium"
       >
+        {/* 여기서는 다른걸로 바꿔야됨 */}
         {detailModal.log && (() => {
           const log = detailModal.log;
           const LevelIcon = levelConfig[log.level].icon;
-          const catConfig = categoryConfig[log.category];
+          const catConfig = categoryConfig['auth'];
+          console.log("catConfig : ",catConfig);
           return (
             <div>
               {/* 헤더 */}
@@ -498,7 +524,7 @@ function Logs() {
               <div className="detail-list">
                 <div className="detail-item" style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid var(--border-color)' }}>
                   <span style={{ color: 'var(--text-muted)' }}><RiTimeLine style={{ marginRight: 8 }} />발생 시간</span>
-                  <span style={{ fontFamily: 'monospace' }}>{log.timestamp}</span>
+                  <span style={{ fontFamily: 'monospace' }}>{log.regDt}</span>
                 </div>
                 <div className="detail-item" style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid var(--border-color)' }}>
                   <span style={{ color: 'var(--text-muted)' }}><RiServerLine style={{ marginRight: 8 }} />소스</span>
@@ -506,7 +532,7 @@ function Logs() {
                 </div>
                 <div className="detail-item" style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid var(--border-color)' }}>
                   <span style={{ color: 'var(--text-muted)' }}><RiUserLine style={{ marginRight: 8 }} />사용자 ID</span>
-                  <span style={{ fontFamily: 'monospace' }}>{log.userId}</span>
+                  <span style={{ fontFamily: 'monospace' }}>{log.systemLogMem}</span>
                 </div>
                 <div className="detail-item" style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid var(--border-color)' }}>
                   <span style={{ color: 'var(--text-muted)' }}><RiShieldLine style={{ marginRight: 8 }} />IP 주소</span>
@@ -527,7 +553,7 @@ function Logs() {
                   whiteSpace: 'pre-wrap',
                   wordBreak: 'break-all'
                 }}>
-                  {log.detail}
+                  {log.msg}
                 </div>
               </div>
 
