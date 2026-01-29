@@ -123,11 +123,11 @@ function ServiceStats() {
   const formatCurrency = (num) => {
     if (num === null || num === undefined) return '0원';
     if (num >= 100000000) {
-      return (num / 100000000).toFixed(1) + '억';
+      return Math.floor(num / 100000000).toLocaleString() + '억';
     } else if (num >= 10000) {
-      return (num / 10000).toLocaleString() + '만원';
+      return Math.floor(num / 10000).toLocaleString() + '만원';
     }
-    return num.toLocaleString() + '원';
+    return Math.floor(num).toLocaleString() + '원';
   };
 
   // 평점 색상
