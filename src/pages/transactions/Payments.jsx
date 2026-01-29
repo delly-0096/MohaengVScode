@@ -648,7 +648,7 @@ function Payments() {
                   <div className="detail-item">
                     <span className="detail-label">적립 포인트</span>
                     <span className="detail-value" style={{ color: 'var(--primary-color)', fontWeight: 600 }}>
-                      +{Math.floor((detailModal.payment.PAY_TOTAL_AMT || detailModal.payment.payTotalAmt || 0) * 0.1).toLocaleString()}P
+                      +{Math.floor((detailModal.payment.PAY_TOTAL_AMT || detailModal.payment.payTotalAmt || 0) * 0.03).toLocaleString()}P
                     </span>
                   </div>
                 </div>
