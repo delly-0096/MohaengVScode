@@ -421,12 +421,12 @@ function ProductInquiries() {
 
       {/* 문의 목록 테이블 */}
       <div className="data-table-container" style={{ overflowX: 'auto' }}>
-        <table className="data-table" style={{ width: '100%' }}>
+        <table className="data-table" style={{ width: '100%', tableLayout: 'fixed' }}>
           <thead>
             <tr>
               <th style={{ width: '110px' }}>카테고리</th>
-              <th style={{ width: '250px' }}>상품명</th>
-              <th>문의 내용</th>
+              <th style={{ width: '200px' }}>상품명</th>
+              <th style={{ width: '300px' }}>문의 내용</th>
               <th style={{ width: '110px' }}>문의자</th>
               <th style={{ width: '110px' }}>판매자</th>
               <th style={{ width: '100px' }}>상태</th>
@@ -467,7 +467,7 @@ function ProductInquiries() {
                       상품번호: {inquiry.tripProdNo}
                     </div>
                   </td>
-                  <td>
+                  <td style={{ maxWidth: '300px' }}>
                     <div style={{
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
