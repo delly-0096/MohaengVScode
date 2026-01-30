@@ -1,5 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
+import { useState, useEffect } from 'react';
 import '../products/Products.css';
 import api from '../../api/api';
 
@@ -14,9 +13,9 @@ function Points() {
   
   const [stats, setStats] = useState({
     TOTAL_EARNED: 0,
-  TOTAL_USED: 0,
-  TOTAL_EXPIRED: 0,
-  TOTAL_BALANCE: 0
+    TOTAL_USED: 0,
+    TOTAL_EXPIRED: 0,
+    TOTAL_BALANCE: 0
   });
   
   const [historyData, setHistoryData] = useState({
@@ -52,86 +51,94 @@ function Points() {
     { value: 'EVENT', label: '이벤트' }
   ];
 
-// --- 수정 및 통합된 함수부 ---  (함수가 매번 새로 생성되는 것을 방지하기 위해 useCallback 추가)
-
-// 1. 통계 로드 
-const loadStats = useCallback(async () => {
-  try {
-    const response = await api.get('/admin/points/stats');
-    console.log("통계 데이터 원본:", response.data);
-    if (response.data.success) {
-      setStats(response.data.data);
-    }
-  } catch (error) {
-    console.error('통계 조회 실패:', error);
-  }
-}, []);
-
-//2. 포인트 내역 로드 함수
-const loadHistory = useCallback(async () => {
-  try {
-    const params = {
-      searchKeyword: searchTerm || null,
-      pointType: filterType === 'all' ? null : filterType,
-      pointTarget: filterTarget === 'all' ? null : filterTarget,
-      startDate: startDate || null,
-      endDate: endDate || null,
-      currentPage: currentPage // 서버 변수명(currentPage)에 맞춤
+  // 통계는 한 번만 로드
+  useEffect(() => {
+    const loadStats = async () => {
+      try {
+        const response = await api.get('/admin/points/stats');
+        console.log("통계 데이터 원본:", response.data);
+        if (response.data.success) {
+          setStats(response.data.data);
+        }
+      } catch (error) {
+        console.error('통계 조회 실패:', error);
+      }
     };
-    const response = await api.get('/admin/points/history', { params });
-    if (response.data.success) {
-      setHistoryData(response.data.paginationVO);
-    }
-  } catch (error) {
-    console.error('포인트 내역 조회 실패:', error);
-  }
-}, [searchTerm, filterType, filterTarget, startDate, endDate, currentPage]); // 이 변수들이 바뀔 때만 함수 재생성
+    
+    loadStats();
+  }, []); // 빈 배열 = 컴포넌트 마운트 시 한 번만 실행
 
-//3. 회원별 현황 로드 함수
-const loadSummary = useCallback(async () => {
-  try {
-    const params = {
-      searchKeyword: searchTerm || null,
-      currentPage: currentPage
+  // 탭이나 필터가 변경될 때마다 데이터 로드
+  useEffect(() => {
+    const loadData = async () => {
+      if (activeTab === 'history') {
+        // 포인트 내역 조회
+        try {
+          const params = {
+            searchKeyword: searchTerm || null,
+            pointType: filterType === 'all' ? null : filterType,
+            pointTarget: filterTarget === 'all' ? null : filterTarget,
+            startDate: startDate || null,
+            endDate: endDate || null,
+            page: currentPage
+          };
+          
+          console.log('포인트 내역 조회 파라미터:', params);
+          
+          const response = await api.get('/admin/points/history', { params });
+          if (response.data.success) {
+            setHistoryData(response.data.paginationVO);
+          }
+        } catch (error) {
+          console.error('포인트 내역 조회 실패:', error);
+        }
+      } else {
+        // 회원별 현황 조회
+        try {
+          const params = {
+            searchKeyword: searchTerm || null,
+            currentPage: currentPage
+          };
+          
+          console.log('회원 현황 조회 파라미터:', params);
+          
+          const response = await api.get('/admin/points/members', { params });
+          if (response.data.success) {
+            setSummaryData(response.data.paginationVO);
+          }
+        } catch (error) {
+          console.error('회원 현황 조회 실패:', error);
+        }
+      }
     };
-    const response = await api.get('/admin/points/members', { params });
-    if (response.data.success) {
-      setSummaryData(response.data.paginationVO);
-    }
-  } catch (error) {
-    console.error('회원 현황 조회 실패:', error);
-  }
-}, [searchTerm, currentPage]);
+    
+    loadData();
+  }, [activeTab, searchTerm, filterType, filterTarget, startDate, endDate, currentPage]); 
+  // 실제 값들만 의존성으로 추가
   
-// --- useEffect (모든 함수가 선언(정의)된 이후 호출) ---
-
-useEffect(() => {
-  loadStats();
-}, [loadStats]); 
-
-useEffect(() => {
-  if (activeTab === 'history') {
-    loadHistory();
-  } else {
-    loadSummary();
-  }
-}, [activeTab, loadHistory, loadSummary]);
-  
-//--- 이벤트 핸들러 ---
-
-  // 검색
+  // 검색 버튼 클릭
   const handleSearch = () => {
-    setCurrentPage(1);
-    if (activeTab === 'history') {
-      loadHistory();
-    } else {
-      loadSummary();
-    }
+    setCurrentPage(1); // 페이지를 1로 초기화하면 useEffect가 자동으로 데이터 로드
   };
 
-  // 페이지 변경
+  // 페이지 변경 - 수정된 버전
   const handlePageClick = (page) => {
+    console.log('페이지 클릭:', page); // 디버깅용
     setCurrentPage(page);
+  };
+
+  // 필터 변경 핸들러 - 수정된 버전
+  const handleFilterChange = (type, value) => {
+    if (type === 'type') {
+      setFilterType(value);
+    } else if (type === 'target') {
+      setFilterTarget(value);
+    } else if (type === 'startDate') {
+      setStartDate(value);
+    } else if (type === 'endDate') {
+      setEndDate(value);
+    }
+    setCurrentPage(1); // 필터 변경 시 1페이지로
   };
 
   // 날짜 포맷
@@ -207,13 +214,26 @@ useEffect(() => {
       <div className="tab-section">
         <button
           className={`tab-btn ${activeTab === 'history' ? 'active' : ''}`}
-          onClick={() => { setActiveTab('history'); setCurrentPage(1); }}
+          onClick={() => { 
+            setActiveTab('history'); 
+            setCurrentPage(1);
+            // 필터 초기화
+            setSearchTerm('');
+            setFilterType('all');
+            setFilterTarget('all');
+            setStartDate('');
+            setEndDate('');
+          }}
         >
           <i className="bi bi-clock-history"></i> 포인트 내역
         </button>
         <button
           className={`tab-btn ${activeTab === 'summary' ? 'active' : ''}`}
-          onClick={() => { setActiveTab('summary'); setCurrentPage(1); }}
+          onClick={() => { 
+            setActiveTab('summary'); 
+            setCurrentPage(1);
+            setSearchTerm('');
+          }}
         >
           <i className="bi bi-people"></i> 회원별 현황
         </button>
@@ -236,12 +256,18 @@ useEffect(() => {
           
           {activeTab === 'history' && (
             <>
-              <select value={filterType} onChange={(e) => { setFilterType(e.target.value); setCurrentPage(1); }}>
+              <select 
+                value={filterType} 
+                onChange={(e) => handleFilterChange('type', e.target.value)}
+              >
                 {pointTypes.map(type => (
                   <option key={type.value} value={type.value}>{type.label}</option>
                 ))}
               </select>
-              <select value={filterTarget} onChange={(e) => { setFilterTarget(e.target.value); setCurrentPage(1); }}>
+              <select 
+                value={filterTarget} 
+                onChange={(e) => handleFilterChange('target', e.target.value)}
+              >
                 {pointTargets.map(target => (
                   <option key={target.value} value={target.value}>{target.label}</option>
                 ))}
@@ -249,12 +275,12 @@ useEffect(() => {
               <input 
                 type="date" 
                 value={startDate} 
-                onChange={(e) => { setStartDate(e.target.value); setCurrentPage(1); }}
+                onChange={(e) => handleFilterChange('startDate', e.target.value)}
               />
               <input 
                 type="date" 
                 value={endDate} 
-                onChange={(e) => { setEndDate(e.target.value); setCurrentPage(1); }}
+                onChange={(e) => handleFilterChange('endDate', e.target.value)}
               />
             </>
           )}
@@ -325,10 +351,23 @@ useEffect(() => {
               className="pagination-container" 
               dangerouslySetInnerHTML={{ __html: historyData.pagingHTML }}
               onClick={(e) => {
-                if (e.target.tagName === 'A') {
-                  e.preventDefault();
-                  const page = e.target.getAttribute('data-page');
-                  if (page) handlePageClick(parseInt(page));
+                e.preventDefault();
+                e.stopPropagation();
+                
+                // 클릭된 요소가 a 태그인지 확인
+                let target = e.target;
+                if (target.tagName !== 'A') {
+                  // a 태그의 자식 요소를 클릭한 경우 부모 a 태그 찾기
+                  target = target.closest('a');
+                }
+                
+                if (target && target.tagName === 'A') {
+                  const page = target.getAttribute('data-page');
+                  console.log('클릭한 페이지:', page, 'target:', target); // 디버깅
+                  
+                  if (page) {
+                    handlePageClick(parseInt(page));
+                  }
                 }
               }}
             />
@@ -393,10 +432,23 @@ useEffect(() => {
               className="pagination-container" 
               dangerouslySetInnerHTML={{ __html: summaryData.pagingHTML }}
               onClick={(e) => {
-                if (e.target.tagName === 'A') {
-                  e.preventDefault();
-                  const page = e.target.getAttribute('data-page');
-                  if (page) handlePageClick(parseInt(page));
+                e.preventDefault();
+                e.stopPropagation();
+                
+                // 클릭된 요소가 a 태그인지 확인
+                let target = e.target;
+                if (target.tagName !== 'A') {
+                  // a 태그의 자식 요소를 클릭한 경우 부모 a 태그 찾기
+                  target = target.closest('a');
+                }
+                
+                if (target && target.tagName === 'A') {
+                  const page = target.getAttribute('data-page');
+                  console.log('클릭한 페이지:', page, 'target:', target); // 디버깅
+                  
+                  if (page) {
+                    handlePageClick(parseInt(page));
+                  }
                 }
               }}
             />

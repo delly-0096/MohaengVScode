@@ -71,7 +71,7 @@ const menuItems = [
     title: '컨텐츠관리',
     icon: RiMapPinLine,
     submenu: [
-      { id: 'destinations', title: '여행지정보', path: '/contents/destinations' },
+      { id: 'destinations', title: '관광지정보', path: '/contents/destinations' },
       { id: 'community', title: '커뮤니티', path: '/contents/community' },
       { id: 'schedules', title: '일정관리', path: '/contents/schedules' },
       { id: 'files', title: '자료실', path: '/contents/files' }

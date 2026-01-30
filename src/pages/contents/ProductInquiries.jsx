@@ -8,7 +8,9 @@ const categories = [
   { value: 'booking', label: '예약/일정' },
   { value: 'price', label: '가격/결제' },
   { value: 'cancel', label: '취소/환불' },
-  { value: 'other', label: '기타' }
+  { value: 'other', label: '기타 문의' },
+  { value: 'room', label: '객실 문의' },
+  { value: 'facility', label: '시설/서비스' }
 ];
 
 // 상태 (SECRET_YN: Y=비밀글, N=공개글, H=숨김)
@@ -419,12 +421,12 @@ function ProductInquiries() {
 
       {/* 문의 목록 테이블 */}
       <div className="data-table-container" style={{ overflowX: 'auto' }}>
-        <table className="data-table" style={{ width: '100%' }}>
+        <table className="data-table" style={{ width: '100%', tableLayout: 'fixed' }}>
           <thead>
             <tr>
-              <th style={{ width: '100px' }}>카테고리</th>
-              <th style={{ width: '250px' }}>상품명</th>
-              <th>문의 내용</th>
+              <th style={{ width: '110px' }}>카테고리</th>
+              <th style={{ width: '200px' }}>상품명</th>
+              <th style={{ width: '300px' }}>문의 내용</th>
               <th style={{ width: '110px' }}>문의자</th>
               <th style={{ width: '110px' }}>판매자</th>
               <th style={{ width: '100px' }}>상태</th>
@@ -465,7 +467,7 @@ function ProductInquiries() {
                       상품번호: {inquiry.tripProdNo}
                     </div>
                   </td>
-                  <td>
+                  <td style={{ maxWidth: '300px' }}>
                     <div style={{
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',

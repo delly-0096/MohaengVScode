@@ -15,6 +15,9 @@ import {
 
 import api from '../../api/api';
 
+// 추가함*****************************************
+const USER_SERVICE_URL = "http://localhost:8272";
+
 // 상태 라벨
 const statusLabels = {
   WAIT: { label: '처리대기', className: 'badge-warning' },
@@ -43,12 +46,25 @@ const procResultLabels = {
 const reasonLabels = {
   SPAM: { label: '스팸/도배', className: 'badge-warning' },
   ABUSE: { label: '욕설/비방', className: 'badge-danger' },
+  FRAUD: { label: '사기', className: 'badge-danger' },  // ← FRAUD 추가
   FALSE: { label: '허위정보', className: 'badge-danger' },
   COPYRIGHT: { label: '저작권 침해', className: 'badge-danger' },
   PRIVACY: { label: '개인정보 노출', className: 'badge-danger' },
   ADVERTISE: { label: '광고/홍보', className: 'badge-gray' },
+  other: { label: '기타', className: 'badge-secondary' },
+  OTHER: { label: '기타', className: 'badge-secondary' },
   ETC: { label: '기타', className: 'badge-secondary' }
 };
+
+// ******************************* 헬퍼 함수 추가
+const getReasonLabel = (ctgryCd) => {
+  if (!ctgryCd) return { label: ctgryCd, className: 'badge-gray' };
+  
+  // 대소문자 무시하고 찾기
+  const upperKey = ctgryCd.toUpperCase();
+  return reasonLabels[upperKey] || { label: ctgryCd, className: 'badge-gray' };
+};
+// ******************************* 헬퍼 함수 추가 끝
 
 // Modal 컴포넌트
 function Modal({ isOpen, onClose, title, children, size = 'medium', footer }) {
@@ -128,7 +144,7 @@ function Reports() {
   useEffect(() => {
     fetchReports(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [procStatusFilter, targetTypeFilter, procResultFilter]); // ← 필터 의존성 추가
 
   const handleSearch = () => fetchReports(1);
 
@@ -357,9 +373,15 @@ function Reports() {
                     </span>
                   </td>
                   <td>
+                    {/* 수정함 */}
+                    <span className={`badge ${getReasonLabel(report.ctgryCd).className}`}>
+                      {getReasonLabel(report.ctgryCd).label}
+                    </span>
+                    {/* 기존것 
                     <span className={`badge ${reasonLabels[report.ctgryCd]?.className || 'badge-gray'}`}>
                       {reasonLabels[report.ctgryCd]?.label || report.ctgryCd}
-                    </span>
+                    </span>       
+                     */}
                   </td>
                   <td>
                     <div>{report.reqMemName || report.reqMemId}</div>
@@ -456,20 +478,23 @@ function Reports() {
               <div className="detail-item">
                 <span className="detail-label"><RiAlertLine /> 신고 사유</span>
                 <span className="detail-value">
-                  <span className={`badge ${reasonLabels[detailModal.report.ctgryCd]?.className || 'badge-gray'}`}>
+                     <span className={`badge ${getReasonLabel(detailModal.report.ctgryCd).className}`}>
+                        {getReasonLabel(detailModal.report.ctgryCd).label}
+                      </span>
+                 {/* 기존것 <span className={`badge ${reasonLabels[detailModal.report.ctgryCd]?.className || 'badge-gray'}`}>
                     {reasonLabels[detailModal.report.ctgryCd]?.label || detailModal.report.ctgryCd}
-                  </span>
+                  </span> */}
                 </span>
               </div>
               <div className="detail-item">
                 <span className="detail-label"><RiUserLine /> 신고자</span>
-                <span className="detail-value">{detailModal.report.reqMemName || detailModal.report.reqMemNo}</span>
+                <span className="detail-value">{detailModal.report.reqMemId || detailModal.report.reqMemNo}</span>
               </div>
               <div className="detail-item">
                 <span className="detail-label"><RiUserLine /> 피신고자</span>
                 <span className="detail-value">
                   <span style={{ color: 'var(--danger-color)', fontWeight: 500 }}>
-                    {detailModal.report.targetMemName || detailModal.report.targetMemNo}
+                    {detailModal.report.targetMemId || detailModal.report.targetMemNo}
                   </span>
                 </span>
               </div>
@@ -507,6 +532,26 @@ function Reports() {
               <div style={{ padding: 16, background: 'var(--bg-color)', borderRadius: 8, lineHeight: 1.6 }}>
                 {detailModal.report.content || '내용 없음'}
               </div>
+              {/* ✅ 이 부분만 추가 ***************************************************************/}
+               {detailModal.report.contentUrl && (
+                  <div style={{ marginTop: 12, textAlign: 'right' }}>
+                    <a 
+                      href={`${USER_SERVICE_URL}${detailModal.report.contentUrl}`}
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="btn btn-sm btn-outline-primary"
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                      onClick={(e) => {
+                        console.log('contentUrl:', detailModal.report.contentUrl);
+                        console.log('최종 URL:', window.location.origin + detailModal.report.contentUrl);
+                      }}
+                    >
+                      <RiEyeLine />
+                      원본 보기
+                    </a>
+                  </div>
+                )}
+              {/* ✅ 이 부분만 추가 ***************************************************************/}
             </div>
 
             {detailModal.report.procStatus === 'DONE' && (
