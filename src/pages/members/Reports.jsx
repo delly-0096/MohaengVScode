@@ -15,6 +15,9 @@ import {
 
 import api from '../../api/api';
 
+// 추가함*****************************************
+const USER_SERVICE_URL = "http://localhost:8272";
+
 // 상태 라벨
 const statusLabels = {
   WAIT: { label: '처리대기', className: 'badge-warning' },
@@ -475,9 +478,12 @@ function Reports() {
               <div className="detail-item">
                 <span className="detail-label"><RiAlertLine /> 신고 사유</span>
                 <span className="detail-value">
-                  <span className={`badge ${reasonLabels[detailModal.report.ctgryCd]?.className || 'badge-gray'}`}>
+                     <span className={`badge ${getReasonLabel(detailModal.report.ctgryCd).className}`}>
+                        {getReasonLabel(detailModal.report.ctgryCd).label}
+                      </span>
+                 {/* 기존것 <span className={`badge ${reasonLabels[detailModal.report.ctgryCd]?.className || 'badge-gray'}`}>
                     {reasonLabels[detailModal.report.ctgryCd]?.label || detailModal.report.ctgryCd}
-                  </span>
+                  </span> */}
                 </span>
               </div>
               <div className="detail-item">
@@ -526,6 +532,26 @@ function Reports() {
               <div style={{ padding: 16, background: 'var(--bg-color)', borderRadius: 8, lineHeight: 1.6 }}>
                 {detailModal.report.content || '내용 없음'}
               </div>
+              {/* ✅ 이 부분만 추가 ***************************************************************/}
+               {detailModal.report.contentUrl && (
+                  <div style={{ marginTop: 12, textAlign: 'right' }}>
+                    <a 
+                      href={`${USER_SERVICE_URL}${detailModal.report.contentUrl}`}
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="btn btn-sm btn-outline-primary"
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                      onClick={(e) => {
+                        console.log('contentUrl:', detailModal.report.contentUrl);
+                        console.log('최종 URL:', window.location.origin + detailModal.report.contentUrl);
+                      }}
+                    >
+                      <RiEyeLine />
+                      원본 보기
+                    </a>
+                  </div>
+                )}
+              {/* ✅ 이 부분만 추가 ***************************************************************/}
             </div>
 
             {detailModal.report.procStatus === 'DONE' && (
