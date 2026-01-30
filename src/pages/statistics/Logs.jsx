@@ -122,8 +122,8 @@ function Logs() {
         currentPage: currentPage,
         searchWord: searchTerm,
         searchType: categoryFilter,
-        // startDate: dateRange.start, // 날짜 추가
-        // endDate: dateRange.end      // 날짜 추가
+        startDate: dateRange.start, // 날짜 추가
+        endDate: dateRange.end      // 날짜 추가
       }
     }).then(res => {
       // console.log("res : ", res.data.dataList);
@@ -137,7 +137,7 @@ function Logs() {
   useEffect(() => {
     console.log("초기화");
     fetchLogList();
-  }, []);
+  }, [dateRange]);
 
   //currentPage, searchTerm, categoryFilter, dateRange
 
@@ -358,7 +358,16 @@ function Logs() {
             {categories.map(cat => {
               const IconComponent = cat.icon;
               // 필터링
-              const count = cat.id === 'all' ? totalCount : dataList.filter(l => getCategoryByMsg(l.msg) === cat.id).length;
+              // const count = cat.id === 'all' ? totalCount : dataList.filter(l => getCategoryByMsg(l.msg) === cat.id).length;
+
+              // 1. 카운트 계산
+              const count = cat.id === 'all'
+                ? totalCount
+                : dataList.filter(l => getCategoryByMsg(l.msg) === cat.id).length;
+
+              // 2. count가 0이면 아무것도 렌더링하지 않음 (null 반환)
+              if (count === 0) return null;
+
               return (
                 <button
                   key={cat.id}
@@ -418,7 +427,7 @@ function Logs() {
             >
               <option value="all">전체 레벨</option>
               <option value="INFO">INFO</option>
-              <option value="WARNING">WARNING</option>
+              <option value="WARN">WARN</option>
               <option value="ERROR">ERROR</option>
             </select>
             <button className="btn btn-outline-danger btn-sm" onClick={handleClearLogs}>
@@ -430,8 +439,6 @@ function Logs() {
         <div className="card-body" style={{ padding: 0 }}>
           <p style={{ padding: '12px 20px', margin: 0, background: '#F9FAFB', borderBottom: '1px solid var(--border-color)', fontSize: 13, color: 'var(--text-muted)' }}>
             검색 결과: {filteredLogs.length}건
-            {errorCount > 0 && <span style={{ color: 'var(--danger-color)', marginLeft: 12 }}>에러 {errorCount}건</span>}
-            {warningCount > 0 && <span style={{ color: 'var(--warning-color)', marginLeft: 12 }}>경고 {warningCount}건</span>}
           </p>
         </div>
 
