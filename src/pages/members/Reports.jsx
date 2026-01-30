@@ -144,7 +144,7 @@ function Reports() {
   useEffect(() => {
     fetchReports(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [procStatusFilter, targetTypeFilter, procResultFilter]); // ← 필터 의존성 추가
 
   const handleSearch = () => fetchReports(1);
 
@@ -488,13 +488,13 @@ function Reports() {
               </div>
               <div className="detail-item">
                 <span className="detail-label"><RiUserLine /> 신고자</span>
-                <span className="detail-value">{detailModal.report.reqMemName || detailModal.report.reqMemNo}</span>
+                <span className="detail-value">{detailModal.report.reqMemId || detailModal.report.reqMemNo}</span>
               </div>
               <div className="detail-item">
                 <span className="detail-label"><RiUserLine /> 피신고자</span>
                 <span className="detail-value">
                   <span style={{ color: 'var(--danger-color)', fontWeight: 500 }}>
-                    {detailModal.report.targetMemName || detailModal.report.targetMemNo}
+                    {detailModal.report.targetMemId || detailModal.report.targetMemNo}
                   </span>
                 </span>
               </div>
