@@ -119,9 +119,9 @@ const recentActivities = [
 const topDestinations = [
   { id: 1, name: '제주도', visits: 12540, change: '+15%' },
   { id: 2, name: '부산', visits: 8920, change: '+8%' },
-  { id: 3, name: '오사카', visits: 7650, change: '+22%' },
-  { id: 4, name: '도쿄', visits: 6840, change: '+12%' },
-  { id: 5, name: '방콕', visits: 5230, change: '+18%' }
+  { id: 3, name: '서울', visits: 7650, change: '+22%' },
+  { id: 4, name: '대전', visits: 6840, change: '+12%' },
+  { id: 5, name: '포항', visits: 5230, change: '+18%' }
 ];
 
 function Dashboard() {
