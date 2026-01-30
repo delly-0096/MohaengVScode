@@ -465,6 +465,7 @@ function Logs() {
                 const summaryMsg = log.msg.includes('에러 발생')
                   ? log.msg.split('###')[0].split(':')[0] // '에러 발생' 근처까지만 깔끔하게 자름
                   : log.msg;
+
                 return (
                   <tr key={log.systemLogNo} style={{ background: log.level === 'ERROR' ? '#FEF2F2' : log.level === 'WARNING' ? '#FFFBEB' : 'transparent' }}>
                     <td style={{ fontFamily: 'monospace', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
@@ -564,7 +565,7 @@ function Logs() {
           const catConfig = categoryConfig[keyword];
 
           const summaryTitle = log.msg.includes('에러 발생')
-            ? log.msg.split('###')[1] // '에러 발생' 근처까지만 깔끔하게 자름
+            ? log.msg.split('에러 발생:')[1] // '에러 발생' 근처까지만 깔끔하게 자름
             : log.msg;
 
           console.log("catConfig : ", catConfig);
