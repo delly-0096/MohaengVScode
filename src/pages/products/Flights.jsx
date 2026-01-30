@@ -423,7 +423,7 @@ function Flights() {
             <div className="modal-body">
               <div className="detail-grid">
                 {/* 항공편 정보 */}
-                <div className="detail-section">
+                <div className="detail-section full-width">
                   <h3><i className="bi bi-airplane"></i> 항공편 정보</h3>
                   <div className="detail-row">
                     <span className="label">항공사</span>
@@ -452,7 +452,7 @@ function Flights() {
                 </div>
 
                 {/* 판매 정보 */}
-                <div className="detail-section">
+                {/* <div className="detail-section">
                   <h3><i className="bi bi-calendar-check"></i> 판매 정보</h3>
                   <div className="detail-row">
                     <span className="label">사업자</span>
@@ -476,12 +476,12 @@ function Flights() {
                       {selectedFlight.status}
                     </span>
                   </div>
-                </div>
+                </div> */}
 
                 {/* 좌석 등급별 가격 */}
                 <div className="detail-section full-width">
                   <h3><i className="bi bi-cash-stack"></i> 좌석 등급별 가격 / 잔여석</h3>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginTop: '12px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', marginTop: '12px' }}>
                     <div style={{ padding: '16px', background: '#f3f4f6', borderRadius: '8px', textAlign: 'center' }}>
                       <div style={{ fontSize: '0.85rem', color: '#6b7280', marginBottom: '4px' }}>이코노미</div>
                       <div style={{ fontSize: '1.1rem', fontWeight: 600, color: '#2563eb' }}>{formatPrice(selectedFlight.economyPrice || 0)}</div>
@@ -496,7 +496,7 @@ function Flights() {
                 </div>
 
                 {/* 수하물 정보 */}
-                <div className="detail-section">
+                <div className="detail-section full-width">
                   <h3><i className="bi bi-luggage"></i> 수하물 정보</h3>
                   <div className="detail-row">
                     <span className="label">무료 위탁 수하물</span>
