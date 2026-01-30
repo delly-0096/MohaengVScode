@@ -22,14 +22,14 @@ import { Modal, ConfirmModal } from '../../components/common/Modal';
 import api from '../../api/api';
 import './Logs.css';
 
-// 로그 카테고리
+// 로그 카테고리 - 아이콘 지정
 const categories = [
   { id: 'all', label: '전체', icon: RiServerLine },
   { id: 'auth', label: '인증', icon: RiUserLine },
   { id: 'payment', label: '결제', icon: RiWalletLine },
   { id: 'booking', label: '예약', icon: RiCalendarCheckLine },
   { id: 'system', label: '시스템', icon: RiServerLine },
-  { id: 'api', label: 'API', icon: RiCodeLine },
+  { id: 'product', label: '상품', icon: RiCodeLine },
   { id: 'security', label: '보안', icon: RiShieldLine }
 ];
 
@@ -55,9 +55,9 @@ const logsData = [
 // 로그 레벨
 const levelConfig = {
   INFO: { icon: RiInformationLine, className: 'badge-primary', color: '#2563EB', bg: '#DBEAFE' },
-  WARNING: { icon: RiAlertLine, className: 'badge-warning', color: '#D97706', bg: '#FEF3C7' },
+  WARN: { icon: RiAlertLine, className: 'badge-warning', color: '#D97706', bg: '#FEF3C7' },
   ERROR: { icon: RiErrorWarningLine, className: 'badge-danger', color: '#DC2626', bg: '#FEE2E2' },
-  SUCCESS: { icon: RiCheckLine, className: 'badge-success', color: '#059669', bg: '#D1FAE5' }
+  // SUCCESS: { icon: RiCheckLine, className: 'badge-success', color: '#059669', bg: '#D1FAE5' }
 };
 
 // 로그 카테고리별 ui
@@ -66,8 +66,21 @@ const categoryConfig = {
   payment: { label: '결제', color: '#059669', bg: '#D1FAE5' },
   booking: { label: '예약', color: '#7C3AED', bg: '#EDE9FE' },
   system: { label: '시스템', color: '#6B7280', bg: '#F3F4F6' },
-  api: { label: 'API', color: '#0891B2', bg: '#CFFAFE' },
+  product: { label: '상품', color: '#0891B2', bg: '#CFFAFE' },
   security: { label: '보안', color: '#DC2626', bg: '#FEE2E2' }
+};
+
+// 카테고리 세팅
+const getCategoryByMsg = (msg) => {
+  if (!msg) return 'system'; // 메시지가 없으면 바로 system 반환
+
+  const text = msg.toLowerCase();
+  if (text.includes('login') || text.includes('인증') || text.includes('로그인')) return 'auth';
+  if (text.includes('pay') || text.includes('결제')) return 'payment';
+  if (text.includes('book') || text.includes('예약')) return 'booking';
+  if (text.includes('product') || text.includes('accommodation') || text.includes('flight') || text.includes('tour')) return 'product';
+  if (text.includes('security') || text.includes('보안') || text.includes('접근')) return 'security';
+  return 'system'; // 매칭되는 게 없으면 기본값
 };
 
 // 시작일 얻기
@@ -83,6 +96,9 @@ function Logs() {
   const [searchTerm, setSearchTerm] = useState('');
   const [dataList, setDataList] = useState([]);
   const [levelFilter, setLevelFilter] = useState('all');
+
+  // 페이징용
+  const [currentPage, setCurrentPage] = useState(1);
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [selectedPeriod, setSelectedPeriod] = useState('today');
   const [dateRange, setDateRange] = useState({
@@ -100,25 +116,30 @@ function Logs() {
   ];
 
   // db에서 실제 로그목록 가져오기
-  const fetchLogList = (page = 1) => {
+  const fetchLogList = () => {
     api.get(`/admin/statistics/logs`, {
       params: {
-        currentPage: page,
+        currentPage: currentPage,
         searchWord: searchTerm,
-        searchType: categories,
+        searchType: categoryFilter,
+        // startDate: dateRange.start, // 날짜 추가
+        // endDate: dateRange.end      // 날짜 추가
       }
     }).then(res => {
-      console.log("res : ", res.data.dataList);
+      // console.log("res : ", res.data.dataList);
       setDataList(res.data.dataList || []);
-      console.log("dataList : ", dataList);
 
+      console.log("dataList : ", dataList);
     }).catch(err => console.error("목록 로딩 실패:", err));
   };
 
+  // 안의 값들 변할때마다 호출
   useEffect(() => {
     console.log("초기화");
     fetchLogList();
   }, []);
+
+  //currentPage, searchTerm, categoryFilter, dateRange
 
   // 불러온 내역 가져오기
   const filteredLogs = dataList.filter(log => {
@@ -126,8 +147,11 @@ function Logs() {
 
     const matchesSearch = log.msg.toLowerCase().includes(searchTerm.toLowerCase()) ||
       log.source.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const logCategory = getCategoryByMsg(log.msg);
+    const matchesCategory = categoryFilter === 'all' || logCategory === categoryFilter;
+
     const matchesLevel = levelFilter === 'all' || log.level === levelFilter;
-    const matchesCategory = categoryFilter === 'all' || log.category === categoryFilter;
 
     // const logDate = log.regDt.split('T')[0];
     // const matchesDate = logDate >= dateRange.start && logDate <= dateRange.end;
@@ -160,10 +184,9 @@ function Logs() {
     });
   };
 
-
   const totalCount = dataList.length;
   const errorCount = dataList.filter(l => l.level === 'ERROR').length;
-  const warningCount = dataList.filter(l => l.level === 'WARNING').length;
+  const warningCount = dataList.filter(l => l.level === 'WARN').length;
   const infoCount = dataList.filter(l => l.level === 'INFO').length;
   console.log("errorCount : ", errorCount);
   console.log("warningCount : ", warningCount);
@@ -286,7 +309,7 @@ function Logs() {
           <div className="stat-header">
             <div className="stat-label-group">
               <RiAlertLine style={{ color: '#d97706' }} />
-              <span>WARNING</span>
+              <span>WARN</span>
             </div>
             <div className="stat-value-group">
               <span>{warningCount}건</span>
@@ -334,7 +357,8 @@ function Logs() {
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             {categories.map(cat => {
               const IconComponent = cat.icon;
-              const count = cat.id === 'all' ? totalCount : logsData.filter(l => l.category === cat.id).length;
+              // 필터링
+              const count = cat.id === 'all' ? totalCount : dataList.filter(l => getCategoryByMsg(l.msg) === cat.id).length;
               return (
                 <button
                   key={cat.id}
@@ -429,21 +453,11 @@ function Logs() {
                 const LevelIcon = levelConfig[log.level].icon;
 
                 // 타입 매칭
-                const getCategoryByMsg = (msg) => {
-                  if (!msg) return 'system'; // 메시지가 없으면 바로 system 반환
-
-                  const text = msg.toLowerCase();
-                  if (text.includes('login') || text.includes('인증') || text.includes('로그인')) return 'auth';
-                  if (text.includes('pay') || text.includes('결제')) return 'payment';
-                  if (text.includes('book') || text.includes('예약')) return 'booking';
-                  if (text.includes('api') || text.includes('호출')) return 'api';
-                  if (text.includes('security') || text.includes('보안') || text.includes('접근')) return 'security';
-                  return 'system'; // 매칭되는 게 없으면 기본값
-                };
-                // 2. 매칭된 키워드로 설정값 가져오기
                 const keyword = getCategoryByMsg(log.msg);
                 const catConfig = categoryConfig[keyword];
-
+                const summaryMsg = log.msg.includes('에러 발생')
+                  ? log.msg.split('###')[0].split(':')[0] // '에러 발생' 근처까지만 깔끔하게 자름
+                  : log.msg;
                 return (
                   <tr key={log.systemLogNo} style={{ background: log.level === 'ERROR' ? '#FEF2F2' : log.level === 'WARNING' ? '#FFFBEB' : 'transparent' }}>
                     <td style={{ fontFamily: 'monospace', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
@@ -494,7 +508,7 @@ function Logs() {
                       </span>
                     </td>
                     <td style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>
-                      {log.msg}
+                      {summaryMsg}
                     </td>
                     <td style={{ fontFamily: 'monospace', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                       {log.ip}
@@ -518,6 +532,7 @@ function Logs() {
         {/* 페이지 네이션 */}
         <div className="pagination">
           <button className="pagination-btn" disabled>&lt;</button>
+          {/* block수만큼 반복 */}
           <button className="pagination-btn active">1</button>
           <button className="pagination-btn">2</button>
           <button className="pagination-btn">3</button>
@@ -538,20 +553,12 @@ function Logs() {
           const LevelIcon = levelConfig[log.level].icon;
 
           // 타입 매칭
-          const getCategoryByMsg = (msg) => {
-            if (!msg) return 'system'; // 메시지가 없으면 바로 system 반환
-
-            const text = msg.toLowerCase();
-            if (text.includes('login') || text.includes('인증') || text.includes('로그인')) return 'auth';
-            if (text.includes('pay') || text.includes('결제')) return 'payment';
-            if (text.includes('book') || text.includes('예약')) return 'booking';
-            if (text.includes('api') || text.includes('호출')) return 'api';
-            if (text.includes('security') || text.includes('보안') || text.includes('접근')) return 'security';
-            return 'system'; // 매칭되는 게 없으면 기본값
-          };
-          // 2. 매칭된 키워드로 설정값 가져오기
           const keyword = getCategoryByMsg(log.msg);
           const catConfig = categoryConfig[keyword];
+
+          const summaryTitle = log.msg.includes('에러 발생')
+            ? log.msg.split('###')[1] // '에러 발생' 근처까지만 깔끔하게 자름
+            : log.msg;
 
           console.log("catConfig : ", catConfig);
           return (
@@ -578,7 +585,9 @@ function Logs() {
                   <LevelIcon size={24} style={{ color: levelConfig[log.level].color }} />
                 </div>
                 <div>
-                  <div style={{ fontWeight: 600, fontSize: 16, marginBottom: 4 }}>{log.message}</div>
+                  <div style={{ fontWeight: 600, fontSize: 16, marginBottom: 4 }}>
+                    {log.msg.includes('에러 발생') ? '' : log.msg}
+                  </div>
                   <div style={{ display: 'flex', gap: 8 }}>
                     <span style={{
                       padding: '2px 8px',
@@ -608,7 +617,7 @@ function Logs() {
               <div className="detail-list">
                 <div className="detail-item" style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid var(--border-color)' }}>
                   <span style={{ color: 'var(--text-muted)' }}><RiTimeLine style={{ marginRight: 8 }} />발생 시간</span>
-                  <span style={{ fontFamily: 'monospace' }}>{log.regDt}</span>
+                  <span style={{ fontFamily: 'monospace' }}>{log.regDt.split('T')[0]} {log.regDt.split('T')[1]}</span>
                 </div>
                 <div className="detail-item" style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid var(--border-color)' }}>
                   <span style={{ color: 'var(--text-muted)' }}><RiServerLine style={{ marginRight: 8 }} />소스</span>
@@ -637,7 +646,7 @@ function Logs() {
                   whiteSpace: 'pre-wrap',
                   wordBreak: 'break-all'
                 }}>
-                  {log.msg}
+                  {summaryTitle}
                 </div>
               </div>
 
