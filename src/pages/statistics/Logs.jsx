@@ -1,9 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   RiSearchLine,
   RiFilterLine,
   RiRefreshLine,
-  RiDownloadLine,
   RiAlertLine,
   RiCheckLine,
   RiInformationLine,
@@ -20,15 +19,17 @@ import {
   RiDeleteBinLine
 } from 'react-icons/ri';
 import { Modal, ConfirmModal } from '../../components/common/Modal';
+import api from '../../api/api';
+import './Logs.css';
 
-// 로그 카테고리
+// 로그 카테고리 - 아이콘 지정
 const categories = [
   { id: 'all', label: '전체', icon: RiServerLine },
   { id: 'auth', label: '인증', icon: RiUserLine },
   { id: 'payment', label: '결제', icon: RiWalletLine },
   { id: 'booking', label: '예약', icon: RiCalendarCheckLine },
   { id: 'system', label: '시스템', icon: RiServerLine },
-  { id: 'api', label: 'API', icon: RiCodeLine },
+  { id: 'product', label: '상품', icon: RiCodeLine },
   { id: 'security', label: '보안', icon: RiShieldLine }
 ];
 
@@ -51,28 +52,59 @@ const logsData = [
   { id: 15, timestamp: '2024-12-18 13:55:10', level: 'INFO', category: 'auth', source: 'AuthService', message: '비밀번호 변경', detail: 'userId: user789, method: forgot_password', ip: '175.223.45.89', userId: 'user789' }
 ];
 
+// 로그 레벨
 const levelConfig = {
   INFO: { icon: RiInformationLine, className: 'badge-primary', color: '#2563EB', bg: '#DBEAFE' },
-  WARNING: { icon: RiAlertLine, className: 'badge-warning', color: '#D97706', bg: '#FEF3C7' },
+  WARN: { icon: RiAlertLine, className: 'badge-warning', color: '#D97706', bg: '#FEF3C7' },
   ERROR: { icon: RiErrorWarningLine, className: 'badge-danger', color: '#DC2626', bg: '#FEE2E2' },
-  SUCCESS: { icon: RiCheckLine, className: 'badge-success', color: '#059669', bg: '#D1FAE5' }
+  // SUCCESS: { icon: RiCheckLine, className: 'badge-success', color: '#059669', bg: '#D1FAE5' }
 };
 
+// 로그 카테고리별 ui
 const categoryConfig = {
   auth: { label: '인증', color: '#2563EB', bg: '#DBEAFE' },
   payment: { label: '결제', color: '#059669', bg: '#D1FAE5' },
   booking: { label: '예약', color: '#7C3AED', bg: '#EDE9FE' },
   system: { label: '시스템', color: '#6B7280', bg: '#F3F4F6' },
-  api: { label: 'API', color: '#0891B2', bg: '#CFFAFE' },
+  product: { label: '상품', color: '#0891B2', bg: '#CFFAFE' },
   security: { label: '보안', color: '#DC2626', bg: '#FEE2E2' }
+};
+
+// 카테고리 세팅
+const getCategoryByMsg = (msg) => {
+  if (!msg) return 'system'; // 메시지가 없으면 바로 system 반환
+
+  const text = msg.toLowerCase();
+  if (text.includes('login') || text.includes('인증') || text.includes('로그인')) return 'auth';
+  if (text.includes('pay') || text.includes('결제')) return 'payment';
+  if (text.includes('book') || text.includes('예약')) return 'booking';
+  if (text.includes('product') || text.includes('accommodation') || text.includes('flight') || text.includes('tour')) return 'product';
+  if (text.includes('security') || text.includes('보안') || text.includes('접근')) return 'security';
+  return 'system'; // 매칭되는 게 없으면 기본값
+};
+
+// 시작일 얻기
+const getToday = () => {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0'); // 월은 0부터 시작하므로 +1
+  const day = String(today.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 };
 
 function Logs() {
   const [searchTerm, setSearchTerm] = useState('');
+  const [dataList, setDataList] = useState([]);
   const [levelFilter, setLevelFilter] = useState('all');
+
+  // 페이징용
+  const [currentPage, setCurrentPage] = useState(1);
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [selectedPeriod, setSelectedPeriod] = useState('today');
-  const [dateRange, setDateRange] = useState({ start: '2024-12-18', end: '2024-12-18' });
+  const [dateRange, setDateRange] = useState({
+    start: getToday(),
+    end: getToday()
+  });
   const [detailModal, setDetailModal] = useState({ isOpen: false, log: null });
   const [confirmModal, setConfirmModal] = useState({ isOpen: false });
 
@@ -83,19 +115,82 @@ function Logs() {
     { id: '3months', label: '최근 3개월' }
   ];
 
-  const filteredLogs = logsData.filter(log => {
-    const matchesSearch = log.message.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      log.source.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      log.detail.toLowerCase().includes(searchTerm.toLowerCase());
+  // db에서 실제 로그목록 가져오기
+  const fetchLogList = () => {
+    api.get(`/admin/statistics/logs`, {
+      params: {
+        currentPage: currentPage,
+        searchWord: searchTerm,
+        searchType: categoryFilter,
+        startDate: dateRange.start, // 날짜 추가
+        endDate: dateRange.end      // 날짜 추가
+      }
+    }).then(res => {
+      // console.log("res : ", res.data.dataList);
+      setDataList(res.data.dataList || []);
+
+      console.log("dataList : ", dataList);
+    }).catch(err => console.error("목록 로딩 실패:", err));
+  };
+
+  // 안의 값들 변할때마다 호출
+  useEffect(() => {
+    console.log("초기화");
+    fetchLogList();
+  }, [dateRange]);
+
+  //currentPage, searchTerm, categoryFilter, dateRange
+
+  // 불러온 내역 가져오기
+  const filteredLogs = dataList.filter(log => {
+    // console.log("log : ", log);
+
+    const matchesSearch = log.msg.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      log.source.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const logCategory = getCategoryByMsg(log.msg);
+    const matchesCategory = categoryFilter === 'all' || logCategory === categoryFilter;
+
     const matchesLevel = levelFilter === 'all' || log.level === levelFilter;
-    const matchesCategory = categoryFilter === 'all' || log.category === categoryFilter;
+
+    // const logDate = log.regDt.split('T')[0];
+    // const matchesDate = logDate >= dateRange.start && logDate <= dateRange.end;
     return matchesSearch && matchesLevel && matchesCategory;
   });
 
-  const totalCount = logsData.length;
-  const errorCount = logsData.filter(l => l.level === 'ERROR').length;
-  const warningCount = logsData.filter(l => l.level === 'WARNING').length;
-  const infoCount = logsData.filter(l => l.level === 'INFO').length;
+  // 기간 선택 핸들러
+  const handlePeriodChange = (periodId) => {
+    setSelectedPeriod(periodId);
+    const end = getToday(); // 종료일은 무조건 오늘
+    let start = new Date();
+
+    if (periodId === 'today') {
+      // 시작일 그대로 (오늘)
+    } else if (periodId === 'week') {
+      start.setDate(start.getDate() - 7);
+    } else if (periodId === 'month') {
+      start.setMonth(start.getMonth() - 1);
+    } else if (periodId === '3months') {
+      start.setMonth(start.getMonth() - 3);
+    }
+
+    const startYear = start.getFullYear();
+    const startMonth = String(start.getMonth() + 1).padStart(2, '0');
+    const startDate = String(start.getDate()).padStart(2, '0');
+
+    setDateRange({
+      start: `${startYear}-${startMonth}-${startDate}`,
+      end: end
+    });
+  };
+
+  const totalCount = dataList.length;
+  const errorCount = dataList.filter(l => l.level === 'ERROR').length;
+  const warningCount = dataList.filter(l => l.level === 'WARN').length;
+  const infoCount = dataList.filter(l => l.level === 'INFO').length;
+  console.log("errorCount : ", errorCount);
+  console.log("warningCount : ", warningCount);
+  console.log("infoCount : ", infoCount);
 
   const handleViewDetail = (log) => {
     setDetailModal({ isOpen: true, log });
@@ -110,6 +205,7 @@ function Logs() {
     setConfirmModal({ isOpen: false });
   };
 
+  /* 페이지 시작 */
   return (
     <div className="page">
       <div className="page-header">
@@ -123,9 +219,9 @@ function Logs() {
           <button className="btn btn-secondary" onClick={() => window.location.reload()}>
             <RiRefreshLine /> 새로고침
           </button>
-          <button className="btn btn-secondary">
+          {/* <button className="btn btn-secondary">
             <RiDownloadLine /> 로그 다운로드
-          </button>
+          </button> */}
         </div>
       </div>
 
@@ -138,13 +234,14 @@ function Logs() {
                 <button
                   key={period.id}
                   className={`btn ${selectedPeriod === period.id ? 'btn-primary' : 'btn-secondary'}`}
-                  onClick={() => setSelectedPeriod(period.id)}
+                  onClick={() => handlePeriodChange(period.id)}
                   style={{ padding: '8px 16px' }}
                 >
                   {period.label}
                 </button>
               ))}
             </div>
+            {/* 날짜별 선택 */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <RiCalendarLine />
               <input
@@ -170,42 +267,87 @@ function Logs() {
       {/* 통계 카드 */}
       <div className="stats-grid mb-3">
         <div className="stat-card">
-          <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #6B7280 0%, #4B5563 100%)', color: 'white' }}>
-            <RiServerLine />
+          <div className="stat-header">
+            <div className="stat-label-group">
+              <RiServerLine style={{ color: '#4b5563' }} />
+              <span>전체 로그</span>
+            </div>
+            <div className="stat-value-group">
+              <span>{totalCount}건</span>
+              <span className="stat-percent">(100%)</span>
+            </div>
           </div>
-          <div className="stat-content">
-            <div className="stat-value">{totalCount}</div>
-            <div className="stat-label">전체 로그</div>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #60A5FA 0%, #2563EB 100%)', color: 'white' }}>
-            <RiInformationLine />
-          </div>
-          <div className="stat-content">
-            <div className="stat-value">{infoCount}</div>
-            <div className="stat-label">INFO</div>
+          <div className="progress-bg">
+            <div className="progress-fill" style={{ width: '100%', backgroundColor: '#4b5563' }} />
           </div>
         </div>
+
+        {/* 2. INFO */}
         <div className="stat-card">
-          <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #FBBF24 0%, #D97706 100%)', color: 'white' }}>
-            <RiAlertLine />
+          <div className="stat-header">
+            <div className="stat-label-group">
+              <RiInformationLine style={{ color: '#2563eb' }} />
+              <span>INFO</span>
+            </div>
+            <div className="stat-value-group">
+              <span>{infoCount}건</span>
+              <span className="stat-percent">
+                ({totalCount > 0 ? ((infoCount / totalCount) * 100).toFixed(1) : 0}%)
+              </span>
+            </div>
           </div>
-          <div className="stat-content">
-            <div className="stat-value">{warningCount}</div>
-            <div className="stat-label">WARNING</div>
-            {warningCount > 0 && <div className="stat-change negative">주의 필요</div>}
+          <div className="progress-bg">
+            <div className="progress-fill" style={{
+              width: `${totalCount > 0 ? (infoCount / totalCount) * 100 : 0}%`,
+              backgroundColor: '#2563eb'
+            }} />
           </div>
         </div>
+
+        {/* 3. WARNING */}
         <div className="stat-card">
-          <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #F87171 0%, #DC2626 100%)', color: 'white' }}>
-            <RiErrorWarningLine />
+          <div className="stat-header">
+            <div className="stat-label-group">
+              <RiAlertLine style={{ color: '#d97706' }} />
+              <span>WARN</span>
+            </div>
+            <div className="stat-value-group">
+              <span>{warningCount}건</span>
+              <span className="stat-percent">
+                ({totalCount > 0 ? ((warningCount / totalCount) * 100).toFixed(1) : 0}%)
+              </span>
+            </div>
           </div>
-          <div className="stat-content">
-            <div className="stat-value">{errorCount}</div>
-            <div className="stat-label">ERROR</div>
-            {errorCount > 0 && <div className="stat-change negative">확인 필요</div>}
+          <div className="progress-bg">
+            <div className="progress-fill" style={{
+              width: `${totalCount > 0 ? (warningCount / totalCount) * 100 : 0}%`,
+              backgroundColor: '#d97706'
+            }} />
           </div>
+          {warningCount > 0 && <div className="stat-alert" style={{ color: '#d97706' }}>⚠️ 주의 필요</div>}
+        </div>
+
+        {/* 4. ERROR */}
+        <div className="stat-card">
+          <div className="stat-header">
+            <div className="stat-label-group">
+              <RiErrorWarningLine style={{ color: '#dc2626' }} />
+              <span>ERROR</span>
+            </div>
+            <div className="stat-value-group">
+              <span>{errorCount}건</span>
+              <span className="stat-percent">
+                ({totalCount > 0 ? ((errorCount / totalCount) * 100).toFixed(1) : 0}%)
+              </span>
+            </div>
+          </div>
+          <div className="progress-bg">
+            <div className="progress-fill" style={{
+              width: `${totalCount > 0 ? (errorCount / totalCount) * 100 : 0}%`,
+              backgroundColor: '#dc2626'
+            }} />
+          </div>
+          {errorCount > 0 && <div className="stat-alert" style={{ color: '#dc2626' }}>🚨 확인 필요</div>}
         </div>
       </div>
 
@@ -215,7 +357,17 @@ function Logs() {
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             {categories.map(cat => {
               const IconComponent = cat.icon;
-              const count = cat.id === 'all' ? totalCount : logsData.filter(l => l.category === cat.id).length;
+              // 필터링
+              // const count = cat.id === 'all' ? totalCount : dataList.filter(l => getCategoryByMsg(l.msg) === cat.id).length;
+
+              // 1. 카운트 계산
+              const count = cat.id === 'all'
+                ? totalCount
+                : dataList.filter(l => getCategoryByMsg(l.msg) === cat.id).length;
+
+              // 2. count가 0이면 아무것도 렌더링하지 않음 (null 반환)
+              if (count === 0) return null;
+
               return (
                 <button
                   key={cat.id}
@@ -275,7 +427,7 @@ function Logs() {
             >
               <option value="all">전체 레벨</option>
               <option value="INFO">INFO</option>
-              <option value="WARNING">WARNING</option>
+              <option value="WARN">WARN</option>
               <option value="ERROR">ERROR</option>
             </select>
             <button className="btn btn-outline-danger btn-sm" onClick={handleClearLogs}>
@@ -287,8 +439,6 @@ function Logs() {
         <div className="card-body" style={{ padding: 0 }}>
           <p style={{ padding: '12px 20px', margin: 0, background: '#F9FAFB', borderBottom: '1px solid var(--border-color)', fontSize: 13, color: 'var(--text-muted)' }}>
             검색 결과: {filteredLogs.length}건
-            {errorCount > 0 && <span style={{ color: 'var(--danger-color)', marginLeft: 12 }}>에러 {errorCount}건</span>}
-            {warningCount > 0 && <span style={{ color: 'var(--warning-color)', marginLeft: 12 }}>경고 {warningCount}건</span>}
           </p>
         </div>
 
@@ -308,13 +458,19 @@ function Logs() {
             <tbody>
               {filteredLogs.map(log => {
                 const LevelIcon = levelConfig[log.level].icon;
-                const catConfig = categoryConfig[log.category];
+
+                // 타입 매칭
+                const keyword = getCategoryByMsg(log.msg);
+                const catConfig = categoryConfig[keyword];
+                const summaryMsg = log.msg.includes('에러 발생')
+                  ? log.msg.split('###')[0].split(':')[0] // '에러 발생' 근처까지만 깔끔하게 자름
+                  : log.msg;
                 return (
-                  <tr key={log.id} style={{ background: log.level === 'ERROR' ? '#FEF2F2' : log.level === 'WARNING' ? '#FFFBEB' : 'transparent' }}>
+                  <tr key={log.systemLogNo} style={{ background: log.level === 'ERROR' ? '#FEF2F2' : log.level === 'WARNING' ? '#FFFBEB' : 'transparent' }}>
                     <td style={{ fontFamily: 'monospace', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                         <RiTimeLine size={12} />
-                        {log.timestamp}
+                        {log.regDt.split('T')[0]} {log.regDt.split('T')[1]}
                       </div>
                     </td>
                     <td>
@@ -359,7 +515,7 @@ function Logs() {
                       </span>
                     </td>
                     <td style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>
-                      {log.message}
+                      {summaryMsg}
                     </td>
                     <td style={{ fontFamily: 'monospace', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                       {log.ip}
@@ -380,8 +536,10 @@ function Logs() {
           </table>
         </div>
 
+        {/* 페이지 네이션 */}
         <div className="pagination">
           <button className="pagination-btn" disabled>&lt;</button>
+          {/* block수만큼 반복 */}
           <button className="pagination-btn active">1</button>
           <button className="pagination-btn">2</button>
           <button className="pagination-btn">3</button>
@@ -396,10 +554,20 @@ function Logs() {
         title="로그 상세"
         size="medium"
       >
+        {/* 여기서는 다른걸로 바꿔야됨 */}
         {detailModal.log && (() => {
           const log = detailModal.log;
           const LevelIcon = levelConfig[log.level].icon;
-          const catConfig = categoryConfig[log.category];
+
+          // 타입 매칭
+          const keyword = getCategoryByMsg(log.msg);
+          const catConfig = categoryConfig[keyword];
+
+          const summaryTitle = log.msg.includes('에러 발생')
+            ? log.msg.split('###')[1] // '에러 발생' 근처까지만 깔끔하게 자름
+            : log.msg;
+
+          console.log("catConfig : ", catConfig);
           return (
             <div>
               {/* 헤더 */}
@@ -424,7 +592,9 @@ function Logs() {
                   <LevelIcon size={24} style={{ color: levelConfig[log.level].color }} />
                 </div>
                 <div>
-                  <div style={{ fontWeight: 600, fontSize: 16, marginBottom: 4 }}>{log.message}</div>
+                  <div style={{ fontWeight: 600, fontSize: 16, marginBottom: 4 }}>
+                    {log.msg.includes('에러 발생') ? '' : log.msg}
+                  </div>
                   <div style={{ display: 'flex', gap: 8 }}>
                     <span style={{
                       padding: '2px 8px',
@@ -454,7 +624,7 @@ function Logs() {
               <div className="detail-list">
                 <div className="detail-item" style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid var(--border-color)' }}>
                   <span style={{ color: 'var(--text-muted)' }}><RiTimeLine style={{ marginRight: 8 }} />발생 시간</span>
-                  <span style={{ fontFamily: 'monospace' }}>{log.timestamp}</span>
+                  <span style={{ fontFamily: 'monospace' }}>{log.regDt.split('T')[0]} {log.regDt.split('T')[1]}</span>
                 </div>
                 <div className="detail-item" style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid var(--border-color)' }}>
                   <span style={{ color: 'var(--text-muted)' }}><RiServerLine style={{ marginRight: 8 }} />소스</span>
@@ -462,7 +632,7 @@ function Logs() {
                 </div>
                 <div className="detail-item" style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid var(--border-color)' }}>
                   <span style={{ color: 'var(--text-muted)' }}><RiUserLine style={{ marginRight: 8 }} />사용자 ID</span>
-                  <span style={{ fontFamily: 'monospace' }}>{log.userId}</span>
+                  <span style={{ fontFamily: 'monospace' }}>{log.systemLogMem}</span>
                 </div>
                 <div className="detail-item" style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid var(--border-color)' }}>
                   <span style={{ color: 'var(--text-muted)' }}><RiShieldLine style={{ marginRight: 8 }} />IP 주소</span>
@@ -483,7 +653,7 @@ function Logs() {
                   whiteSpace: 'pre-wrap',
                   wordBreak: 'break-all'
                 }}>
-                  {log.detail}
+                  {summaryTitle}
                 </div>
               </div>
 
