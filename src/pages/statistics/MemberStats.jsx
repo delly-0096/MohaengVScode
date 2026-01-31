@@ -796,7 +796,7 @@ function MemberStats() {
           </div>
           <div style={{ padding: 20, height: 280 }}>
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={regionData} layout="vertical">
+              <BarChart data={jybbp} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                 <XAxis type="number" stroke="#94a3b8" fontSize={12} />
                 <YAxis

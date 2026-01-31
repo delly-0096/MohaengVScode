@@ -78,7 +78,7 @@ const initialTalkData = [
   {
     id: 3,
     category: 'info',
-    title: '오사카 맛집 리스트 총정리 (2024년 최신)',
+    title: '제주도 맛집 리스트 총정리 (2024년 최신)',
     author: 'foodie_kim',
     authorAvatar: 'https://images.unsplash.com/photo-1599566150163-29194dcabd36?w=100&h=100&fit=crop&q=80',
     date: '2024-03-14',
@@ -86,17 +86,17 @@ const initialTalkData = [
     likes: 187,
     reports: 2,
     status: 'reported',
-    tags: ['오사카', '일본맛집', '라멘'],
-    content: '<p>지난 2월에 오사카 다녀왔는데요, 직접 가본 맛집들 정리해봤습니다!</p>',
+    tags: ['제주도', '맛집'],
+    content: '<p>지난 2월에 제주도 다녀왔는데요, 직접 가본 맛집들 정리해봤습니다!</p>',
     comments: [
-      { id: 1, author: 'japan_trip', avatar: 'https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=100&h=100&fit=crop&q=80', date: '2024-03-14 18:00', text: '와 정리 감사해요! 저장해놓고 가야겠어요' },
-      { id: 2, author: 'osaka_fan', avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop&q=80', date: '2024-03-14 19:30', text: '이치란 진짜 맛있죠!!' }
+      { id: 1, author: 'jeju_trip', avatar: 'https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=100&h=100&fit=crop&q=80', date: '2024-03-14 18:00', text: '와 정리 감사해요! 저장해놓고 가야겠어요' },
+      { id: 2, author: 'jeju_fan', avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop&q=80', date: '2024-03-14 19:30', text: '연돈 진짜 맛있죠!!' }
     ]
   },
   {
     id: 4,
     category: 'free',
-    title: '방콕 여행 다녀왔어요! 너무 좋았던 경험 공유합니다',
+    title: '대전 여행 다녀왔어요! 너무 좋았던 경험 공유합니다',
     author: 'adventure_park',
     authorAvatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=100&h=100&fit=crop&q=80',
     date: '2024-03-14',
@@ -104,16 +104,16 @@ const initialTalkData = [
     likes: 43,
     reports: 0,
     status: 'active',
-    tags: ['방콕', '태국여행', '왓아룬'],
-    content: '<p>저번 주에 방콕 4박 5일 다녀왔는데 정말 최고였어요!</p>',
+    tags: ['대전', '대전여행', '성심당'],
+    content: '<p>저번 주에 대전 4박 5일 다녀왔는데 정말 최고였어요!</p>',
     comments: [
-      { id: 1, author: 'thai_lover', avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=100&h=100&fit=crop&q=80', date: '2024-03-14 16:00', text: '방콕 진짜 좋죠! 저도 왓아룬 일몰 보고 감동받았어요' }
+      { id: 1, author: 'dj_lover', avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=100&h=100&fit=crop&q=80', date: '2024-03-14 16:00', text: '대전 진짜 좋죠! 저도 성심당 빵 먹고 감동받았어요' }
     ]
   },
   {
     id: 5,
     category: 'qna',
-    title: '일본 교통카드 뭘로 사야 할까요?',
+    title: '대구 교통카드 뭘로 사야 할까요?',
     author: 'newbie_traveler',
     authorAvatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100&h=100&fit=crop&q=80',
     date: '2024-03-13',
@@ -121,29 +121,29 @@ const initialTalkData = [
     likes: 12,
     reports: 0,
     status: 'active',
-    tags: ['일본여행', '교통카드', '스이카'],
-    content: '<p>4월에 일본 여행 처음 가는데요, 교통카드 종류가 너무 많아서 뭘 사야 할지 모르겠어요</p>',
+    tags: ['대구여행', '교통카드', '버카충'],
+    content: '<p>4월에 대구 여행 처음 가는데요, 교통카드가 다르다고 들었어서 뭘 사야 할지 모르겠어요</p>',
     comments: [
-      { id: 1, author: 'japan_expert', avatar: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=100&h=100&fit=crop&q=80', date: '2024-03-13 10:00', text: '스이카나 이코카 아무거나 사셔도 돼요!' },
-      { id: 2, author: 'tokyo_guide', avatar: 'https://images.unsplash.com/photo-1489424731084-a5d8b219a5bb?w=100&h=100&fit=crop&q=80', date: '2024-03-13 11:30', text: 'JR패스는 7일권 기준 도쿄-오사카 왕복 신칸센 타면 본전이에요.' },
-      { id: 3, author: 'travel_helper', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop&q=80', date: '2024-03-13 14:00', text: '저도 처음에 고민 많이 했는데, 그냥 공항에서 스이카 사세요.' }
+      { id: 1, author: 'dg_expert', avatar: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=100&h=100&fit=crop&q=80', date: '2024-03-13 10:00', text: '아무거나 사셔도 돼요!' },
+      { id: 2, author: 'dg_guide', avatar: 'https://images.unsplash.com/photo-1489424731084-a5d8b219a5bb?w=100&h=100&fit=crop&q=80', date: '2024-03-13 11:30', text: '저도 궁금해요.' },
+      { id: 3, author: 'travel_helper', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop&q=80', date: '2024-03-13 14:00', text: '저도 처음에 고민 많이 했는데, 안가기로 했어요.' }
     ]
   },
   {
     id: 6,
     category: 'companion',
-    title: '4월 초 도쿄 디즈니 같이 가실 분 구해요!',
-    author: 'disney_fan',
+    title: '4월 초 용인 에버랜드 같이 가실 분 구해요!',
+    author: 'ss_fan',
     authorAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&q=80',
     date: '2024-03-13',
     views: 234,
     likes: 18,
     reports: 0,
     status: 'active',
-    tags: ['도쿄', '디즈니랜드', '동행구함'],
-    content: '<p>혼자 디즈니 가려니까 좀 외로울 것 같아서요 ㅠㅠ</p>',
+    tags: ['용인', '에버랜드', '동행구함'],
+    content: '<p>혼자 에버랜드 가려니까 좀 외로울 것 같아서요 ㅠㅠ</p>',
     comments: [
-      { id: 1, author: 'disney_love', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&q=80', date: '2024-03-13 20:00', text: '저 디즈니 너무 좋아해요!! 같이 가고 싶은데 일정이 안 맞네요 ㅠㅠ' }
+      { id: 1, author: 'ss_love', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&q=80', date: '2024-03-13 20:00', text: '저 에버랜드 너무 좋아해요!! 같이 가고 싶은데 일정이 안 맞네요 ㅠㅠ' }
     ]
   },
   {
@@ -201,25 +201,25 @@ const initialMohaengData = [
   },
   {
     id: 'room2',
-    name: '3월 도쿄 동행 구해요',
+    name: '3월 제주도 동행 구해요',
     category: 'companion',
     categoryLabel: '동행',
     currentUsers: 8,
     maxUsers: 10,
-    createdBy: 'tokyo_lover',
+    createdBy: 'jeju_lover',
     createdAt: '2024-03-14',
     status: 'active',
     reports: 0,
     users: [
-      { id: 'user1', name: 'tokyo_lover', status: 'online', isCreator: true },
-      { id: 'user2', name: 'japan_fan', status: 'online' },
-      { id: 'user3', name: 'disney_lover', status: 'online' }
+      { id: 'user1', name: 'jeju_lover', status: 'online', isCreator: true },
+      { id: 'user2', name: 'jeju_fan', status: 'online' },
+      { id: 'user3', name: 'jejuk_lover', status: 'online' }
     ],
     messages: [
-      { id: 1, sender: 'tokyo_lover', message: '3월 20일~23일 도쿄 여행 같이 가실 분!', time: '10:00', date: '2024-03-14' },
-      { id: 2, sender: 'japan_fan', message: '저 관심있어요! 일정 어떻게 되나요?', time: '10:15', date: '2024-03-14' },
-      { id: 3, sender: 'tokyo_lover', message: '디즈니랜드 하루, 시부야/하라주쿠 하루, 아사쿠사 하루 생각중이에요', time: '10:20', date: '2024-03-14' },
-      { id: 4, sender: 'disney_lover', message: '디즈니 저도 가고 싶었어요!! 같이 가요~', time: '10:25', date: '2024-03-14' }
+      { id: 1, sender: 'jeju_lover', message: '3월 20일~23일 제주 여행 같이 가실 분!', time: '10:00', date: '2024-03-14' },
+      { id: 2, sender: 'jeju_fan', message: '저 관심있어요! 일정 어떻게 되나요?', time: '10:15', date: '2024-03-14' },
+      { id: 3, sender: 'jeju_lover', message: '한라산 하루, 제주 하루, 서귀포 하루 생각중이에요', time: '10:20', date: '2024-03-14' },
+      { id: 4, sender: 'jejuk_lover', message: '제주도 저도 가고 싶었어요!! 같이 가요~', time: '10:25', date: '2024-03-14' }
     ]
   },
   {
@@ -270,23 +270,23 @@ const initialMohaengData = [
   },
   {
     id: 'room5',
-    name: '오사카 여행 정보',
+    name: '대전 여행 정보',
     category: 'local',
     categoryLabel: '지역',
     currentUsers: 17,
     maxUsers: 30,
-    createdBy: 'osaka_guide',
+    createdBy: 'dj_guide',
     createdAt: '2024-03-12',
     status: 'active',
     reports: 0,
     users: [
-      { id: 'user1', name: 'osaka_guide', status: 'online', isCreator: true },
-      { id: 'user2', name: 'japan_trip', status: 'online' }
+      { id: 'user1', name: 'dj_guide', status: 'online', isCreator: true },
+      { id: 'user2', name: 'dj_trip', status: 'online' }
     ],
     messages: [
-      { id: 1, sender: 'osaka_guide', message: '오사카 여행 정보 공유합니다!', time: '12:00', date: '2024-03-12' },
-      { id: 2, sender: 'japan_trip', message: '이치란 라멘 진짜 맛있죠?', time: '12:30', date: '2024-03-15' },
-      { id: 3, sender: 'osaka_guide', message: '네! 도톤보리 본점 추천해요', time: '12:35', date: '2024-03-15' }
+      { id: 1, sender: 'dj_guide', message: '대전 여행 정보 공유합니다!', time: '12:00', date: '2024-03-12' },
+      { id: 2, sender: 'dj_trip', message: '성심당 빵 진짜 맛있죠?', time: '12:30', date: '2024-03-15' },
+      { id: 3, sender: 'dj_guide', message: '네! 본점 추천해요', time: '12:35', date: '2024-03-15' }
     ]
   }
 ];
