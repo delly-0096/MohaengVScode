@@ -168,8 +168,9 @@ function Tours() {
 
   // 판매 상태 토글 (상세 모달용)
   const handleToggleSale = async (item) => {
-    const isCurrentlySelling = item?.delYn === 'N' || !item?.delYn;
-    const newDelYn = isCurrentlySelling ? 'Y' : 'N';
+    const currentStatus = getDisplayStatus(item);
+    const isCurrentlySelling = currentStatus === '판매중';
+    const newApproveStatus = isCurrentlySelling ? '판매중지' : '판매중';
     const actionText = isCurrentlySelling ? "판매 중지" : "판매 재개";
 
     if (!window.confirm(`이 상품을 ${actionText} 하시겠습니까?`)) return;
@@ -177,7 +178,7 @@ function Tours() {
     try {
       const response = await api.patch('/admin/products/tours/toggle-sale', {
         tripProdNo: item.tripProdNo,
-        delYn: newDelYn
+        approveStatus: newApproveStatus
       });
 
       if (response.status === 200) {
@@ -195,12 +196,12 @@ function Tours() {
   // 목록에서 상태 토글
   const toggleStatus = async (tour) => {
     const displayStatus = getDisplayStatus(tour);
-    const nextDelYn = displayStatus === '판매중' ? 'Y' : 'N';
+    const nextApproveStatus = displayStatus === '판매중' ? '판매중지' : '판매중';
 
     try {
       const res = await api.patch('/admin/products/tours/toggle-sale', {
         tripProdNo: tour.tripProdNo,
-        delYn: nextDelYn
+        approveStatus: nextApproveStatus
       });
 
       if (res.data > 0) {

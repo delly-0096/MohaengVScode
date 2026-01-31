@@ -1,0 +1,61 @@
+/* 1. 전체 컨테이너 정렬 및 초기화 */
+.pagination-container {
+  display: flex !important;
+  justify-content: center !important; /* 가운데 정렬 */
+  margin: 30px 0 !important;
+}
+
+.pagination-container .pagination {
+  display: flex !important;
+  list-style: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  gap: 6px; /* 버튼 사이 간격 */
+}
+
+/* 2. 모든 페이지 버튼(숫자, Prev, next) 공통 스타일 */
+.pagination-container .page-link {
+  display: flex !important;
+  align-items: center;~
+  justify-content: center;
+  min-width: 40px; /* 정사각형 형태 유지 */
+  height: 40px;
+  padding: 0 12px !important;
+  border: 1px solid #e5e7eb !important; /* 연한 회색 테두리 */
+  border-radius: 8px !important; /* 부드러운 곡면 */
+  background-color: #ffffff !important;
+  color: #4b5563 !important; /* 짙은 회색 글자 */
+  font-size: 0.875rem !important;
+  font-weight: 500 !important;
+  text-decoration: none !important;
+  transition: all 0.2s ease;
+}
+
+/* 3. 마우스 호버 시 효과 */
+.pagination-container .page-link:hover {
+  background-color: #f9fafb !important;
+  border-color: #d1d5db !important;
+  color: #2563eb !important;
+}
+
+/* 4. 현재 활성화된 페이지 (파란색 박스) */
+.pagination-container .page-item.active .page-link {
+  background-color: #3b82f6 !important; /* 선명한 파란색 */
+  border-color: #3b82f6 !important;
+  color: #ffffff !important; /* 흰색 글자 */
+  font-weight: 600 !important;
+  cursor: default;
+}
+
+/* 5. 비활성화된 버튼 (선택 사항) */
+.pagination-container .page-item.disabled .page-link {
+  background-color: #f3f4f6 !important;
+  color: #9ca3af !important;
+  cursor: not-allowed;
+  border-color: #e5e7eb !important;
+}
+
+/* 6. 'Prev', 'next' 글자가 있는 버튼 스타일 살짝 조정 */
+.pagination-container .page-link[data-page] {
+  text-transform: capitalize; /* 첫 글자 대문자 */
+}
