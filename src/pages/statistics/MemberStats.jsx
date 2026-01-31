@@ -40,8 +40,8 @@ const ageData = [
 
 // 성별 분포
 const genderData = [
-  { name: "남성", value: 45, count: 5606, color: "#60A5FA" },
-  { name: "여성", value: 55, count: 6852, color: "#F472B6" },
+  { name: "남성", value: 61.5, count: 16, color: "#60A5FA" },
+  { name: "여성", value: 38.5, count: 10, color: "#F472B6" },
 ];
 
 // 지역별 분포
@@ -102,6 +102,12 @@ function MemberStats() {
   const [period, setPeriod] = useState("month");
 
   const [summary, setSummary] = useState({});
+  const [ibdgij, setIbdgij] = useState({});
+
+  const [hwyhbpData, setHwyhbpData] = useState([]);
+  const [jybbp, setJybbp] = useState([]);
+  const [yrdbbp, setYrdbbp] = useState([]);
+  const [cggihw, setCggihw] = useState([]);
 
   const [monthlyData, setMonthlyData] = useState([
     {
@@ -149,7 +155,7 @@ function MemberStats() {
   ]); // 월별 회원 추이 데이터
 
   const periods = [
-    // { id: "today", label: "오늘" },
+    // { id: "today", label: "오늘" },ㄴ
     // { id: "week", label: "이번 주" },
     // { id: "month", label: "이번 달" },
     // { id: "3months", label: "최근 3개월" },
@@ -219,10 +225,62 @@ function MemberStats() {
       });
   }
 
-  function fetchDataForGrowth(selectedPeriod) {
+  function fetchDataForHwYhBp(selectedPeriod) {
     // 기간에 따른 데이터 갱신 로직 구현 가능
     // 현재는 더미 데이터 사용 중
 
+    let token = localStorage.getItem("adminUser").token;
+    fetch("http://localhost:8272/api/admin/members/hwyhbp", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        console.log("Fetched member summary data:", data);
+        // 받아온 데이터로 상태 업데이트 로직 추가 가능
+        console.log("hwyhbp data:", data);
+        setHwyhbpData({
+          total_mem_cnt: data.totalMemCnt,
+          user_mem_cnt: data.userMemCnt,
+          comp_mem_cnt: data.compMemCnt,
+          user_rate: data.userRate,
+          comp_rate: data.compRate,
+        });
+      })
+      .catch((error) => {
+        console.error("Error fetching member summary data:", error);
+      });
+  }
+
+  function fetchDataForIbdGij(selectedPeriod) {
+    // 기간에 따른 데이터 갱신 로직 구현 가능
+    // 현재는 더미 데이터 사용 중
+
+    let token = localStorage.getItem("adminUser").token;
+    fetch("http://localhost:8272/api/admin/members/ibdgij", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        console.log("Fetched member summary data:", data);
+        // 받아온 데이터로 상태 업데이트 로직 추가 가능
+        console.log("setIbdgij data:", data);
+        setIbdgij({
+          thisMonthUser: data.thisMonthUser,
+          thisMonthComp: data.thisMonthComp,
+        });
+      })
+      .catch((error) => {
+        console.error("Error fetching member summary data:", error);
+      });
+  }
+
+  function fetchDataForGrowth(selectedPeriod) {
     let token = localStorage.getItem("adminUser").token;
     fetch("http://localhost:8272/api/admin/members/growth", {
       method: "POST",
@@ -234,16 +292,120 @@ function MemberStats() {
       .then((data) => {
         console.log("Fetched member summary data:", data);
         // 받아온 데이터로 상태 업데이트 로직 추가 가능
+        let growthDataList = [];
+        growthDataList.push({
+          month: "0",
+          newUsers: 0,
+          activeUsers: 0,
+          general: 0,
+          business: 0,
+        });
+        data.forEach((item) => {
+          growthDataList.push({
+            month: item.month,
+            newUsers: item.newMember,
+            activeUsers: item.total,
+            general: item.total,
+            business: item.newCompMem,
+          });
+        });
+        setMonthlyData(growthDataList);
+      })
+      .catch((error) => {
+        console.error("Error fetching member summary data:", error);
+      });
+  }
 
-        let updatedMonthlyData = [];
-        // data.forEach((item) => {
-        //   updatedMonthlyData.push({
-        //     month: item.month,
-        //     newUsers: item.newMember,
-        //     activeUsers: item.total,
-        //     general: item.total,
-        // });
-        // setMonthlyData
+  function fetchDataForJybBp(selectedPeriod) {
+    let token = localStorage.getItem("adminUser").token;
+    fetch("http://localhost:8272/api/admin/members/jybbp", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        console.log("Fetched member summary data:", data);
+        // 받아온 데이터로 상태 업데이트 로직 추가 가능
+        let resData = data;
+        let total = 0;
+        resData.forEach((item) => {
+          total += item.rgnCnt;
+        });
+        let jybbpData = [];
+        resData.forEach((item) => {
+          jybbpData.push({
+            region: item.region,
+            users: item.rgnCnt,
+            percent: ((item.rgnCnt / total) * 100).toFixed(1),
+          });
+        });
+        setJybbp(jybbpData);
+      })
+      .catch((error) => {
+        console.error("Error fetching member summary data:", error);
+      });
+  }
+
+  function fetchDataForYrdbBp(selectedPeriod) {
+    let token = localStorage.getItem("adminUser").token;
+    fetch("http://localhost:8272/api/admin/members/yrdbbp", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        console.log("Fetched member summary data:", data);
+        let jybbpData = [];
+        data.forEach((item) => {
+          let color = "";
+          if (item.ageGroup === "10대") color = "#818CF8";
+          else if (item.ageGroup === "20대") color = "#34D399";
+          else if (item.ageGroup === "30대") color = "#FBBF24";
+          else if (item.ageGroup === "40대") color = "#F87171";
+          else color = "#60A5FA";
+
+          jybbpData.push({
+            name: item.ageGroup,
+            value: item.ratio,
+            count: item.cnt,
+            color: color,
+          });
+        });
+        setYrdbbp(jybbpData);
+      })
+      .catch((error) => {
+        console.error("Error fetching member summary data:", error);
+      });
+  }
+
+  function fetchDataForCgGiHw(selectedPeriod) {
+    let token = localStorage.getItem("adminUser").token;
+    fetch("http://localhost:8272/api/admin/members/cggihw", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        console.log("Fetched member summary data:", data);
+        let cggihwData = [];
+
+        data.forEach((item) => {
+          cggihwData.push({
+            id: item.id,
+            name: item.name,
+            email: item.email,
+            type: item.type,
+            joinDate: item.joinDate,
+            status: item.status,
+          });
+        });
+        setCggihw(cggihwData);
       })
       .catch((error) => {
         console.error("Error fetching member summary data:", error);
@@ -254,6 +416,11 @@ function MemberStats() {
     // 기간 변경 시 데이터 갱신 로직 추가 가능
     fetchDataForPeriod(period);
     fetchDataForGrowth(period);
+    fetchDataForHwYhBp(period);
+    fetchDataForIbdGij(period);
+    fetchDataForJybBp(period);
+    fetchDataForYrdbBp(period);
+    fetchDataForCgGiHw(period);
   }, [period]);
 
   return (
@@ -365,7 +532,7 @@ function MemberStats() {
                   gap: 2,
                 }}
               >
-                <RiArrowUpLine /> + {summary.beforeTotalMembers || 0}% (전달
+                <RiArrowUpLine /> +{summary.beforeTotalMembers || 0}% (전달
                 대비)
               </div>
             </div>
@@ -639,7 +806,7 @@ function MemberStats() {
                   <span style={{ fontWeight: 500 }}>일반회원</span>
                 </div>
                 <span style={{ fontWeight: 600, color: "#4A90D9" }}>
-                  12,000명 (96.3%)
+                  {hwyhbpData.user_mem_cnt}명 ({hwyhbpData.user_rate}%)
                 </span>
               </div>
               <div
@@ -652,7 +819,7 @@ function MemberStats() {
               >
                 <div
                   style={{
-                    width: "96.3%",
+                    width: `${hwyhbpData.user_rate}%`,
                     height: "100%",
                     background: "linear-gradient(90deg, #4A90D9, #60a5fa)",
                     borderRadius: 6,
@@ -675,7 +842,7 @@ function MemberStats() {
                   <span style={{ fontWeight: 500 }}>기업회원</span>
                 </div>
                 <span style={{ fontWeight: 600, color: "#8b5cf6" }}>
-                  458명 (3.7%)
+                  {hwyhbpData.comp_mem_cnt}명 ({hwyhbpData.comp_rate}%)
                 </span>
               </div>
               <div
@@ -688,7 +855,7 @@ function MemberStats() {
               >
                 <div
                   style={{
-                    width: "3.7%",
+                    width: `${hwyhbpData.comp_rate}%`,
                     height: "100%",
                     background: "linear-gradient(90deg, #8b5cf6, #a78bfa)",
                     borderRadius: 6,
@@ -732,7 +899,7 @@ function MemberStats() {
                       color: "#4A90D9",
                     }}
                   >
-                    1,920
+                    {ibdgij.thisMonthUser}
                   </div>
                   <div style={{ fontSize: "0.8rem", color: "#64748b" }}>
                     일반회원
@@ -753,7 +920,7 @@ function MemberStats() {
                       color: "#8b5cf6",
                     }}
                   >
-                    180
+                    {ibdgij.thisMonthComp}
                   </div>
                   <div style={{ fontSize: "0.8rem", color: "#64748b" }}>
                     기업회원
@@ -802,7 +969,8 @@ function MemberStats() {
                 <YAxis
                   dataKey="region"
                   type="category"
-                  width={50}
+                  width={60}
+                  interval={0}
                   stroke="#94a3b8"
                   fontSize={12}
                 />
@@ -834,10 +1002,10 @@ function MemberStats() {
             </h3>
           </div>
           <div style={{ padding: 20 }}>
-            {ageData.map((item, index) => (
+            {yrdbbp.map((item, index) => (
               <div
                 key={index}
-                style={{ marginBottom: index < ageData.length - 1 ? 16 : 0 }}
+                style={{ marginBottom: index < yrdbbp.length - 1 ? 16 : 0 }}
               >
                 <div
                   style={{
@@ -968,7 +1136,7 @@ function MemberStats() {
               </tr>
             </thead>
             <tbody>
-              {recentMembers.map((member) => (
+              {cggihw.map((member) => (
                 <tr key={member.id}>
                   <td>
                     <div
