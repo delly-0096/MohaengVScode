@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef } from "react";
 import {
   RiSearchLine,
   RiFilterLine,
@@ -21,34 +21,36 @@ import {
   RiNotification3Line,
   RiMapPinLine,
   RiLockLine,
-  RiAddLine
-} from 'react-icons/ri';
-import { Modal, ConfirmModal } from '../../components/common/Modal';
+  RiAddLine,
+} from "react-icons/ri";
+import { Modal, ConfirmModal } from "../../components/common/Modal";
+import { Bounce, toast, ToastContainer } from "react-toastify";
 
 // 더미 데이터 - mohaeng 프로젝트 필드 기반
 const initialBusinessData = [
   {
     id: 1,
-    visibleId: 'BIZ0084',
-    visibleUserId: 'sonointer',
-    companyName: '(주)소노인터내셔널',
-    businessNo: '2208115022',
-    businessLicense: 'license_sonointer.pdf',
-    ceoName: '서준혁',
-    ecommerceNo: '제2024-강원홍천-0011호',
-    companyWebsite: 'https://www.sonohotelsresorts.com',
-    companyDescription: '자연과 하나되는 최고의 휴식처, 국내 최대 규모의 리조트 네트워크를 자랑합니다.',
-    companyPostcode: '25102',
-    companyAddress: '강원특별자치도 홍천군 서면 한치골길 262',
-    companyAddressDetail: '비발디파크',
-    managerName: '홍길동',
-    managerPhone: '01011112222',
-    managerEmail: 'sono_reserve@sono.com',
-    bankName: '우리은행',
-    accountNumber: '1002999888777',
-    accountHolder: '서준혁',
-    joinDate: '2026-02-02',
-    status: 'pending',
+    visibleId: "BIZ0084",
+    visibleUserId: "sonointer",
+    companyName: "(주)소노인터내셔널",
+    businessNo: "2208115022",
+    businessLicense: "license_sonointer.pdf",
+    ceoName: "서준혁",
+    ecommerceNo: "제2024-강원홍천-0011호",
+    companyWebsite: "https://www.sonohotelsresorts.com",
+    companyDescription:
+      "자연과 하나되는 최고의 휴식처, 국내 최대 규모의 리조트 네트워크를 자랑합니다.",
+    companyPostcode: "25102",
+    companyAddress: "강원특별자치도 홍천군 서면 한치골길 262",
+    companyAddressDetail: "비발디파크",
+    managerName: "홍길동",
+    managerPhone: "01011112222",
+    managerEmail: "sono_reserve@sono.com",
+    bankName: "우리은행",
+    accountNumber: "1002999888777",
+    accountHolder: "서준혁",
+    joinDate: "2026-02-02",
+    status: "pending",
     products: 0,
     logo: null,
     agreeTerms: true,
@@ -60,30 +62,31 @@ const initialBusinessData = [
     notifyReview: true,
     notifyInquiry: true,
     notifySettlement: true,
-    notifyMarketing: false
+    notifyMarketing: false,
   },
   {
     id: 2,
-    visibleId: 'BIZ0072',
-    visibleUserId: 'a009',
-    companyName: '별리조트',
-    businessNo: '1234567899',
-    businessLicense: 'license_deresaresort.pdf',
-    ceoName: '김별',
-    ecommerceNo: '제2025-서울강남-12013호',
-    companyWebsite: 'https://deresaresort.com',
-    companyDescription: '태안 해수욕장 앞 엄청 크고 멋진 리조트가 있습니다. 사계절 내내 놀러 오기 좋은 곳에서 편히 쉬다 가세요 :)',
-    companyPostcode: '34908',
-    companyAddress: '대전 중구 계룡로 846',
-    companyAddressDetail: '대덕인재개발원',
-    managerName: '김별',
-    managerPhone: '0101234123',
-    managerEmail: 'deresa@resort.com',
-    bankName: '카카오뱅크',
-    accountNumber: '010110110110',
-    accountHolder: '김별',
-    joinDate: '2026-01-21',
-    status: 'approved',
+    visibleId: "BIZ0072",
+    visibleUserId: "a009",
+    companyName: "별리조트",
+    businessNo: "1234567899",
+    businessLicense: "license_deresaresort.pdf",
+    ceoName: "김별",
+    ecommerceNo: "제2025-서울강남-12013호",
+    companyWebsite: "https://deresaresort.com",
+    companyDescription:
+      "태안 해수욕장 앞 엄청 크고 멋진 리조트가 있습니다. 사계절 내내 놀러 오기 좋은 곳에서 편히 쉬다 가세요 :)",
+    companyPostcode: "34908",
+    companyAddress: "대전 중구 계룡로 846",
+    companyAddressDetail: "대덕인재개발원",
+    managerName: "김별",
+    managerPhone: "0101234123",
+    managerEmail: "deresa@resort.com",
+    bankName: "카카오뱅크",
+    accountNumber: "010110110110",
+    accountHolder: "김별",
+    joinDate: "2026-01-21",
+    status: "approved",
     products: 14,
     logo: null,
     agreeTerms: true,
@@ -94,30 +97,30 @@ const initialBusinessData = [
     notifyReview: true,
     notifyInquiry: true,
     notifySettlement: true,
-    notifyMarketing: true
+    notifyMarketing: true,
   },
   {
     id: 3,
-    visibleId: 'BIZ0069',
-    visibleUserId: 'a008',
-    companyName: '둘리투어',
-    businessNo: '1234132113',
-    businessLicense: 'license_dullitour.pdf',
-    ceoName: '고둘리',
-    ecommerceNo: '제2025-대전탄방-10000호',
-    companyWebsite: 'https://dullitour.com',
-    companyDescription: '둘리투어에서 제대로 된 여행을 선보이겠습니다',
-    companyPostcode: '34908',
-    companyAddress: '대전 중구 계룡로 846',
-    companyAddressDetail: '대덕인재개발원',
-    managerName: '고둘리',
-    managerPhone: '0101122112',
-    managerEmail: 'dulli@tour.com',
-    bankName: '하나은행',
-    accountNumber: '010230132103',
-    accountHolder: '고둘리',
-    joinDate: '2026-01-12',
-    status: 'approved',
+    visibleId: "BIZ0069",
+    visibleUserId: "a008",
+    companyName: "둘리투어",
+    businessNo: "1234132113",
+    businessLicense: "license_dullitour.pdf",
+    ceoName: "고둘리",
+    ecommerceNo: "제2025-대전탄방-10000호",
+    companyWebsite: "https://dullitour.com",
+    companyDescription: "둘리투어에서 제대로 된 여행을 선보이겠습니다",
+    companyPostcode: "34908",
+    companyAddress: "대전 중구 계룡로 846",
+    companyAddressDetail: "대덕인재개발원",
+    managerName: "고둘리",
+    managerPhone: "0101122112",
+    managerEmail: "dulli@tour.com",
+    bankName: "하나은행",
+    accountNumber: "010230132103",
+    accountHolder: "고둘리",
+    joinDate: "2026-01-12",
+    status: "approved",
     products: 7,
     logo: null,
     agreeTerms: true,
@@ -128,30 +131,30 @@ const initialBusinessData = [
     notifyReview: true,
     notifyInquiry: true,
     notifySettlement: true,
-    notifyMarketing: true
+    notifyMarketing: true,
   },
   {
     id: 4,
-    visibleId: 'BIZ0047',
-    visibleUserId: 'a006',
-    companyName: '여행가자',
-    businessNo: '1231323132',
-    businessLicense: 'license_yeohaenggaja .pdf',
-    ceoName: '김여행',
-    ecommerceNo: '제2022-대전탄방-12133호',
-    companyWebsite: 'https://yeohaenggaja.com',
-    companyDescription: '여행 갈 사람 모두 모여라!!!!@!@',
-    companyPostcode: '34908',
-    companyAddress: '대전 중구 계룡로 846',
-    companyAddressDetail: '대덕인재개발원',
-    managerName: '박투어',
-    managerPhone: '01012313213',
-    managerEmail: 'trip@trip.com',
-    bankName: '우리은행',
-    accountNumber: '9201230123',
-    accountHolder: '김여행',
-    joinDate: '2026-01-07',
-    status: 'approved',
+    visibleId: "BIZ0047",
+    visibleUserId: "a006",
+    companyName: "여행가자",
+    businessNo: "1231323132",
+    businessLicense: "license_yeohaenggaja .pdf",
+    ceoName: "김여행",
+    ecommerceNo: "제2022-대전탄방-12133호",
+    companyWebsite: "https://yeohaenggaja.com",
+    companyDescription: "여행 갈 사람 모두 모여라!!!!@!@",
+    companyPostcode: "34908",
+    companyAddress: "대전 중구 계룡로 846",
+    companyAddressDetail: "대덕인재개발원",
+    managerName: "박투어",
+    managerPhone: "01012313213",
+    managerEmail: "trip@trip.com",
+    bankName: "우리은행",
+    accountNumber: "9201230123",
+    accountHolder: "김여행",
+    joinDate: "2026-01-07",
+    status: "approved",
     products: 5,
     logo: null,
     agreeTerms: true,
@@ -162,30 +165,30 @@ const initialBusinessData = [
     notifyReview: true,
     notifyInquiry: true,
     notifySettlement: true,
-    notifyMarketing: false
+    notifyMarketing: false,
   },
   {
     id: 5,
-    visibleId: 'BIZ0045',
-    visibleUserId: 'a005',
-    companyName: '보람투어',
-    businessNo: '1231321323',
-    businessLicense: 'license_boramtour.pdf',
-    ceoName: '김보람',
-    ecommerceNo: '제2024-서울강남-12313호',
-    companyWebsite: 'https://boramtour.com',
-    companyDescription: '보람투어입니다',
-    companyPostcode: '06232',
-    companyAddress: '서울 강남구 강남대로 지하 396',
-    companyAddressDetail: '보람투어',
-    managerName: '김보람',
-    managerPhone: '0102131123',
-    managerEmail: 'eee@eee.eee',
-    bankName: 'KB국민은행',
-    accountNumber: '12313231321',
-    accountHolder: '김보람',
-    joinDate: '2026-01-05',
-    status: 'rejected',
+    visibleId: "BIZ0045",
+    visibleUserId: "a005",
+    companyName: "보람투어",
+    businessNo: "1231321323",
+    businessLicense: "license_boramtour.pdf",
+    ceoName: "김보람",
+    ecommerceNo: "제2024-서울강남-12313호",
+    companyWebsite: "https://boramtour.com",
+    companyDescription: "보람투어입니다",
+    companyPostcode: "06232",
+    companyAddress: "서울 강남구 강남대로 지하 396",
+    companyAddressDetail: "보람투어",
+    managerName: "김보람",
+    managerPhone: "0102131123",
+    managerEmail: "eee@eee.eee",
+    bankName: "KB국민은행",
+    accountNumber: "12313231321",
+    accountHolder: "김보람",
+    joinDate: "2026-01-05",
+    status: "rejected",
     products: 0,
     logo: null,
     agreeTerms: true,
@@ -196,30 +199,30 @@ const initialBusinessData = [
     notifyReview: false,
     notifyInquiry: true,
     notifySettlement: true,
-    notifyMarketing: false
+    notifyMarketing: false,
   },
   {
     id: 6,
-    visibleId: 'BIZ006',
-    visibleUserId: 'a002',
-    companyName: '데레사여행',
-    businessNo: '1231213213',
-    businessLicense: 'license_deresayeohaeng .pdf',
-    ceoName: '김데레사',
-    ecommerceNo: '제2025-대전서구-12919호',
-    companyWebsite: 'https://deresayeohaeng .com',
-    companyDescription: '저희 데레사여행은 언제나 편안함을 추구합니다',
-    companyPostcode: '35279',
-    companyAddress: '대전 서구 계룡로 198',
-    companyAddressDetail: '계룡로 어딘가',
-    managerName: '김데레사',
-    managerPhone: '01012341234',
-    managerEmail: 'deresa@trip.com',
-    bankName: 'KB국민은행',
-    accountNumber: '0101201230132',
-    accountHolder: '김데레사',
-    joinDate: '2026-01-02',
-    status: 'approved',
+    visibleId: "BIZ006",
+    visibleUserId: "a002",
+    companyName: "데레사여행",
+    businessNo: "1231213213",
+    businessLicense: "license_deresayeohaeng .pdf",
+    ceoName: "김데레사",
+    ecommerceNo: "제2025-대전서구-12919호",
+    companyWebsite: "https://deresayeohaeng .com",
+    companyDescription: "저희 데레사여행은 언제나 편안함을 추구합니다",
+    companyPostcode: "35279",
+    companyAddress: "대전 서구 계룡로 198",
+    companyAddressDetail: "계룡로 어딘가",
+    managerName: "김데레사",
+    managerPhone: "01012341234",
+    managerEmail: "deresa@trip.com",
+    bankName: "KB국민은행",
+    accountNumber: "0101201230132",
+    accountHolder: "김데레사",
+    joinDate: "2026-01-02",
+    status: "approved",
     products: 18,
     logo: null,
     agreeTerms: true,
@@ -230,60 +233,84 @@ const initialBusinessData = [
     notifyReview: true,
     notifyInquiry: true,
     notifySettlement: true,
-    notifyMarketing: true
-  }
+    notifyMarketing: true,
+  },
 ];
 
 const statusLabels = {
-  approved: { label: '승인', className: 'badge-success' },
-  pending: { label: '대기', className: 'badge-warning' },
-  rejected: { label: '반려', className: 'badge-danger' }
+  approved: { label: "승인", className: "badge-success" },
+  pending: { label: "대기", className: "badge-warning" },
+  rejected: { label: "반려", className: "badge-danger" },
 };
 
 const bankOptions = [
-  '국민은행', '신한은행', '하나은행', '우리은행', '농협', 'IBK기업은행',
-  'SC제일은행', '씨티은행', '카카오뱅크', '케이뱅크', '토스뱅크'
+  "국민은행",
+  "신한은행",
+  "하나은행",
+  "우리은행",
+  "농협",
+  "IBK기업은행",
+  "SC제일은행",
+  "씨티은행",
+  "카카오뱅크",
+  "케이뱅크",
+  "토스뱅크",
 ];
 
 function BusinessMembers() {
   const [businessData, setBusinessData] = useState(initialBusinessData);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
   const fileInputRef = useRef(null);
   const licenseInputRef = useRef(null);
 
   // 모달 상태
-  const [detailModal, setDetailModal] = useState({ isOpen: false, business: null });
+  const [detailModal, setDetailModal] = useState({
+    isOpen: false,
+    business: null,
+  });
   const [editModal, setEditModal] = useState({ isOpen: false, business: null });
-  const [approveModal, setApproveModal] = useState({ isOpen: false, business: null });
-  const [rejectModal, setRejectModal] = useState({ isOpen: false, business: null });
-  const [passwordModal, setPasswordModal] = useState({ isOpen: false, business: null });
+  const [approveModal, setApproveModal] = useState({
+    isOpen: false,
+    business: null,
+  });
+  const [rejectModal, setRejectModal] = useState({
+    isOpen: false,
+    business: null,
+  });
+  const [passwordModal, setPasswordModal] = useState({
+    isOpen: false,
+    business: null,
+  });
   const [registerModal, setRegisterModal] = useState(false);
   const [editForm, setEditForm] = useState({});
-  const [rejectReason, setRejectReason] = useState('');
-  const [passwordForm, setPasswordForm] = useState({ newPassword: '', confirmPassword: '' });
+  const [rejectReason, setRejectReason] = useState("");
+  const [passwordForm, setPasswordForm] = useState({
+    newPassword: "",
+    confirmPassword: "",
+  });
   const [registerForm, setRegisterForm] = useState({
-    visibleUserId: '',
-    password: '',
-    passwordConfirm: '',
-    companyName: '',
-    ceoName: '',
-    businessNo: '',
-    businessLicense: '',
-    ecommerceNo: '',
-    companyWebsite: '',
-    companyDescription: '',
-    companyPostcode: '',
-    companyAddress: '',
-    companyAddressDetail: '',
-    managerName: '',
-    managerPhone: '',
-    managerEmail: '',
-    bankName: '',
-    accountNumber: '',
-    accountHolder: '',
+    visibleUserId: "",
+    password: "",
+    passwordConfirm: "",
+    companyName: "",
+    ceoName: "",
+    businessNo: "",
+    businessLicense: "",
+    ecommerceNo: "",
+    companyWebsite: "",
+    companyDescription: "",
+    companyPostcode: "",
+    companyAddress: "",
+    companyAddressDetail: "",
+    managerName: "",
+    managerPhone: "",
+    managerEmail: "",
+    bankName: "",
+    accountNumber: "",
+    accountHolder: "",
     logo: null,
-    status: 'pending',
+    status: "pending",
     agreeTerms: true,
     agreePrivacy: true,
     agreeLocation: false,
@@ -292,7 +319,7 @@ function BusinessMembers() {
     notifyReview: true,
     notifyInquiry: true,
     notifySettlement: true,
-    notifyMarketing: false
+    notifyMarketing: false,
   });
   const registerFileInputRef = useRef(null);
   const registerLicenseInputRef = useRef(null);
@@ -303,7 +330,7 @@ function BusinessMembers() {
     if (file) {
       const reader = new FileReader();
       reader.onload = (e) => {
-        setEditForm(prev => ({ ...prev, logo: e.target.result }));
+        setEditForm((prev) => ({ ...prev, logo: e.target.result }));
       };
       reader.readAsDataURL(file);
     }
@@ -311,34 +338,46 @@ function BusinessMembers() {
 
   // 이미지 삭제
   const handleRemoveImage = () => {
-    setEditForm(prev => ({ ...prev, logo: null }));
+    setEditForm((prev) => ({ ...prev, logo: null }));
   };
 
   // 사업자등록증 업로드 처리
   const handleLicenseChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      setEditForm(prev => ({ ...prev, businessLicense: file.name }));
+      setEditForm((prev) => ({ ...prev, businessLicense: file.name }));
     }
   };
 
-  const filteredBusinesses = businessData.filter(biz => {
-    const matchesSearch = biz.companyName.includes(searchTerm) ||
-                          biz.ceoName.includes(searchTerm) ||
-                          biz.businessNo.includes(searchTerm) ||
-                          biz.managerName.includes(searchTerm) ||
-                          biz.visibleUserId.includes(searchTerm);
-    const matchesStatus = statusFilter === 'all' || biz.status === statusFilter;
+  const filteredBusinesses = businessData.filter((biz) => {
+    const matchesSearch =
+      biz.companyName.includes(searchTerm) ||
+      biz.ceoName.includes(searchTerm) ||
+      biz.businessNo.includes(searchTerm) ||
+      biz.managerName.includes(searchTerm) ||
+      biz.visibleUserId.includes(searchTerm);
+    const matchesStatus = statusFilter === "all" || biz.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
   // 엑셀(CSV) 다운로드 핸들러
   const handleExcelDownload = () => {
     // 1. 헤더 정의
-    const headers = ['회원번호', '아이디', '회사명', '사업주', '사업자번호', '담당자', '연락처', '가입일', '상품수', '상태'];
-    
+    const headers = [
+      "회원번호",
+      "아이디",
+      "회사명",
+      "사업주",
+      "사업자번호",
+      "담당자",
+      "연락처",
+      "가입일",
+      "상품수",
+      "상태",
+    ];
+
     // 2. 데이터 행 변환
-    const rows = filteredBusinesses.map(biz => [
+    const rows = filteredBusinesses.map((biz) => [
       biz.visibleId,
       biz.visibleUserId,
       biz.companyName,
@@ -348,30 +387,33 @@ function BusinessMembers() {
       biz.managerPhone,
       biz.joinDate,
       biz.products,
-      statusLabels[biz.status].label
+      statusLabels[biz.status].label,
     ]);
 
     // 3. CSV 내용 생성 (쉼표로 구분, 한글 깨짐 방지를 위해 BOM 추가)
     const csvContent = [
-      headers.join(','),
-      ...rows.map(row => row.join(','))
-    ].join('\n');
+      headers.join(","),
+      ...rows.map((row) => row.join(",")),
+    ].join("\n");
 
     // 4. 다운로드 로직 (Blob 이용)
-    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob(["\ufeff" + csvContent], {
+      type: "text/csv;charset=utf-8;",
+    });
     const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    
-    const timestamp = new Date().toISOString().split('T')[0];
+    const link = document.createElement("a");
+
+    const timestamp = new Date().toISOString().split("T")[0];
     link.href = url;
-    link.setAttribute('download', `mohaeng_business_members_${timestamp}.csv`);
+    link.setAttribute("download", `mohaeng_business_members_${timestamp}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
-
-  const pendingCount = businessData.filter(b => b.status === 'pending').length;
+  const pendingCount = businessData.filter(
+    (b) => b.status === "pending",
+  ).length;
 
   // 상세보기
   const handleViewDetail = (business) => {
@@ -385,9 +427,11 @@ function BusinessMembers() {
   };
 
   const handleEditSubmit = () => {
-    setBusinessData(prev => prev.map(b => b.id === editForm.id ? editForm : b));
+    setBusinessData((prev) =>
+      prev.map((b) => (b.id === editForm.id ? editForm : b)),
+    );
     setEditModal({ isOpen: false, business: null });
-    alert('기업 정보가 수정되었습니다.');
+    alert("기업 정보가 수정되었습니다.");
   };
 
   // 승인
@@ -396,78 +440,101 @@ function BusinessMembers() {
   };
 
   const handleApproveConfirm = () => {
-    setBusinessData(prev => prev.map(b => b.id === approveModal.business.id ? { ...b, status: 'approved' } : b));
+    setBusinessData((prev) =>
+      prev.map((b) =>
+        b.id === approveModal.business.id ? { ...b, status: "approved" } : b,
+      ),
+    );
     setApproveModal({ isOpen: false, business: null });
-    alert('기업회원이 승인되었습니다.');
+    // alert('기업회원이 승인되었습니다.');
+    toast.success(`기업회원이 승인되었습니다.`, {
+      position: "top-center",
+      autoClose: 2500,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+      theme: "dark",
+      style: {
+        whiteSpace: "pre-line",
+        lineHeight: "1.4",
+        fontSize: "14px",
+      },
+      transition: Bounce,
+    });
   };
 
   // 반려
   const handleReject = (business) => {
-    setRejectReason('');
+    setRejectReason("");
     setRejectModal({ isOpen: true, business });
   };
 
   const handleRejectConfirm = () => {
-    setBusinessData(prev => prev.map(b => b.id === rejectModal.business.id ? { ...b, status: 'rejected' } : b));
+    setBusinessData((prev) =>
+      prev.map((b) =>
+        b.id === rejectModal.business.id ? { ...b, status: "rejected" } : b,
+      ),
+    );
     setRejectModal({ isOpen: false, business: null });
-    setRejectReason('');
-    alert('기업회원이 반려되었습니다.');
+    setRejectReason("");
+    alert("기업회원이 반려되었습니다.");
   };
 
   // 승인대기만 보기
   const handleShowPending = () => {
-    setStatusFilter('pending');
+    setStatusFilter("pending");
   };
 
   // 비밀번호 변경
   const handlePasswordChange = (business) => {
-    setPasswordForm({ newPassword: '', confirmPassword: '' });
+    setPasswordForm({ newPassword: "", confirmPassword: "" });
     setPasswordModal({ isOpen: true, business });
   };
 
   const handlePasswordSubmit = () => {
     if (!passwordForm.newPassword || !passwordForm.confirmPassword) {
-      alert('비밀번호를 입력해주세요.');
+      alert("비밀번호를 입력해주세요.");
       return;
     }
     if (passwordForm.newPassword.length < 8) {
-      alert('비밀번호는 8자 이상이어야 합니다.');
+      alert("비밀번호는 8자 이상이어야 합니다.");
       return;
     }
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      alert('비밀번호가 일치하지 않습니다.');
+      alert("비밀번호가 일치하지 않습니다.");
       return;
     }
     // 실제 구현 시 API 호출
     setPasswordModal({ isOpen: false, business: null });
-    setPasswordForm({ newPassword: '', confirmPassword: '' });
-    alert('비밀번호가 변경되었습니다.');
+    setPasswordForm({ newPassword: "", confirmPassword: "" });
+    alert("비밀번호가 변경되었습니다.");
   };
 
   // 기업회원 등록
   const handleRegister = () => {
     setRegisterForm({
-      visibleUserId: '',
-      password: '',
-      passwordConfirm: '',
-      companyName: '',
-      ceoName: '',
-      businessNo: '',
-      businessLicense: '',
-      ecommerceNo: '',
-      companyWebsite: '',
-      companyDescription: '',
-      companyPostcode: '',
-      companyAddress: '',
-      companyAddressDetail: '',
-      managerName: '',
-      managerPhone: '',
-      managerEmail: '',
-      bankName: '',
-      accountNumber: '',
-      accountHolder: '',
+      visibleUserId: "",
+      password: "",
+      passwordConfirm: "",
+      companyName: "",
+      ceoName: "",
+      businessNo: "",
+      businessLicense: "",
+      ecommerceNo: "",
+      companyWebsite: "",
+      companyDescription: "",
+      companyPostcode: "",
+      companyAddress: "",
+      companyAddressDetail: "",
+      managerName: "",
+      managerPhone: "",
+      managerEmail: "",
+      bankName: "",
+      accountNumber: "",
+      accountHolder: "",
       logo: null,
-      status: 'pending',
+      status: "pending",
       agreeTerms: true,
       agreePrivacy: true,
       agreeLocation: false,
@@ -476,7 +543,7 @@ function BusinessMembers() {
       notifyReview: true,
       notifyInquiry: true,
       notifySettlement: true,
-      notifyMarketing: false
+      notifyMarketing: false,
     });
     setRegisterModal(true);
   };
@@ -486,7 +553,7 @@ function BusinessMembers() {
     if (file) {
       const reader = new FileReader();
       reader.onload = (e) => {
-        setRegisterForm(prev => ({ ...prev, logo: e.target.result }));
+        setRegisterForm((prev) => ({ ...prev, logo: e.target.result }));
       };
       reader.readAsDataURL(file);
     }
@@ -495,39 +562,46 @@ function BusinessMembers() {
   const handleRegisterLicenseChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      setRegisterForm(prev => ({ ...prev, businessLicense: file.name }));
+      setRegisterForm((prev) => ({ ...prev, businessLicense: file.name }));
     }
   };
 
   const handleRegisterSubmit = () => {
     // 필수 필드 검증
-    if (!registerForm.visibleUserId || !registerForm.password || !registerForm.companyName ||
-        !registerForm.ceoName || !registerForm.businessNo || !registerForm.managerName ||
-        !registerForm.managerPhone || !registerForm.managerEmail) {
-      alert('필수 항목을 모두 입력해주세요.');
+    if (
+      !registerForm.visibleUserId ||
+      !registerForm.password ||
+      !registerForm.companyName ||
+      !registerForm.ceoName ||
+      !registerForm.businessNo ||
+      !registerForm.managerName ||
+      !registerForm.managerPhone ||
+      !registerForm.managerEmail
+    ) {
+      alert("필수 항목을 모두 입력해주세요.");
       return;
     }
     if (registerForm.password.length < 8) {
-      alert('비밀번호는 8자 이상이어야 합니다.');
+      alert("비밀번호는 8자 이상이어야 합니다.");
       return;
     }
     if (registerForm.password !== registerForm.passwordConfirm) {
-      alert('비밀번호가 일치하지 않습니다.');
+      alert("비밀번호가 일치하지 않습니다.");
       return;
     }
     if (registerForm.businessNo.length !== 10) {
-      alert('사업자등록번호는 10자리여야 합니다.');
+      alert("사업자등록번호는 10자리여야 합니다.");
       return;
     }
     if (!registerForm.agreeTerms || !registerForm.agreePrivacy) {
-      alert('필수 약관에 동의해주세요.');
+      alert("필수 약관에 동의해주세요.");
       return;
     }
 
     // 새 기업회원 추가
     const newBusiness = {
       id: businessData.length + 1,
-      visibleId: `BIZ${String(businessData.length + 1).padStart(3, '0')}`,
+      visibleId: `BIZ${String(businessData.length + 1).padStart(3, "0")}`,
       visibleUserId: registerForm.visibleUserId,
       companyName: registerForm.companyName,
       businessNo: registerForm.businessNo,
@@ -545,7 +619,7 @@ function BusinessMembers() {
       bankName: registerForm.bankName,
       accountNumber: registerForm.accountNumber,
       accountHolder: registerForm.accountHolder,
-      joinDate: new Date().toISOString().split('T')[0],
+      joinDate: new Date().toISOString().split("T")[0],
       status: registerForm.status,
       products: 0,
       logo: registerForm.logo,
@@ -557,17 +631,18 @@ function BusinessMembers() {
       notifyReview: registerForm.notifyReview,
       notifyInquiry: registerForm.notifyInquiry,
       notifySettlement: registerForm.notifySettlement,
-      notifyMarketing: registerForm.notifyMarketing
+      notifyMarketing: registerForm.notifyMarketing,
     };
 
-    setBusinessData(prev => [newBusiness, ...prev]);
+    setBusinessData((prev) => [newBusiness, ...prev]);
     setRegisterModal(false);
-    alert('기업회원이 등록되었습니다.');
+    alert("기업회원이 등록되었습니다.");
   };
 
   return (
     <div className="members-page">
       <div className="page-header">
+        <ToastContainer />
         <div>
           <h1 className="page-title">기업회원 관리</h1>
           <p className="page-subtitle">
@@ -592,7 +667,12 @@ function BusinessMembers() {
         <div className="alert alert-warning mb-3">
           <RiBuilding2Line />
           <span>승인 대기 중인 기업회원이 {pendingCount}건 있습니다.</span>
-          <button className="btn btn-sm btn-warning" onClick={handleShowPending}>승인 대기 보기</button>
+          <button
+            className="btn btn-sm btn-warning"
+            onClick={handleShowPending}
+          >
+            승인 대기 보기
+          </button>
         </div>
       )}
 
@@ -616,7 +696,7 @@ function BusinessMembers() {
               className="form-input form-select"
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              style={{ width: 'auto' }}
+              style={{ width: "auto" }}
             >
               <option value="all">전체 상태</option>
               <option value="approved">승인</option>
@@ -642,27 +722,37 @@ function BusinessMembers() {
               </tr>
             </thead>
             <tbody>
-              {filteredBusinesses.map(biz => (
+              {filteredBusinesses.map((biz) => (
                 <tr key={biz.id}>
                   <td>
                     <div className="member-info">
                       <div
                         className="avatar"
                         style={{
-                          background: biz.logo ? 'transparent' : '#E0E7FF',
-                          color: '#4F46E5',
-                          overflow: 'hidden'
+                          background: biz.logo ? "transparent" : "#E0E7FF",
+                          color: "#4F46E5",
+                          overflow: "hidden",
                         }}
                       >
                         {biz.logo ? (
-                          <img src={biz.logo} alt={biz.companyName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          <img
+                            src={biz.logo}
+                            alt={biz.companyName}
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              objectFit: "cover",
+                            }}
+                          />
                         ) : (
                           <RiBuilding2Line />
                         )}
                       </div>
                       <div>
                         <div className="member-name">{biz.companyName}</div>
-                        <div className="member-email">사업주: {biz.ceoName}</div>
+                        <div className="member-email">
+                          사업주: {biz.ceoName}
+                        </div>
                       </div>
                     </div>
                   </td>
@@ -675,26 +765,46 @@ function BusinessMembers() {
                   <td>{biz.joinDate}</td>
                   <td>{biz.products}개</td>
                   <td>
-                    <span className={`badge ${statusLabels[biz.status].className}`}>
+                    <span
+                      className={`badge ${statusLabels[biz.status].className}`}
+                    >
                       {statusLabels[biz.status].label}
                     </span>
                   </td>
                   <td>
                     <div className="table-actions">
-                      <button className="table-action-btn" title="상세보기" onClick={() => handleViewDetail(biz)}>
+                      <button
+                        className="table-action-btn"
+                        title="상세보기"
+                        onClick={() => handleViewDetail(biz)}
+                      >
                         <RiEyeLine />
                       </button>
-                      {biz.status === 'pending' ? (
+                      {biz.status === "pending" ? (
                         <>
-                          <button className="table-action-btn" title="승인" style={{ color: 'var(--success-color)' }} onClick={() => handleApprove(biz)}>
+                          <button
+                            className="table-action-btn"
+                            title="승인"
+                            style={{ color: "var(--success-color)" }}
+                            onClick={() => handleApprove(biz)}
+                          >
                             <RiCheckLine />
                           </button>
-                          <button className="table-action-btn" title="반려" style={{ color: 'var(--danger-color)' }} onClick={() => handleReject(biz)}>
+                          <button
+                            className="table-action-btn"
+                            title="반려"
+                            style={{ color: "var(--danger-color)" }}
+                            onClick={() => handleReject(biz)}
+                          >
                             <RiCloseLine />
                           </button>
                         </>
                       ) : (
-                        <button className="table-action-btn edit" title="수정" onClick={() => handleEdit(biz)}>
+                        <button
+                          className="table-action-btn edit"
+                          title="수정"
+                          onClick={() => handleEdit(biz)}
+                        >
                           <RiEditLine />
                         </button>
                       )}
@@ -725,28 +835,40 @@ function BusinessMembers() {
         {detailModal.business && (
           <div className="detail-list">
             {/* 기업 로고 */}
-            <div style={{ textAlign: 'center', marginBottom: 20 }}>
+            <div style={{ textAlign: "center", marginBottom: 20 }}>
               <div
                 style={{
                   width: 100,
                   height: 100,
                   borderRadius: 12,
-                  background: detailModal.business.logo ? 'transparent' : '#E0E7FF',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  overflow: 'hidden',
-                  border: '2px solid var(--border-color)'
+                  background: detailModal.business.logo
+                    ? "transparent"
+                    : "#E0E7FF",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  overflow: "hidden",
+                  border: "2px solid var(--border-color)",
                 }}
               >
                 {detailModal.business.logo ? (
-                  <img src={detailModal.business.logo} alt={detailModal.business.companyName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <img
+                    src={detailModal.business.logo}
+                    alt={detailModal.business.companyName}
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                    }}
+                  />
                 ) : (
-                  <RiBuilding2Line size={40} style={{ color: '#4F46E5' }} />
+                  <RiBuilding2Line size={40} style={{ color: "#4F46E5" }} />
                 )}
               </div>
               <div style={{ marginTop: 8 }}>
-                <span className={`badge ${statusLabels[detailModal.business.status].className}`}>
+                <span
+                  className={`badge ${statusLabels[detailModal.business.status].className}`}
+                >
                   {statusLabels[detailModal.business.status].label}
                 </span>
               </div>
@@ -754,59 +876,95 @@ function BusinessMembers() {
 
             {/* 회사 정보 섹션 */}
             <div className="detail-section">
-              <h4 className="detail-section-title"><RiBuilding2Line /> 회사 정보</h4>
+              <h4 className="detail-section-title">
+                <RiBuilding2Line /> 회사 정보
+              </h4>
               <div className="detail-grid">
                 <div className="detail-item">
                   <span className="detail-label">회원번호</span>
-                  <span className="detail-value">{detailModal.business.visibleId}</span>
+                  <span className="detail-value">
+                    {detailModal.business.visibleId}
+                  </span>
                 </div>
                 <div className="detail-item">
                   <span className="detail-label">아이디</span>
-                  <span className="detail-value">{detailModal.business.visibleUserId}</span>
+                  <span className="detail-value">
+                    {detailModal.business.visibleUserId}
+                  </span>
                 </div>
                 <div className="detail-item">
                   <span className="detail-label">회사명</span>
-                  <span className="detail-value">{detailModal.business.companyName}</span>
+                  <span className="detail-value">
+                    {detailModal.business.companyName}
+                  </span>
                 </div>
                 <div className="detail-item">
                   <span className="detail-label">사업주명</span>
-                  <span className="detail-value">{detailModal.business.ceoName}</span>
+                  <span className="detail-value">
+                    {detailModal.business.ceoName}
+                  </span>
                 </div>
                 <div className="detail-item">
                   <span className="detail-label">사업자등록번호</span>
-                  <span className="detail-value">{detailModal.business.businessNo}</span>
+                  <span className="detail-value">
+                    {detailModal.business.businessNo}
+                  </span>
                 </div>
                 <div className="detail-item">
                   <span className="detail-label">사업자등록증</span>
                   <span className="detail-value">
                     {detailModal.business.businessLicense ? (
-                      <a href="#" style={{ color: 'var(--primary-color)' }}>{detailModal.business.businessLicense}</a>
-                    ) : '-'}
+                      <a href="#" style={{ color: "var(--primary-color)" }}>
+                        {detailModal.business.businessLicense}
+                      </a>
+                    ) : (
+                      "-"
+                    )}
                   </span>
                 </div>
                 <div className="detail-item">
                   <span className="detail-label">통신판매업신고번호</span>
-                  <span className="detail-value">{detailModal.business.ecommerceNo || '-'}</span>
+                  <span className="detail-value">
+                    {detailModal.business.ecommerceNo || "-"}
+                  </span>
                 </div>
                 <div className="detail-item">
                   <span className="detail-label">회사 홈페이지</span>
                   <span className="detail-value">
                     {detailModal.business.companyWebsite ? (
-                      <a href={detailModal.business.companyWebsite} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--primary-color)' }}>
+                      <a
+                        href={detailModal.business.companyWebsite}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ color: "var(--primary-color)" }}
+                      >
                         {detailModal.business.companyWebsite}
                       </a>
-                    ) : '-'}
+                    ) : (
+                      "-"
+                    )}
                   </span>
                 </div>
                 <div className="detail-item">
                   <span className="detail-label">가입일</span>
-                  <span className="detail-value">{detailModal.business.joinDate}</span>
+                  <span className="detail-value">
+                    {detailModal.business.joinDate}
+                  </span>
                 </div>
               </div>
               {detailModal.business.companyDescription && (
                 <div style={{ marginTop: 12 }}>
                   <span className="detail-label">기업 소개</span>
-                  <p style={{ marginTop: 4, padding: '12px', background: '#f9fafb', borderRadius: '8px', fontSize: '0.9rem', lineHeight: 1.6 }}>
+                  <p
+                    style={{
+                      marginTop: 4,
+                      padding: "12px",
+                      background: "#f9fafb",
+                      borderRadius: "8px",
+                      fontSize: "0.9rem",
+                      lineHeight: 1.6,
+                    }}
+                  >
                     {detailModal.business.companyDescription}
                   </p>
                 </div>
@@ -815,102 +973,138 @@ function BusinessMembers() {
 
             {/* 주소 정보 섹션 */}
             <div className="detail-section">
-              <h4 className="detail-section-title"><RiMapPinLine /> 회사 주소</h4>
+              <h4 className="detail-section-title">
+                <RiMapPinLine /> 회사 주소
+              </h4>
               <div className="detail-grid">
                 <div className="detail-item">
                   <span className="detail-label">우편번호</span>
-                  <span className="detail-value">{detailModal.business.companyPostcode || '-'}</span>
+                  <span className="detail-value">
+                    {detailModal.business.companyPostcode || "-"}
+                  </span>
                 </div>
                 <div className="detail-item">
                   <span className="detail-label">주소</span>
-                  <span className="detail-value">{detailModal.business.companyAddress || '-'}</span>
+                  <span className="detail-value">
+                    {detailModal.business.companyAddress || "-"}
+                  </span>
                 </div>
                 <div className="detail-item">
                   <span className="detail-label">상세주소</span>
-                  <span className="detail-value">{detailModal.business.companyAddressDetail || '-'}</span>
+                  <span className="detail-value">
+                    {detailModal.business.companyAddressDetail || "-"}
+                  </span>
                 </div>
               </div>
             </div>
 
             {/* 담당자 정보 섹션 */}
             <div className="detail-section">
-              <h4 className="detail-section-title"><RiUserLine /> 담당자 정보</h4>
+              <h4 className="detail-section-title">
+                <RiUserLine /> 담당자 정보
+              </h4>
               <div className="detail-grid">
                 <div className="detail-item">
                   <span className="detail-label">담당자명</span>
-                  <span className="detail-value">{detailModal.business.managerName}</span>
+                  <span className="detail-value">
+                    {detailModal.business.managerName}
+                  </span>
                 </div>
                 <div className="detail-item">
                   <span className="detail-label">담당자 연락처</span>
-                  <span className="detail-value">{detailModal.business.managerPhone}</span>
+                  <span className="detail-value">
+                    {detailModal.business.managerPhone}
+                  </span>
                 </div>
                 <div className="detail-item">
                   <span className="detail-label">담당자 이메일</span>
-                  <span className="detail-value">{detailModal.business.managerEmail}</span>
+                  <span className="detail-value">
+                    {detailModal.business.managerEmail}
+                  </span>
                 </div>
               </div>
             </div>
 
             {/* 정산 계좌 섹션 */}
             <div className="detail-section">
-              <h4 className="detail-section-title"><RiBankLine /> 정산 계좌</h4>
+              <h4 className="detail-section-title">
+                <RiBankLine /> 정산 계좌
+              </h4>
               <div className="detail-grid">
                 <div className="detail-item">
                   <span className="detail-label">은행</span>
-                  <span className="detail-value">{detailModal.business.bankName || '-'}</span>
+                  <span className="detail-value">
+                    {detailModal.business.bankName || "-"}
+                  </span>
                 </div>
                 <div className="detail-item">
                   <span className="detail-label">계좌번호</span>
-                  <span className="detail-value">{detailModal.business.accountNumber || '-'}</span>
+                  <span className="detail-value">
+                    {detailModal.business.accountNumber || "-"}
+                  </span>
                 </div>
                 <div className="detail-item">
                   <span className="detail-label">예금주</span>
-                  <span className="detail-value">{detailModal.business.accountHolder || '-'}</span>
+                  <span className="detail-value">
+                    {detailModal.business.accountHolder || "-"}
+                  </span>
                 </div>
               </div>
             </div>
 
             {/* 알림 설정 섹션 */}
             <div className="detail-section">
-              <h4 className="detail-section-title"><RiNotification3Line /> 알림 설정</h4>
+              <h4 className="detail-section-title">
+                <RiNotification3Line /> 알림 설정
+              </h4>
               <div className="detail-grid">
                 <div className="detail-item">
                   <span className="detail-label">새 예약 알림</span>
                   <span className="detail-value">
-                    <span className={`badge ${detailModal.business.notifyOrder ? 'badge-success' : 'badge-gray'}`}>
-                      {detailModal.business.notifyOrder ? '수신' : '거부'}
+                    <span
+                      className={`badge ${detailModal.business.notifyOrder ? "badge-success" : "badge-gray"}`}
+                    >
+                      {detailModal.business.notifyOrder ? "수신" : "거부"}
                     </span>
                   </span>
                 </div>
                 <div className="detail-item">
                   <span className="detail-label">새 후기 알림</span>
                   <span className="detail-value">
-                    <span className={`badge ${detailModal.business.notifyReview ? 'badge-success' : 'badge-gray'}`}>
-                      {detailModal.business.notifyReview ? '수신' : '거부'}
+                    <span
+                      className={`badge ${detailModal.business.notifyReview ? "badge-success" : "badge-gray"}`}
+                    >
+                      {detailModal.business.notifyReview ? "수신" : "거부"}
                     </span>
                   </span>
                 </div>
                 <div className="detail-item">
                   <span className="detail-label">문의 알림</span>
                   <span className="detail-value">
-                    <span className={`badge ${detailModal.business.notifyInquiry ? 'badge-success' : 'badge-gray'}`}>
-                      {detailModal.business.notifyInquiry ? '수신' : '거부'}
+                    <span
+                      className={`badge ${detailModal.business.notifyInquiry ? "badge-success" : "badge-gray"}`}
+                    >
+                      {detailModal.business.notifyInquiry ? "수신" : "거부"}
                     </span>
                   </span>
                 </div>
                 <div className="detail-item">
                   <span className="detail-label">정산 완료 알림</span>
                   <span className="detail-value">
-                    <span className={`badge ${detailModal.business.notifySettlement ? 'badge-success' : 'badge-gray'}`}>
-                      {detailModal.business.notifySettlement ? '수신' : '거부'}
+                    <span
+                      className={`badge ${detailModal.business.notifySettlement ? "badge-success" : "badge-gray"}`}
+                    >
+                      {detailModal.business.notifySettlement ? "수신" : "거부"}
                     </span>
                   </span>
                 </div>
                 <div className="detail-item">
                   <span className="detail-label">마케팅 정보 수신</span>
                   <span className="detail-value">
-                    <span className={`badge ${detailModal.business.notifyMarketing ? 'badge-success' : 'badge-gray'}`}>
-                      {detailModal.business.notifyMarketing ? '수신' : '거부'}
+                    <span
+                      className={`badge ${detailModal.business.notifyMarketing ? "badge-success" : "badge-gray"}`}
+                    >
+                      {detailModal.business.notifyMarketing ? "수신" : "거부"}
                     </span>
                   </span>
                 </div>
@@ -919,29 +1113,37 @@ function BusinessMembers() {
 
             {/* 약관 동의 섹션 */}
             <div className="detail-section">
-              <h4 className="detail-section-title"><RiFileTextLine /> 약관 동의</h4>
+              <h4 className="detail-section-title">
+                <RiFileTextLine /> 약관 동의
+              </h4>
               <div className="detail-grid">
                 <div className="detail-item">
                   <span className="detail-label">이용약관 동의</span>
                   <span className="detail-value">
-                    <span className={`badge ${detailModal.business.agreeTerms ? 'badge-success' : 'badge-gray'}`}>
-                      {detailModal.business.agreeTerms ? '동의' : '거부'}
+                    <span
+                      className={`badge ${detailModal.business.agreeTerms ? "badge-success" : "badge-gray"}`}
+                    >
+                      {detailModal.business.agreeTerms ? "동의" : "거부"}
                     </span>
                   </span>
                 </div>
                 <div className="detail-item">
                   <span className="detail-label">개인정보처리방침 동의</span>
                   <span className="detail-value">
-                    <span className={`badge ${detailModal.business.agreePrivacy ? 'badge-success' : 'badge-gray'}`}>
-                      {detailModal.business.agreePrivacy ? '동의' : '거부'}
+                    <span
+                      className={`badge ${detailModal.business.agreePrivacy ? "badge-success" : "badge-gray"}`}
+                    >
+                      {detailModal.business.agreePrivacy ? "동의" : "거부"}
                     </span>
                   </span>
                 </div>
                 <div className="detail-item">
                   <span className="detail-label">위치기반서비스 동의</span>
                   <span className="detail-value">
-                    <span className={`badge ${detailModal.business.agreeLocation ? 'badge-success' : 'badge-gray'}`}>
-                      {detailModal.business.agreeLocation ? '동의' : '거부'}
+                    <span
+                      className={`badge ${detailModal.business.agreeLocation ? "badge-success" : "badge-gray"}`}
+                    >
+                      {detailModal.business.agreeLocation ? "동의" : "거부"}
                     </span>
                   </span>
                 </div>
@@ -950,11 +1152,15 @@ function BusinessMembers() {
 
             {/* 활동 정보 */}
             <div className="detail-section">
-              <h4 className="detail-section-title"><RiShoppingBagLine /> 활동 정보</h4>
+              <h4 className="detail-section-title">
+                <RiShoppingBagLine /> 활동 정보
+              </h4>
               <div className="detail-grid">
                 <div className="detail-item">
                   <span className="detail-label">등록 상품 수</span>
-                  <span className="detail-value">{detailModal.business.products}개</span>
+                  <span className="detail-value">
+                    {detailModal.business.products}개
+                  </span>
                 </div>
               </div>
             </div>
@@ -970,8 +1176,15 @@ function BusinessMembers() {
         size="large"
         footer={
           <>
-            <button className="btn btn-secondary" onClick={() => setEditModal({ isOpen: false, business: null })}>취소</button>
-            <button className="btn btn-primary" onClick={handleEditSubmit}>저장</button>
+            <button
+              className="btn btn-secondary"
+              onClick={() => setEditModal({ isOpen: false, business: null })}
+            >
+              취소
+            </button>
+            <button className="btn btn-primary" onClick={handleEditSubmit}>
+              저장
+            </button>
           </>
         }
       >
@@ -979,28 +1192,40 @@ function BusinessMembers() {
           <div>
             {/* 기업 로고 */}
             <div className="form-group">
-              <label className="form-label"><RiImageLine /> 기업 로고</label>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+              <label className="form-label">
+                <RiImageLine /> 기업 로고
+              </label>
+              <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
                 <div
                   style={{
                     width: 80,
                     height: 80,
                     borderRadius: 8,
-                    background: editForm.logo ? 'transparent' : '#E0E7FF',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    overflow: 'hidden',
-                    border: '2px dashed var(--border-color)'
+                    background: editForm.logo ? "transparent" : "#E0E7FF",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    overflow: "hidden",
+                    border: "2px dashed var(--border-color)",
                   }}
                 >
                   {editForm.logo ? (
-                    <img src={editForm.logo} alt="로고" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <img
+                      src={editForm.logo}
+                      alt="로고"
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                      }}
+                    />
                   ) : (
-                    <RiBuilding2Line size={32} style={{ color: '#4F46E5' }} />
+                    <RiBuilding2Line size={32} style={{ color: "#4F46E5" }} />
                   )}
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <div
+                  style={{ display: "flex", flexDirection: "column", gap: 8 }}
+                >
                   <button
                     type="button"
                     className="btn btn-secondary btn-sm"
@@ -1013,7 +1238,7 @@ function BusinessMembers() {
                       type="button"
                       className="btn btn-outline btn-sm"
                       onClick={handleRemoveImage}
-                      style={{ color: 'var(--danger-color)' }}
+                      style={{ color: "var(--danger-color)" }}
                     >
                       이미지 삭제
                     </button>
@@ -1023,7 +1248,7 @@ function BusinessMembers() {
               <input
                 type="file"
                 ref={fileInputRef}
-                style={{ display: 'none' }}
+                style={{ display: "none" }}
                 accept="image/*"
                 onChange={handleImageChange}
               />
@@ -1031,16 +1256,24 @@ function BusinessMembers() {
 
             {/* 회사 정보 섹션 */}
             <div className="form-section">
-              <h4 className="form-section-title"><RiBuilding2Line /> 회사 정보</h4>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              <h4 className="form-section-title">
+                <RiBuilding2Line /> 회사 정보
+              </h4>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: 16,
+                }}
+              >
                 <div className="form-group">
                   <label className="form-label">아이디 (변경불가)</label>
                   <input
                     type="text"
                     className="form-input"
-                    value={editForm.visibleUserId || ''}
+                    value={editForm.visibleUserId || ""}
                     disabled
-                    style={{ backgroundColor: '#f3f4f6' }}
+                    style={{ backgroundColor: "#f3f4f6" }}
                   />
                 </div>
                 <div className="form-group">
@@ -1048,19 +1281,29 @@ function BusinessMembers() {
                   <input
                     type="text"
                     className="form-input"
-                    value={editForm.companyName || ''}
-                    onChange={(e) => setEditForm({ ...editForm, companyName: e.target.value })}
+                    value={editForm.companyName || ""}
+                    onChange={(e) =>
+                      setEditForm({ ...editForm, companyName: e.target.value })
+                    }
                   />
                 </div>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: 16,
+                }}
+              >
                 <div className="form-group">
                   <label className="form-label">사업주명</label>
                   <input
                     type="text"
                     className="form-input"
-                    value={editForm.ceoName || ''}
-                    onChange={(e) => setEditForm({ ...editForm, ceoName: e.target.value })}
+                    value={editForm.ceoName || ""}
+                    onChange={(e) =>
+                      setEditForm({ ...editForm, ceoName: e.target.value })
+                    }
                   />
                 </div>
                 <div className="form-group">
@@ -1068,21 +1311,32 @@ function BusinessMembers() {
                   <input
                     type="text"
                     className="form-input"
-                    value={editForm.businessNo || ''}
-                    onChange={(e) => setEditForm({ ...editForm, businessNo: e.target.value.replace(/[^0-9]/g, '') })}
+                    value={editForm.businessNo || ""}
+                    onChange={(e) =>
+                      setEditForm({
+                        ...editForm,
+                        businessNo: e.target.value.replace(/[^0-9]/g, ""),
+                      })
+                    }
                     maxLength={10}
                     placeholder="'-' 없이 숫자만 입력"
                   />
                 </div>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: 16,
+                }}
+              >
                 <div className="form-group">
                   <label className="form-label">사업자등록증</label>
-                  <div style={{ display: 'flex', gap: 8 }}>
+                  <div style={{ display: "flex", gap: 8 }}>
                     <input
                       type="text"
                       className="form-input"
-                      value={editForm.businessLicense || ''}
+                      value={editForm.businessLicense || ""}
                       readOnly
                       placeholder="파일을 업로드해주세요"
                     />
@@ -1097,7 +1351,7 @@ function BusinessMembers() {
                   <input
                     type="file"
                     ref={licenseInputRef}
-                    style={{ display: 'none' }}
+                    style={{ display: "none" }}
                     accept=".pdf,.jpg,.jpeg,.png"
                     onChange={handleLicenseChange}
                   />
@@ -1107,8 +1361,10 @@ function BusinessMembers() {
                   <input
                     type="text"
                     className="form-input"
-                    value={editForm.ecommerceNo || ''}
-                    onChange={(e) => setEditForm({ ...editForm, ecommerceNo: e.target.value })}
+                    value={editForm.ecommerceNo || ""}
+                    onChange={(e) =>
+                      setEditForm({ ...editForm, ecommerceNo: e.target.value })
+                    }
                     placeholder="예: 제2024-서울강남-00000호"
                   />
                 </div>
@@ -1118,8 +1374,10 @@ function BusinessMembers() {
                 <input
                   type="url"
                   className="form-input"
-                  value={editForm.companyWebsite || ''}
-                  onChange={(e) => setEditForm({ ...editForm, companyWebsite: e.target.value })}
+                  value={editForm.companyWebsite || ""}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, companyWebsite: e.target.value })
+                  }
                   placeholder="https://"
                 />
               </div>
@@ -1128,8 +1386,13 @@ function BusinessMembers() {
                 <textarea
                   className="form-input"
                   rows={3}
-                  value={editForm.companyDescription || ''}
-                  onChange={(e) => setEditForm({ ...editForm, companyDescription: e.target.value })}
+                  value={editForm.companyDescription || ""}
+                  onChange={(e) =>
+                    setEditForm({
+                      ...editForm,
+                      companyDescription: e.target.value,
+                    })
+                  }
                   placeholder="기업에 대한 간단한 소개를 입력해주세요."
                   maxLength={1000}
                 />
@@ -1138,15 +1401,28 @@ function BusinessMembers() {
 
             {/* 주소 정보 섹션 */}
             <div className="form-section">
-              <h4 className="form-section-title"><RiMapPinLine /> 회사 주소</h4>
-              <div style={{ display: 'grid', gridTemplateColumns: '150px 1fr', gap: 16 }}>
+              <h4 className="form-section-title">
+                <RiMapPinLine /> 회사 주소
+              </h4>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "150px 1fr",
+                  gap: 16,
+                }}
+              >
                 <div className="form-group">
                   <label className="form-label">우편번호</label>
                   <input
                     type="text"
                     className="form-input"
-                    value={editForm.companyPostcode || ''}
-                    onChange={(e) => setEditForm({ ...editForm, companyPostcode: e.target.value })}
+                    value={editForm.companyPostcode || ""}
+                    onChange={(e) =>
+                      setEditForm({
+                        ...editForm,
+                        companyPostcode: e.target.value,
+                      })
+                    }
                   />
                 </div>
                 <div className="form-group">
@@ -1154,8 +1430,13 @@ function BusinessMembers() {
                   <input
                     type="text"
                     className="form-input"
-                    value={editForm.companyAddress || ''}
-                    onChange={(e) => setEditForm({ ...editForm, companyAddress: e.target.value })}
+                    value={editForm.companyAddress || ""}
+                    onChange={(e) =>
+                      setEditForm({
+                        ...editForm,
+                        companyAddress: e.target.value,
+                      })
+                    }
                   />
                 </div>
               </div>
@@ -1164,23 +1445,38 @@ function BusinessMembers() {
                 <input
                   type="text"
                   className="form-input"
-                  value={editForm.companyAddressDetail || ''}
-                  onChange={(e) => setEditForm({ ...editForm, companyAddressDetail: e.target.value })}
+                  value={editForm.companyAddressDetail || ""}
+                  onChange={(e) =>
+                    setEditForm({
+                      ...editForm,
+                      companyAddressDetail: e.target.value,
+                    })
+                  }
                 />
               </div>
             </div>
 
             {/* 담당자 정보 섹션 */}
             <div className="form-section">
-              <h4 className="form-section-title"><RiUserLine /> 담당자 정보</h4>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              <h4 className="form-section-title">
+                <RiUserLine /> 담당자 정보
+              </h4>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: 16,
+                }}
+              >
                 <div className="form-group">
                   <label className="form-label">담당자명</label>
                   <input
                     type="text"
                     className="form-input"
-                    value={editForm.managerName || ''}
-                    onChange={(e) => setEditForm({ ...editForm, managerName: e.target.value })}
+                    value={editForm.managerName || ""}
+                    onChange={(e) =>
+                      setEditForm({ ...editForm, managerName: e.target.value })
+                    }
                   />
                 </div>
                 <div className="form-group">
@@ -1188,8 +1484,13 @@ function BusinessMembers() {
                   <input
                     type="text"
                     className="form-input"
-                    value={editForm.managerPhone || ''}
-                    onChange={(e) => setEditForm({ ...editForm, managerPhone: e.target.value.replace(/[^0-9]/g, '') })}
+                    value={editForm.managerPhone || ""}
+                    onChange={(e) =>
+                      setEditForm({
+                        ...editForm,
+                        managerPhone: e.target.value.replace(/[^0-9]/g, ""),
+                      })
+                    }
                     maxLength={11}
                     placeholder="01012345678"
                   />
@@ -1200,26 +1501,40 @@ function BusinessMembers() {
                 <input
                   type="email"
                   className="form-input"
-                  value={editForm.managerEmail || ''}
-                  onChange={(e) => setEditForm({ ...editForm, managerEmail: e.target.value })}
+                  value={editForm.managerEmail || ""}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, managerEmail: e.target.value })
+                  }
                 />
               </div>
             </div>
 
             {/* 정산 계좌 섹션 */}
             <div className="form-section">
-              <h4 className="form-section-title"><RiBankLine /> 정산 계좌</h4>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr 1fr', gap: 16 }}>
+              <h4 className="form-section-title">
+                <RiBankLine /> 정산 계좌
+              </h4>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 2fr 1fr",
+                  gap: 16,
+                }}
+              >
                 <div className="form-group">
                   <label className="form-label">은행</label>
                   <select
                     className="form-input form-select"
-                    value={editForm.bankName || ''}
-                    onChange={(e) => setEditForm({ ...editForm, bankName: e.target.value })}
+                    value={editForm.bankName || ""}
+                    onChange={(e) =>
+                      setEditForm({ ...editForm, bankName: e.target.value })
+                    }
                   >
                     <option value="">선택</option>
-                    {bankOptions.map(bank => (
-                      <option key={bank} value={bank}>{bank}</option>
+                    {bankOptions.map((bank) => (
+                      <option key={bank} value={bank}>
+                        {bank}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -1228,8 +1543,13 @@ function BusinessMembers() {
                   <input
                     type="text"
                     className="form-input"
-                    value={editForm.accountNumber || ''}
-                    onChange={(e) => setEditForm({ ...editForm, accountNumber: e.target.value.replace(/[^0-9]/g, '') })}
+                    value={editForm.accountNumber || ""}
+                    onChange={(e) =>
+                      setEditForm({
+                        ...editForm,
+                        accountNumber: e.target.value.replace(/[^0-9]/g, ""),
+                      })
+                    }
                     maxLength={20}
                     placeholder="'-' 없이 숫자만 입력"
                   />
@@ -1239,8 +1559,13 @@ function BusinessMembers() {
                   <input
                     type="text"
                     className="form-input"
-                    value={editForm.accountHolder || ''}
-                    onChange={(e) => setEditForm({ ...editForm, accountHolder: e.target.value })}
+                    value={editForm.accountHolder || ""}
+                    onChange={(e) =>
+                      setEditForm({
+                        ...editForm,
+                        accountHolder: e.target.value,
+                      })
+                    }
                   />
                 </div>
               </div>
@@ -1248,13 +1573,26 @@ function BusinessMembers() {
 
             {/* 알림 설정 섹션 */}
             <div className="form-section">
-              <h4 className="form-section-title"><RiNotification3Line /> 알림 설정</h4>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              <h4 className="form-section-title">
+                <RiNotification3Line /> 알림 설정
+              </h4>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: 16,
+                }}
+              >
                 <label className="checkbox-label">
                   <input
                     type="checkbox"
                     checked={editForm.notifyOrder || false}
-                    onChange={(e) => setEditForm({ ...editForm, notifyOrder: e.target.checked })}
+                    onChange={(e) =>
+                      setEditForm({
+                        ...editForm,
+                        notifyOrder: e.target.checked,
+                      })
+                    }
                   />
                   <span>새 예약 알림 (이메일)</span>
                 </label>
@@ -1262,7 +1600,12 @@ function BusinessMembers() {
                   <input
                     type="checkbox"
                     checked={editForm.notifyReview || false}
-                    onChange={(e) => setEditForm({ ...editForm, notifyReview: e.target.checked })}
+                    onChange={(e) =>
+                      setEditForm({
+                        ...editForm,
+                        notifyReview: e.target.checked,
+                      })
+                    }
                   />
                   <span>새 후기 알림 (이메일)</span>
                 </label>
@@ -1270,7 +1613,12 @@ function BusinessMembers() {
                   <input
                     type="checkbox"
                     checked={editForm.notifyInquiry || false}
-                    onChange={(e) => setEditForm({ ...editForm, notifyInquiry: e.target.checked })}
+                    onChange={(e) =>
+                      setEditForm({
+                        ...editForm,
+                        notifyInquiry: e.target.checked,
+                      })
+                    }
                   />
                   <span>문의 알림 (이메일)</span>
                 </label>
@@ -1278,7 +1626,12 @@ function BusinessMembers() {
                   <input
                     type="checkbox"
                     checked={editForm.notifySettlement || false}
-                    onChange={(e) => setEditForm({ ...editForm, notifySettlement: e.target.checked })}
+                    onChange={(e) =>
+                      setEditForm({
+                        ...editForm,
+                        notifySettlement: e.target.checked,
+                      })
+                    }
                   />
                   <span>정산 완료 알림 (이메일)</span>
                 </label>
@@ -1286,7 +1639,12 @@ function BusinessMembers() {
                   <input
                     type="checkbox"
                     checked={editForm.notifyMarketing || false}
-                    onChange={(e) => setEditForm({ ...editForm, notifyMarketing: e.target.checked })}
+                    onChange={(e) =>
+                      setEditForm({
+                        ...editForm,
+                        notifyMarketing: e.target.checked,
+                      })
+                    }
                   />
                   <span>마케팅 정보 수신 (이메일)</span>
                 </label>
@@ -1295,13 +1653,23 @@ function BusinessMembers() {
 
             {/* 약관 동의 섹션 */}
             <div className="form-section">
-              <h4 className="form-section-title"><RiFileTextLine /> 약관 동의</h4>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              <h4 className="form-section-title">
+                <RiFileTextLine /> 약관 동의
+              </h4>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: 16,
+                }}
+              >
                 <label className="checkbox-label">
                   <input
                     type="checkbox"
                     checked={editForm.agreeTerms || false}
-                    onChange={(e) => setEditForm({ ...editForm, agreeTerms: e.target.checked })}
+                    onChange={(e) =>
+                      setEditForm({ ...editForm, agreeTerms: e.target.checked })
+                    }
                   />
                   <span>이용약관 동의 (필수)</span>
                 </label>
@@ -1309,7 +1677,12 @@ function BusinessMembers() {
                   <input
                     type="checkbox"
                     checked={editForm.agreePrivacy || false}
-                    onChange={(e) => setEditForm({ ...editForm, agreePrivacy: e.target.checked })}
+                    onChange={(e) =>
+                      setEditForm({
+                        ...editForm,
+                        agreePrivacy: e.target.checked,
+                      })
+                    }
                   />
                   <span>개인정보처리방침 동의 (필수)</span>
                 </label>
@@ -1317,7 +1690,12 @@ function BusinessMembers() {
                   <input
                     type="checkbox"
                     checked={editForm.agreeLocation || false}
-                    onChange={(e) => setEditForm({ ...editForm, agreeLocation: e.target.checked })}
+                    onChange={(e) =>
+                      setEditForm({
+                        ...editForm,
+                        agreeLocation: e.target.checked,
+                      })
+                    }
                   />
                   <span>위치기반서비스 동의 (선택)</span>
                 </label>
@@ -1330,8 +1708,10 @@ function BusinessMembers() {
               <div className="form-group">
                 <select
                   className="form-input form-select"
-                  value={editForm.status || ''}
-                  onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
+                  value={editForm.status || ""}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, status: e.target.value })
+                  }
                 >
                   <option value="approved">승인</option>
                   <option value="pending">대기</option>
@@ -1342,7 +1722,9 @@ function BusinessMembers() {
 
             {/* 비밀번호 변경 */}
             <div className="form-section">
-              <h4 className="form-section-title"><RiLockLine /> 비밀번호 관리</h4>
+              <h4 className="form-section-title">
+                <RiLockLine /> 비밀번호 관리
+              </h4>
               <button
                 type="button"
                 className="btn btn-outline"
@@ -1378,15 +1760,23 @@ function BusinessMembers() {
         size="medium"
         footer={
           <>
-            <button className="btn btn-secondary" onClick={() => setRejectModal({ isOpen: false, business: null })}>취소</button>
-            <button className="btn btn-danger" onClick={handleRejectConfirm}>반려</button>
+            <button
+              className="btn btn-secondary"
+              onClick={() => setRejectModal({ isOpen: false, business: null })}
+            >
+              취소
+            </button>
+            <button className="btn btn-danger" onClick={handleRejectConfirm}>
+              반려
+            </button>
           </>
         }
       >
         {rejectModal.business && (
           <div>
             <p style={{ marginBottom: 16 }}>
-              <strong>"{rejectModal.business.companyName}"</strong> 기업회원 가입을 반려하시겠습니까?
+              <strong>"{rejectModal.business.companyName}"</strong> 기업회원
+              가입을 반려하시겠습니까?
             </p>
             <div className="form-group">
               <label className="form-label">반려 사유</label>
@@ -1407,25 +1797,44 @@ function BusinessMembers() {
         isOpen={passwordModal.isOpen}
         onClose={() => {
           setPasswordModal({ isOpen: false, business: null });
-          setPasswordForm({ newPassword: '', confirmPassword: '' });
+          setPasswordForm({ newPassword: "", confirmPassword: "" });
         }}
         title="비밀번호 변경"
         size="small"
         footer={
           <>
-            <button className="btn btn-secondary" onClick={() => {
-              setPasswordModal({ isOpen: false, business: null });
-              setPasswordForm({ newPassword: '', confirmPassword: '' });
-            }}>취소</button>
-            <button className="btn btn-primary" onClick={handlePasswordSubmit}>변경</button>
+            <button
+              className="btn btn-secondary"
+              onClick={() => {
+                setPasswordModal({ isOpen: false, business: null });
+                setPasswordForm({ newPassword: "", confirmPassword: "" });
+              }}
+            >
+              취소
+            </button>
+            <button className="btn btn-primary" onClick={handlePasswordSubmit}>
+              변경
+            </button>
           </>
         }
       >
         {passwordModal.business && (
           <div>
-            <div style={{ marginBottom: 16, padding: '12px', background: '#f3f4f6', borderRadius: '8px' }}>
-              <div style={{ fontSize: '0.85rem', color: '#6b7280' }}>대상 기업회원</div>
-              <div style={{ fontWeight: 600 }}>{passwordModal.business.companyName} ({passwordModal.business.visibleUserId})</div>
+            <div
+              style={{
+                marginBottom: 16,
+                padding: "12px",
+                background: "#f3f4f6",
+                borderRadius: "8px",
+              }}
+            >
+              <div style={{ fontSize: "0.85rem", color: "#6b7280" }}>
+                대상 기업회원
+              </div>
+              <div style={{ fontWeight: 600 }}>
+                {passwordModal.business.companyName} (
+                {passwordModal.business.visibleUserId})
+              </div>
             </div>
             <div className="form-group" style={{ marginBottom: 16 }}>
               <label className="form-label">새 비밀번호 *</label>
@@ -1433,10 +1842,17 @@ function BusinessMembers() {
                 type="password"
                 className="form-input"
                 value={passwordForm.newPassword}
-                onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+                onChange={(e) =>
+                  setPasswordForm({
+                    ...passwordForm,
+                    newPassword: e.target.value,
+                  })
+                }
                 placeholder="8자 이상 입력"
               />
-              <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: 4 }}>
+              <div
+                style={{ fontSize: "0.75rem", color: "#6b7280", marginTop: 4 }}
+              >
                 영문, 숫자, 특수문자 포함 8자 이상
               </div>
             </div>
@@ -1446,19 +1862,38 @@ function BusinessMembers() {
                 type="password"
                 className="form-input"
                 value={passwordForm.confirmPassword}
-                onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
+                onChange={(e) =>
+                  setPasswordForm({
+                    ...passwordForm,
+                    confirmPassword: e.target.value,
+                  })
+                }
                 placeholder="비밀번호 다시 입력"
               />
-              {passwordForm.confirmPassword && passwordForm.newPassword !== passwordForm.confirmPassword && (
-                <div style={{ fontSize: '0.75rem', color: '#ef4444', marginTop: 4 }}>
-                  비밀번호가 일치하지 않습니다.
-                </div>
-              )}
-              {passwordForm.confirmPassword && passwordForm.newPassword === passwordForm.confirmPassword && (
-                <div style={{ fontSize: '0.75rem', color: '#10b981', marginTop: 4 }}>
-                  비밀번호가 일치합니다.
-                </div>
-              )}
+              {passwordForm.confirmPassword &&
+                passwordForm.newPassword !== passwordForm.confirmPassword && (
+                  <div
+                    style={{
+                      fontSize: "0.75rem",
+                      color: "#ef4444",
+                      marginTop: 4,
+                    }}
+                  >
+                    비밀번호가 일치하지 않습니다.
+                  </div>
+                )}
+              {passwordForm.confirmPassword &&
+                passwordForm.newPassword === passwordForm.confirmPassword && (
+                  <div
+                    style={{
+                      fontSize: "0.75rem",
+                      color: "#10b981",
+                      marginTop: 4,
+                    }}
+                  >
+                    비밀번호가 일치합니다.
+                  </div>
+                )}
             </div>
           </div>
         )}
@@ -1472,36 +1907,53 @@ function BusinessMembers() {
         size="large"
         footer={
           <>
-            <button className="btn btn-secondary" onClick={() => setRegisterModal(false)}>취소</button>
-            <button className="btn btn-primary" onClick={handleRegisterSubmit}>등록</button>
+            <button
+              className="btn btn-secondary"
+              onClick={() => setRegisterModal(false)}
+            >
+              취소
+            </button>
+            <button className="btn btn-primary" onClick={handleRegisterSubmit}>
+              등록
+            </button>
           </>
         }
       >
         <div>
           {/* 기업 로고 */}
           <div className="form-group">
-            <label className="form-label"><RiImageLine /> 기업 로고</label>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <label className="form-label">
+              <RiImageLine /> 기업 로고
+            </label>
+            <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
               <div
                 style={{
                   width: 80,
                   height: 80,
                   borderRadius: 8,
-                  background: registerForm.logo ? 'transparent' : '#E0E7FF',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  overflow: 'hidden',
-                  border: '2px dashed var(--border-color)'
+                  background: registerForm.logo ? "transparent" : "#E0E7FF",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  overflow: "hidden",
+                  border: "2px dashed var(--border-color)",
                 }}
               >
                 {registerForm.logo ? (
-                  <img src={registerForm.logo} alt="로고" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <img
+                    src={registerForm.logo}
+                    alt="로고"
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                    }}
+                  />
                 ) : (
-                  <RiBuilding2Line size={32} style={{ color: '#4F46E5' }} />
+                  <RiBuilding2Line size={32} style={{ color: "#4F46E5" }} />
                 )}
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 <button
                   type="button"
                   className="btn btn-secondary btn-sm"
@@ -1513,8 +1965,10 @@ function BusinessMembers() {
                   <button
                     type="button"
                     className="btn btn-outline btn-sm"
-                    onClick={() => setRegisterForm(prev => ({ ...prev, logo: null }))}
-                    style={{ color: 'var(--danger-color)' }}
+                    onClick={() =>
+                      setRegisterForm((prev) => ({ ...prev, logo: null }))
+                    }
+                    style={{ color: "var(--danger-color)" }}
                   >
                     이미지 삭제
                   </button>
@@ -1524,7 +1978,7 @@ function BusinessMembers() {
             <input
               type="file"
               ref={registerFileInputRef}
-              style={{ display: 'none' }}
+              style={{ display: "none" }}
               accept="image/*"
               onChange={handleRegisterImageChange}
             />
@@ -1532,15 +1986,28 @@ function BusinessMembers() {
 
           {/* 계정 정보 섹션 */}
           <div className="form-section">
-            <h4 className="form-section-title"><RiLockLine /> 계정 정보</h4>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <h4 className="form-section-title">
+              <RiLockLine /> 계정 정보
+            </h4>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: 16,
+              }}
+            >
               <div className="form-group">
                 <label className="form-label">아이디 *</label>
                 <input
                   type="text"
                   className="form-input"
                   value={registerForm.visibleUserId}
-                  onChange={(e) => setRegisterForm({ ...registerForm, visibleUserId: e.target.value })}
+                  onChange={(e) =>
+                    setRegisterForm({
+                      ...registerForm,
+                      visibleUserId: e.target.value,
+                    })
+                  }
                   placeholder="영문, 숫자 조합"
                 />
               </div>
@@ -1549,7 +2016,9 @@ function BusinessMembers() {
                 <select
                   className="form-input form-select"
                   value={registerForm.status}
-                  onChange={(e) => setRegisterForm({ ...registerForm, status: e.target.value })}
+                  onChange={(e) =>
+                    setRegisterForm({ ...registerForm, status: e.target.value })
+                  }
                 >
                   <option value="pending">대기</option>
                   <option value="approved">승인</option>
@@ -1562,7 +2031,12 @@ function BusinessMembers() {
                   type="password"
                   className="form-input"
                   value={registerForm.password}
-                  onChange={(e) => setRegisterForm({ ...registerForm, password: e.target.value })}
+                  onChange={(e) =>
+                    setRegisterForm({
+                      ...registerForm,
+                      password: e.target.value,
+                    })
+                  }
                   placeholder="8자 이상"
                 />
               </div>
@@ -1572,29 +2046,54 @@ function BusinessMembers() {
                   type="password"
                   className="form-input"
                   value={registerForm.passwordConfirm}
-                  onChange={(e) => setRegisterForm({ ...registerForm, passwordConfirm: e.target.value })}
+                  onChange={(e) =>
+                    setRegisterForm({
+                      ...registerForm,
+                      passwordConfirm: e.target.value,
+                    })
+                  }
                   placeholder="비밀번호 다시 입력"
                 />
-                {registerForm.passwordConfirm && registerForm.password !== registerForm.passwordConfirm && (
-                  <div style={{ fontSize: '0.75rem', color: '#ef4444', marginTop: 4 }}>
-                    비밀번호가 일치하지 않습니다.
-                  </div>
-                )}
+                {registerForm.passwordConfirm &&
+                  registerForm.password !== registerForm.passwordConfirm && (
+                    <div
+                      style={{
+                        fontSize: "0.75rem",
+                        color: "#ef4444",
+                        marginTop: 4,
+                      }}
+                    >
+                      비밀번호가 일치하지 않습니다.
+                    </div>
+                  )}
               </div>
             </div>
           </div>
 
           {/* 회사 정보 섹션 */}
           <div className="form-section">
-            <h4 className="form-section-title"><RiBuilding2Line /> 회사 정보</h4>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <h4 className="form-section-title">
+              <RiBuilding2Line /> 회사 정보
+            </h4>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: 16,
+              }}
+            >
               <div className="form-group">
                 <label className="form-label">회사명 *</label>
                 <input
                   type="text"
                   className="form-input"
                   value={registerForm.companyName}
-                  onChange={(e) => setRegisterForm({ ...registerForm, companyName: e.target.value })}
+                  onChange={(e) =>
+                    setRegisterForm({
+                      ...registerForm,
+                      companyName: e.target.value,
+                    })
+                  }
                 />
               </div>
               <div className="form-group">
@@ -1603,25 +2102,41 @@ function BusinessMembers() {
                   type="text"
                   className="form-input"
                   value={registerForm.ceoName}
-                  onChange={(e) => setRegisterForm({ ...registerForm, ceoName: e.target.value })}
+                  onChange={(e) =>
+                    setRegisterForm({
+                      ...registerForm,
+                      ceoName: e.target.value,
+                    })
+                  }
                 />
               </div>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: 16,
+              }}
+            >
               <div className="form-group">
                 <label className="form-label">사업자등록번호 *</label>
                 <input
                   type="text"
                   className="form-input"
                   value={registerForm.businessNo}
-                  onChange={(e) => setRegisterForm({ ...registerForm, businessNo: e.target.value.replace(/[^0-9]/g, '') })}
+                  onChange={(e) =>
+                    setRegisterForm({
+                      ...registerForm,
+                      businessNo: e.target.value.replace(/[^0-9]/g, ""),
+                    })
+                  }
                   maxLength={10}
                   placeholder="'-' 없이 숫자만 입력"
                 />
               </div>
               <div className="form-group">
                 <label className="form-label">사업자등록증</label>
-                <div style={{ display: 'flex', gap: 8 }}>
+                <div style={{ display: "flex", gap: 8 }}>
                   <input
                     type="text"
                     className="form-input"
@@ -1640,20 +2155,31 @@ function BusinessMembers() {
                 <input
                   type="file"
                   ref={registerLicenseInputRef}
-                  style={{ display: 'none' }}
+                  style={{ display: "none" }}
                   accept=".pdf,.jpg,.jpeg,.png"
                   onChange={handleRegisterLicenseChange}
                 />
               </div>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: 16,
+              }}
+            >
               <div className="form-group">
                 <label className="form-label">통신판매업신고번호</label>
                 <input
                   type="text"
                   className="form-input"
                   value={registerForm.ecommerceNo}
-                  onChange={(e) => setRegisterForm({ ...registerForm, ecommerceNo: e.target.value })}
+                  onChange={(e) =>
+                    setRegisterForm({
+                      ...registerForm,
+                      ecommerceNo: e.target.value,
+                    })
+                  }
                   placeholder="예: 제2024-서울강남-00000호"
                 />
               </div>
@@ -1663,7 +2189,12 @@ function BusinessMembers() {
                   type="url"
                   className="form-input"
                   value={registerForm.companyWebsite}
-                  onChange={(e) => setRegisterForm({ ...registerForm, companyWebsite: e.target.value })}
+                  onChange={(e) =>
+                    setRegisterForm({
+                      ...registerForm,
+                      companyWebsite: e.target.value,
+                    })
+                  }
                   placeholder="https://"
                 />
               </div>
@@ -1674,7 +2205,12 @@ function BusinessMembers() {
                 className="form-input"
                 rows={3}
                 value={registerForm.companyDescription}
-                onChange={(e) => setRegisterForm({ ...registerForm, companyDescription: e.target.value })}
+                onChange={(e) =>
+                  setRegisterForm({
+                    ...registerForm,
+                    companyDescription: e.target.value,
+                  })
+                }
                 placeholder="기업에 대한 간단한 소개를 입력해주세요."
                 maxLength={1000}
               />
@@ -1683,15 +2219,28 @@ function BusinessMembers() {
 
           {/* 주소 정보 섹션 */}
           <div className="form-section">
-            <h4 className="form-section-title"><RiMapPinLine /> 회사 주소</h4>
-            <div style={{ display: 'grid', gridTemplateColumns: '150px 1fr', gap: 16 }}>
+            <h4 className="form-section-title">
+              <RiMapPinLine /> 회사 주소
+            </h4>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "150px 1fr",
+                gap: 16,
+              }}
+            >
               <div className="form-group">
                 <label className="form-label">우편번호</label>
                 <input
                   type="text"
                   className="form-input"
                   value={registerForm.companyPostcode}
-                  onChange={(e) => setRegisterForm({ ...registerForm, companyPostcode: e.target.value })}
+                  onChange={(e) =>
+                    setRegisterForm({
+                      ...registerForm,
+                      companyPostcode: e.target.value,
+                    })
+                  }
                 />
               </div>
               <div className="form-group">
@@ -1700,7 +2249,12 @@ function BusinessMembers() {
                   type="text"
                   className="form-input"
                   value={registerForm.companyAddress}
-                  onChange={(e) => setRegisterForm({ ...registerForm, companyAddress: e.target.value })}
+                  onChange={(e) =>
+                    setRegisterForm({
+                      ...registerForm,
+                      companyAddress: e.target.value,
+                    })
+                  }
                 />
               </div>
             </div>
@@ -1710,22 +2264,40 @@ function BusinessMembers() {
                 type="text"
                 className="form-input"
                 value={registerForm.companyAddressDetail}
-                onChange={(e) => setRegisterForm({ ...registerForm, companyAddressDetail: e.target.value })}
+                onChange={(e) =>
+                  setRegisterForm({
+                    ...registerForm,
+                    companyAddressDetail: e.target.value,
+                  })
+                }
               />
             </div>
           </div>
 
           {/* 담당자 정보 섹션 */}
           <div className="form-section">
-            <h4 className="form-section-title"><RiUserLine /> 담당자 정보</h4>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <h4 className="form-section-title">
+              <RiUserLine /> 담당자 정보
+            </h4>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: 16,
+              }}
+            >
               <div className="form-group">
                 <label className="form-label">담당자명 *</label>
                 <input
                   type="text"
                   className="form-input"
                   value={registerForm.managerName}
-                  onChange={(e) => setRegisterForm({ ...registerForm, managerName: e.target.value })}
+                  onChange={(e) =>
+                    setRegisterForm({
+                      ...registerForm,
+                      managerName: e.target.value,
+                    })
+                  }
                 />
               </div>
               <div className="form-group">
@@ -1734,7 +2306,12 @@ function BusinessMembers() {
                   type="text"
                   className="form-input"
                   value={registerForm.managerPhone}
-                  onChange={(e) => setRegisterForm({ ...registerForm, managerPhone: e.target.value.replace(/[^0-9]/g, '') })}
+                  onChange={(e) =>
+                    setRegisterForm({
+                      ...registerForm,
+                      managerPhone: e.target.value.replace(/[^0-9]/g, ""),
+                    })
+                  }
                   maxLength={11}
                   placeholder="01012345678"
                 />
@@ -1746,25 +2323,45 @@ function BusinessMembers() {
                 type="email"
                 className="form-input"
                 value={registerForm.managerEmail}
-                onChange={(e) => setRegisterForm({ ...registerForm, managerEmail: e.target.value })}
+                onChange={(e) =>
+                  setRegisterForm({
+                    ...registerForm,
+                    managerEmail: e.target.value,
+                  })
+                }
               />
             </div>
           </div>
 
           {/* 정산 계좌 섹션 */}
           <div className="form-section">
-            <h4 className="form-section-title"><RiBankLine /> 정산 계좌</h4>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr 1fr', gap: 16 }}>
+            <h4 className="form-section-title">
+              <RiBankLine /> 정산 계좌
+            </h4>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 2fr 1fr",
+                gap: 16,
+              }}
+            >
               <div className="form-group">
                 <label className="form-label">은행</label>
                 <select
                   className="form-input form-select"
                   value={registerForm.bankName}
-                  onChange={(e) => setRegisterForm({ ...registerForm, bankName: e.target.value })}
+                  onChange={(e) =>
+                    setRegisterForm({
+                      ...registerForm,
+                      bankName: e.target.value,
+                    })
+                  }
                 >
                   <option value="">선택</option>
-                  {bankOptions.map(bank => (
-                    <option key={bank} value={bank}>{bank}</option>
+                  {bankOptions.map((bank) => (
+                    <option key={bank} value={bank}>
+                      {bank}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -1774,7 +2371,12 @@ function BusinessMembers() {
                   type="text"
                   className="form-input"
                   value={registerForm.accountNumber}
-                  onChange={(e) => setRegisterForm({ ...registerForm, accountNumber: e.target.value.replace(/[^0-9]/g, '') })}
+                  onChange={(e) =>
+                    setRegisterForm({
+                      ...registerForm,
+                      accountNumber: e.target.value.replace(/[^0-9]/g, ""),
+                    })
+                  }
                   maxLength={20}
                   placeholder="'-' 없이 숫자만 입력"
                 />
@@ -1785,7 +2387,12 @@ function BusinessMembers() {
                   type="text"
                   className="form-input"
                   value={registerForm.accountHolder}
-                  onChange={(e) => setRegisterForm({ ...registerForm, accountHolder: e.target.value })}
+                  onChange={(e) =>
+                    setRegisterForm({
+                      ...registerForm,
+                      accountHolder: e.target.value,
+                    })
+                  }
                 />
               </div>
             </div>
@@ -1793,13 +2400,26 @@ function BusinessMembers() {
 
           {/* 알림 설정 섹션 */}
           <div className="form-section">
-            <h4 className="form-section-title"><RiNotification3Line /> 알림 설정</h4>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <h4 className="form-section-title">
+              <RiNotification3Line /> 알림 설정
+            </h4>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: 16,
+              }}
+            >
               <label className="checkbox-label">
                 <input
                   type="checkbox"
                   checked={registerForm.notifyOrder}
-                  onChange={(e) => setRegisterForm({ ...registerForm, notifyOrder: e.target.checked })}
+                  onChange={(e) =>
+                    setRegisterForm({
+                      ...registerForm,
+                      notifyOrder: e.target.checked,
+                    })
+                  }
                 />
                 <span>새 예약 알림 (이메일)</span>
               </label>
@@ -1807,7 +2427,12 @@ function BusinessMembers() {
                 <input
                   type="checkbox"
                   checked={registerForm.notifyReview}
-                  onChange={(e) => setRegisterForm({ ...registerForm, notifyReview: e.target.checked })}
+                  onChange={(e) =>
+                    setRegisterForm({
+                      ...registerForm,
+                      notifyReview: e.target.checked,
+                    })
+                  }
                 />
                 <span>새 후기 알림 (이메일)</span>
               </label>
@@ -1815,7 +2440,12 @@ function BusinessMembers() {
                 <input
                   type="checkbox"
                   checked={registerForm.notifyInquiry}
-                  onChange={(e) => setRegisterForm({ ...registerForm, notifyInquiry: e.target.checked })}
+                  onChange={(e) =>
+                    setRegisterForm({
+                      ...registerForm,
+                      notifyInquiry: e.target.checked,
+                    })
+                  }
                 />
                 <span>문의 알림 (이메일)</span>
               </label>
@@ -1823,7 +2453,12 @@ function BusinessMembers() {
                 <input
                   type="checkbox"
                   checked={registerForm.notifySettlement}
-                  onChange={(e) => setRegisterForm({ ...registerForm, notifySettlement: e.target.checked })}
+                  onChange={(e) =>
+                    setRegisterForm({
+                      ...registerForm,
+                      notifySettlement: e.target.checked,
+                    })
+                  }
                 />
                 <span>정산 완료 알림 (이메일)</span>
               </label>
@@ -1831,7 +2466,12 @@ function BusinessMembers() {
                 <input
                   type="checkbox"
                   checked={registerForm.notifyMarketing}
-                  onChange={(e) => setRegisterForm({ ...registerForm, notifyMarketing: e.target.checked })}
+                  onChange={(e) =>
+                    setRegisterForm({
+                      ...registerForm,
+                      notifyMarketing: e.target.checked,
+                    })
+                  }
                 />
                 <span>마케팅 정보 수신 (이메일)</span>
               </label>
@@ -1840,13 +2480,26 @@ function BusinessMembers() {
 
           {/* 약관 동의 섹션 */}
           <div className="form-section">
-            <h4 className="form-section-title"><RiFileTextLine /> 약관 동의</h4>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <h4 className="form-section-title">
+              <RiFileTextLine /> 약관 동의
+            </h4>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: 16,
+              }}
+            >
               <label className="checkbox-label">
                 <input
                   type="checkbox"
                   checked={registerForm.agreeTerms}
-                  onChange={(e) => setRegisterForm({ ...registerForm, agreeTerms: e.target.checked })}
+                  onChange={(e) =>
+                    setRegisterForm({
+                      ...registerForm,
+                      agreeTerms: e.target.checked,
+                    })
+                  }
                 />
                 <span>이용약관 동의 (필수)</span>
               </label>
@@ -1854,7 +2507,12 @@ function BusinessMembers() {
                 <input
                   type="checkbox"
                   checked={registerForm.agreePrivacy}
-                  onChange={(e) => setRegisterForm({ ...registerForm, agreePrivacy: e.target.checked })}
+                  onChange={(e) =>
+                    setRegisterForm({
+                      ...registerForm,
+                      agreePrivacy: e.target.checked,
+                    })
+                  }
                 />
                 <span>개인정보처리방침 동의 (필수)</span>
               </label>
@@ -1862,7 +2520,12 @@ function BusinessMembers() {
                 <input
                   type="checkbox"
                   checked={registerForm.agreeLocation}
-                  onChange={(e) => setRegisterForm({ ...registerForm, agreeLocation: e.target.checked })}
+                  onChange={(e) =>
+                    setRegisterForm({
+                      ...registerForm,
+                      agreeLocation: e.target.checked,
+                    })
+                  }
                 />
                 <span>위치기반서비스 동의 (선택)</span>
               </label>
