@@ -430,9 +430,9 @@ function Logs() {
               <option value="WARN">WARN</option>
               <option value="ERROR">ERROR</option>
             </select>
-            <button className="btn btn-outline-danger btn-sm" onClick={handleClearLogs}>
+            {/* <button className="btn btn-outline-danger btn-sm" onClick={handleClearLogs}>
               <RiDeleteBinLine /> 오래된 로그 삭제
-            </button>
+            </button> */}
           </div>
         </div>
 
